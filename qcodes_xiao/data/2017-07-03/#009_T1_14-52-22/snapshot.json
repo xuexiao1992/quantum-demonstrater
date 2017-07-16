@@ -1,0 +1,150 @@
+{
+    "Parameters": {
+        "Nrep": 10,
+        "t_empty": 2,
+        "t_load": 2.4,
+        "t_read": 2.2
+    },
+    "__class__": "qcodes.data.data_set.DataSet",
+    "arrays": {
+        "Fixed1": {
+            "__class__": "qcodes.data.data_array.DataArray",
+            "action_indices": [
+                0,
+                0
+            ],
+            "array_id": "Fixed1",
+            "is_setpoint": false,
+            "label": "Fixed1",
+            "name": "Fixed1",
+            "shape": [
+                9,
+                8
+            ],
+            "unit": "",
+            "vals": "<Numbers>"
+        },
+        "Fixed2": {
+            "__class__": "qcodes.data.data_array.DataArray",
+            "action_indices": [
+                0,
+                1
+            ],
+            "array_id": "Fixed2",
+            "is_setpoint": false,
+            "label": "Fixed2",
+            "name": "Fixed2",
+            "shape": [
+                9,
+                8
+            ],
+            "unit": "",
+            "vals": "<Numbers>"
+        },
+        "Para1_set": {
+            "__class__": "qcodes.data.data_array.DataArray",
+            "action_indices": [],
+            "array_id": "Para1_set",
+            "is_setpoint": true,
+            "label": "Para1",
+            "name": "Para1",
+            "shape": [
+                9
+            ],
+            "unit": "",
+            "vals": "<Numbers>"
+        },
+        "Para2_set": {
+            "__class__": "qcodes.data.data_array.DataArray",
+            "action_indices": [
+                0
+            ],
+            "array_id": "Para2_set",
+            "is_setpoint": true,
+            "label": "Para2",
+            "name": "Para2",
+            "shape": [
+                9,
+                8
+            ],
+            "unit": "",
+            "vals": "<Numbers>"
+        }
+    },
+    "formatter": "qcodes.data.gnuplot_format.GNUPlotFormat",
+    "io": "<DiskIO, base_location='D:\\\\文献\\\\QuTech\\\\QTlab\\\\xiaotest'>",
+    "location": "data/2017-07-03/#009_T1_14-52-22",
+    "loop": {
+        "__class__": "qcodes.loops.ActiveLoop",
+        "actions": [
+            {
+                "__class__": "qcodes.loops.ActiveLoop",
+                "actions": [
+                    {
+                        "__class__": "qcodes.instrument.parameter.StandardParameter",
+                        "label": "Fixed1",
+                        "name": "Fixed1",
+                        "ts": null,
+                        "unit": "",
+                        "vals": "<Numbers>",
+                        "value": null
+                    },
+                    {
+                        "__class__": "qcodes.instrument.parameter.StandardParameter",
+                        "label": "Fixed2",
+                        "name": "Fixed2",
+                        "ts": null,
+                        "unit": "",
+                        "vals": "<Numbers>",
+                        "value": null
+                    }
+                ],
+                "delay": 0,
+                "sweep_values": {
+                    "parameter": {
+                        "__class__": "qcodes.instrument.parameter.StandardParameter",
+                        "label": "Para2",
+                        "name": "Para2",
+                        "ts": null,
+                        "unit": "",
+                        "vals": "<Numbers>",
+                        "value": null
+                    },
+                    "values": [
+                        {
+                            "first": 2,
+                            "last": 9,
+                            "num": 8,
+                            "type": "linear"
+                        }
+                    ]
+                },
+                "then_actions": []
+            }
+        ],
+        "delay": 0,
+        "sweep_values": {
+            "parameter": {
+                "__class__": "qcodes.instrument.parameter.StandardParameter",
+                "label": "Para1",
+                "name": "Para1",
+                "ts": null,
+                "unit": "",
+                "vals": "<Numbers>",
+                "value": null
+            },
+            "values": [
+                {
+                    "first": 1.0,
+                    "last": 5.0,
+                    "num": 9,
+                    "type": "linear"
+                }
+            ]
+        },
+        "then_actions": [],
+        "ts_end": "2017-07-03 14:52:29",
+        "ts_start": "2017-07-03 14:52:29",
+        "use_threads": false
+    }
+}

@@ -1,0 +1,159 @@
+#%% Load packages
+import logging
+#logging.basicConfig(level=logging.INFO) #used to see logging in console when not using the ZMQ GUI logger
+
+import qcodes
+import qtt
+import numpy as np
+
+#from qcodes.utils.loggingGUI import installZMQlogger
+#import qcodes.instrument_drivers.stanford_research.SR830 as SR830
+import qcodes.instrument_drivers.tektronix.AWG5014 as AWG5014
+import qcodes.instrument_drivers.tektronix.Keithley_2700 as Keithley_2700
+#import qcodes.instrument_drivers.QuTech.IVVI as IVVI
+import qcodes.instrument_drivers.Spectrum.M4i as M4i
+
+#import users.boterjm.Drivers.QuTech.IVVI as IVVI
+#import users.boterjm.Drivers.Spectrum.M4i as M4i
+#import users.boterjm.Drivers.american_magnetics.AMI430_IP as AMI430
+
+#import users.boterjm.Drivers.E8267D as E8267D
+
+#from qtt.qtt_toymodel import virtual_gates
+#from users.petitlp.measurements.virtual_gates import virtual_gates 
+
+#%% Instruments and gate/outputs maps definition
+_initialized = False
+
+GenInfo = {
+    'Is_Gain' : 1e8,
+    'Id_Gain' : 1e8,
+    'Ir_Gain' : 1e8
+    }
+
+
+# Format (instrument_index, query, multiplier)
+gate_map = {
+    # bias dacs
+    'G1': (0,'dac1'),
+    'G2': (0,'dac2'),
+    'G3': (0,'dac3'),
+    'ST': (0,'dac4'),
+    'LB': (0,'dac5'),
+    'RB': (0,'dac6'),
+    'C': (0,'dac7'),
+    'R': (0,'dac8'),
+    'NA9': (0,'dac9'),
+    'NA10': (0,'dac10'),
+    'NA11': (0,'dac11'),
+    'NA12': (0,'dac12'),
+    'Vsd': (0,'dac13'),
+    'NA14': (0,'dac14'),
+    'NA15': (0,'dac15'),
+    'NA16': (0,'dac16'),
+    
+    'Vsd_AC': (2,'amplitude'),
+    
+    'Vgate_AC': (1, 'amplitude')
+}
+
+output_map = None
+
+station = None
+ivvi = None
+digitizer = None
+lockin = None
+awg = None
+magnet=None
+sig_gen=None
+keithley=None
+
+mwindows=None
+
+location_matfiles = 'D:/Measurements/Apr72017UNSW-19th&20th_Devices_NewBatch/data/BOTTOM/Matlab'
+
+datadir = 'D:/Measurements/Apr72017UNSW-19th&20th_Devices_NewBatch/data/BOTTOM/Qcodes'
+qcodes.DataSet.default_io = qcodes.DiskIO(datadir)
+
+#%%
+def getStation():
+    global station
+    return station
+
+#%%
+def close(verbose=1):
+    global station
+
+    for instr in station.components.keys():
+        if verbose:
+            print('close %s' % station.components[instr])
+        try:
+            station.components[instr].close()
+        except:
+            print('could not close instrument %s' % station.components[instr])
+
+#%%
+def initialize(reinit=False, server_name=None):
+    global ivvi, digitizer, lockin1, lockin2, awg, magnet, sig_gen, keithley, gate_map, station, mwindows, output_map
+    
+    #qcodes.installZMQlogger()
+    logging.info('LD400: initialize')
+    print('\n')
+    
+    if _initialized and not reinit:
+        return station
+    
+    
+    # Loading AWG
+    logging.info('LD400: load AWG driver')
+    awg = AWG5014.Tektronix_AWG5014(name='awg', address='TCPIP0::169.254.141.235::inst0::INSTR', server_name=server_name)
+    print('awg loaded')
+    
+    
+
+    
+    #Loading Microwave source
+#    logging.info('Keysight signal generator driver')
+#    sig_gen = E8267D.E8267D(name='sig_gen',address='TCPIP::192.168.2.2::INSTR',server_name=server_name)
+#    print('')
+
+#    load keithley driver
+#    keithley = Keithley_2700.Keithley_2700(name='keithley', address='GPIB0::15::INSTR', server_name=server_name)
+    
+
+    # Loading digitizer
+    logging.info('LD400: load digitizer driver')
+    digitizer = M4i.M4i(name='digitizer', server_name=server_name)
+    if digitizer==None:
+        print('Digitizer driver not laoded')
+    else:
+        print('Digitizer driver loaded')
+    print('')
+
+    
+    logging.info('all drivers have been loaded')
+    
+    
+#     Create map for gates and outputs
+#    gates = virtual_gates(name='gates', gate_map=gate_map, server_name=server_name, instruments=[ivvi, lockin1, lockin2])
+
+#    output_map = {
+#                  'Id': lockin1.X,
+#                  'Is': lockin2.X,
+#                  'Id_R': lockin1.R,
+#                  'Is_R' : lockin2.R,
+#                  'Idc': keithley.amplitude
+#    }
+    
+    #Creating the experimental station
+    #station = qcodes.Station(ivvi, awg, lockin1, lockin2, digitizer, gates)
+#    station = qcodes.Station(ivvi, lockin1, lockin2, digitizer, gates)
+    # station = qcodes.Station(awg, digitizer)
+    station = qcodes.Station(awg, digitizer)
+    logging.info('Initialized LDHe station')
+    print('Initialized LDHe station\n')
+    
+    return station
+    
+#%% Initializing station    
+#initialize()
