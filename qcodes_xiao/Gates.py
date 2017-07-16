@@ -22,9 +22,15 @@ class Gates:
         self.name = name                                 ## name of a gate, e.g. 'X_Q1' 'CZ_Q12'
         self.qubit_name = 'qubit'
         self.qubits = []
+<<<<<<< HEAD
 
 
 ##      Gate will be an object that consists all the pulse information in the operation,
+=======
+
+
+##      Gates will be an object that consists all the pulse information in the operation,
+>>>>>>> b7918d212502aadde6e5a17a361c1a522f6003bd
 ##      but it will just store the pulses in information and the links in time domain
 ##      between different pulses, but not adding it into an Element
 
