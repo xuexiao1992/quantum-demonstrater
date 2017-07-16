@@ -22,9 +22,15 @@ class Gates:
         self.name = name                                 ## name of a gate, e.g. 'X_Q1' 'CZ_Q12'
         self.qubit_name = 'qubit'
         self.qubits = []
+<<<<<<< HEAD
 
 
 ##      Gate will be an object that consists all the pulse information in the operation,
+=======
+
+
+##      Gates will be an object that consists all the pulse information in the operation,
+>>>>>>> b7918d212502aadde6e5a17a361c1a522f6003bd
 ##      but it will just store the pulses in information and the links in time domain
 ##      between different pulses, but not adding it into an Element
 
@@ -43,6 +49,7 @@ class Single_Qubit_Gate(Gates):
         self.channel_VP = qubit.plunger_gate['channel_VP']
 #        self.add(CosPulse(channel = self.channel, name = 'first pulse', frequency = qubit.frequency,
 #                          amplitude = 0, length = 0,))
+
 #        self.add(SquarePulse(channel = self.channel, name = 'another pulse', frequency = qubit.frequency,
 #                          amplitude = 0, length = 0, refpulse='first pulse', refpoint='start'))
         self.axis = np.array(rotating_axis)
