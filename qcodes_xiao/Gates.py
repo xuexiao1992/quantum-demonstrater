@@ -15,7 +15,7 @@ from pycqed.measurement.waveform_control.pulse import CosPulse, SquarePulse, Lin
 from qubit import Qubit
 
 
-class Gates:
+class Gate:
 
     def __init__(self, name, **kw):
 
@@ -36,7 +36,7 @@ class Gates:
 
 
 
-class Single_Qubit_Gate(Gates):
+class Single_Qubit_Gate(Gate):
 
     def __init__(self, name, qubit, rotating_axis = (1, 0, 0), frequency = None, refphase = 0, **kw):
         super().__init__(name, **kw)
@@ -137,7 +137,7 @@ class Single_Qubit_Gate(Gates):
 
 
 
-class Two_Qubit_Gate(Gates):
+class Two_Qubit_Gate(Gate):
 
     def __init__(self, name, control_qubit, target_qubit, operation = '', **kw):
         super().__init__(name, **kw)
