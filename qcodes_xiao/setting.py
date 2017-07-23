@@ -13,55 +13,59 @@ from experiment import Experiment
 #%% make experiment
 
 def set_step(time = 0, qubits = [], voltages = []):
-    
+
     if len(qubits)!=len(voltages):
         raise ValueError('qubits should be same length with voltages')
-    
+
     step = {'time' : time}
-    
+
     for i in range(len(qubits)):
         qubit = qubits[i]
         step[qubit] = voltages[i]
-    
+
     return step
 
+#%%
 
 def make_experiment_cfg(station):
-    
+
     experiment = Experiment()
-    
+
     qubits = experiment.qubits_name
-    
-#    experiment.Sweep_2D(parameter1 = 'time_step2', start1 = 0, stop1 = 10, points1 = 11, 
+
+#    experiment.Sweep_2D(parameter1 = 'time_step2', start1 = 0, stop1 = 10, points1 = 11,
 #                        parameter2 = 'voltage_q1_step1', start2 = 10, stop2=30, points2 =21)
-    
-    experiment.SP1 = np.array([1,2,3])
-    experiment.SP2 = np.array([2,45,55])
-    
-    experiment.init_cfg = {
+
+    experiment.sweep_set1 = np.array([1,2,3])
+    experiment.sweep_set2 = np.array([2,45,55])
+
+    init_cfg = {
             'step1' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
-            'step2' : set_step(time = experiment.SP1, qubits = qubits, voltages = [0.3, 0.2]),
-            'setp3' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, experiment.SP2]),
+            'step2' : set_step(time = experiment.sweep_point1, qubits = qubits, voltages = [0.3, 0.2]),
+            'setp3' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, experiment.sweep_point2]),
             }
-    
-    experiment.manip_cfg = {
-            'step1' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
-            'step2' : [],
+
+    manip_cfg = {
+            'step1' : set_step(time = 10e-6, qubits = qubits, operations = ['X', 'Y']),
+            'step2' : set_step(time = 10e-6, qubits = qubits, operations = ['X', 'Y']),
             'step3' : [],
             }
-    
-    experiment.read_cfg = {
+
+    read_cfg = {
             'step1' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
             'step2' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
             'step3' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
             }
-    
+
+    experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg]
+
+
 #    experiment.Sweep_2D(parameter1 = T, name1 = 'time_step2', )
-#    experiment.Sweep_2D(parameter1 = 'time_step2', start1 = 0, stop1 = 10, points1 = 11, 
+#    experiment.Sweep_2D(parameter1 = 'time_step2', start1 = 0, stop1 = 10, points1 = 11,
 #                        parameter2 = 'voltage_q1_step1', start2 = 10, stop2=30, points2 =21)
-#    
-    return experiment   
-    
+#
+    return experiment
+
 
 
 #%% make pulsar
@@ -118,8 +122,3 @@ def set_5014pulsar(awg):
 
 
 #%%
-
-
-
-
-
