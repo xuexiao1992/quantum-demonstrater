@@ -2,7 +2,7 @@
 """
 Created on Wed Jun 14 16:31:17 2017
 
-@author: think
+@author: X.X
 """
 
 
@@ -33,7 +33,6 @@ class Experiment:
         self.SP2 = 0
         
         self.sweep_type = '2D'
-        
         
         self.init_cfg = {
                 'step1' : {},
@@ -91,12 +90,16 @@ class Experiment:
     
 
 
-    def initialize_element(self, name, amplitude, length):
+    def initialize_element(self, name, step = 'step1'):
         
         initialize = Initialize(name = name)
         
-        for qubit in self.qubits:        
-            initialize.add(SquarePulse(name='init', channel='ch1', amplitude=amplitude, length=length), name='init')
+        value = self.init_cfg[step]
+        
+        for i in range(len(self.qubits)):
+            refpulse = None if i ==0 else 'init1'
+            initialize.add(SquarePulse(name='init', channel='ch1', amplitude=value['Qubit_%d'%i], length=value['time']), 
+                           name='init%d'%(i+1),refpulse = None)
         
         return initialize
     
@@ -109,6 +112,7 @@ class Experiment:
         readout.add(SquarePulse(name='square_load', channel='ch1', amplitude=0.05, length=10e-6), name='Load')
         
         return readout
+    
     
     def manipulation_element(self, name):
         
