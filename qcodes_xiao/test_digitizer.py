@@ -80,8 +80,8 @@ class digitizer_param(ArrayParameter):
         
     def get(self):
 #        res = digitizer.single_trigger_acquisition(self.mV_range,self.memsize,self.posttrigger_size)
-        res = digitizer.multiple_trigger_acquisition(self.mV_range,self.memsize,self.seg_size,self.posttrigger_size)
-#        res = digitizer.single_software_trigger_acquisition(self.mV_range,self.memsize,self.posttrigger_size)
+#        res = digitizer.multiple_trigger_acquisition(self.mV_range,self.memsize,self.seg_size,self.posttrigger_size)
+        res = digitizer.single_software_trigger_acquisition(self.mV_range,self.memsize,self.posttrigger_size)
         print(res.shape)
         return res
         
@@ -119,7 +119,7 @@ aa=5
 def Ffunction():
     global aa
     a=0
-    a = a +5
+    a = a + 5
     b =3
     aa += a*b
     return aa
@@ -144,7 +144,7 @@ data = LP.get_data_set(location=None, loc_record = {'name':'T1', 'label':'Vread_
 print('loop.data_set: %s' % LP.data_set)
 
 
-LP.run()
+data = LP.run()
 
 
 

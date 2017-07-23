@@ -2,10 +2,11 @@
 """
 Created on Wed May 31 13:12:15 2017
 
-@author: think
+@author: X.X
 """
 
 from qcodes.instrument.base import Instrument
+from qcodes import validators as vals
 
 class Qubit(Instrument):
     
@@ -18,13 +19,27 @@ class Qubit(Instrument):
 #                           get_cmd=self._get_operations)
         self.T1 = 0
         self.T2 = 0
+        
         self.frequency = 0
+        
         self.Pi_pulse_length = 50e-9
         
+        self.refphase = 0
         
+        self.microwave_power = 0.3
+        
+        if self.microwave_power >= 1:
+            raise ValueError('should be set in a safe value less than ')
+        
+        self.IQ_ampitude = 1
+        
+        if self.IQ_ampitude not in range(-1, 1):
+            raise ValueError('should be set in a safe value within (-1,1)')
         
         self.Rabi_frequency = 0
         self.gates = {}      #{number:voltage}
+        
+        self.awg_channels = {}
         
         self.neighbor = {}               ##        neighbor quantum dots
         
@@ -39,8 +54,35 @@ class Qubit(Instrument):
 #                    'channel': 0,              ##   awg_channel
 #                    'microwave': 0,            ##   0/1    no/yes
 #                    }
-         
-    
+#         
+        self.add_parameter('Rabi_frequency',
+                           label = 'Rabi Frequency',
+                           get_cmd='AWGControl:RMODe?',
+                           set_cmd='AWGControl:RMODe ' + '{}',
+#                           vals=vals.Enum('CONT', 'TRIG', 'SEQ', 'GAT'),
+                           )
+#
+        self.add_parameter('IQ_amplitude',
+                           label='AWG IQ channel amplitude',
+                           get_cmd='AWGControl:CLOCk:SOURce?',
+                           set_cmd='AWGControl:CLOCk:SOURce ' + '{}',
+                           vals=vals.Numbers(-1, 1),
+                           )
+        
+        self.add_parameter('microwave_power',
+                           label='microwave source power',
+                           get_cmd='AWGControl:CLOCk:SOURce?',
+                           set_cmd='AWGControl:CLOCk:SOURce ' + '{}',
+                           vals=vals.Numbers(0, 1),
+                           )
+        
+        self.add_parameter('resonance_frequency',
+                           label='qubit resonance frequency',
+                           get_cmd='AWGControl:CLOCk:SOURce?',
+                           set_cmd='AWGControl:CLOCk:SOURce ' + '{}',
+#                           vals=vals.Enum('INT', 'EXT'),
+                           )
+
     
     def define_gate(self, gate_name, gate_number, gate_function = 'confinement', channel_DC = None, 
                     microwave = 0, channel_I = None, channel_Q = None, channel_PM = None, channel_FM = None, 

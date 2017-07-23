@@ -49,7 +49,7 @@ def make5014pulsar(awg):
         pulsar.define_channel(id='ch{}'.format(i + 1),
                               name='ch{}'.format(i + 1), type='analog',
                               # max safe IQ voltage
-                              high=0.5, low=-0.5,
+                              high=1, low=-1,
                               offset=0.0, delay=0, active=True)
         pulsar.define_channel(id='ch{}_marker1'.format(i + 1),
                               name='ch{}_marker1'.format(i + 1),
@@ -86,12 +86,12 @@ def make5014pulsar(awg):
 pulsar = make5014pulsar(station.components['awg'])
 station.pulsar = pulsar
 
-# Generating an example sequence
-initialize = Element('initialize', pulsar=pulsar)
-# we copied the channel definition from out global pulsar
-print('Channel definitions: ')
-pprint.pprint(initialize._channels)
-print()
+## Generating an example sequence
+#initialize = Element('initialize', pulsar=pulsar)
+## we copied the channel definition from out global pulsar
+#print('Channel definitions: ')
+#pprint.pprint(initialize._channels)
+#print()
 
 plungerchannel = 3
 microwavechannel = 2
@@ -101,84 +101,158 @@ initialize_amplitude = 0.3
 readout_amplitude = 0.5
 
 
-initialize.add(SquarePulse(channel = 'ch%d' % plungerchannel, name = 'initialize_1', amplitude = initialize_amplitude,
-                           length = 2e-6), name = 'initialize_1')
 
-initialize.add(SquarePulse(channel = 'ch%d' % plungerchannel, name = 'initialize_2', 
-                           amplitude = 0.5*initialize_amplitude, length =0.5e-6,),
-                           name= 'initialize_2', refpulse = 'initialize_1', refpoint = 'center')
-
-initialize.add(CosPulse(channel = 'ch%d' % plungerchannel, name = 'initialize_3', frequency = 1e6,
-                           amplitude = 0.5*initialize_amplitude, length =1.5e-6,),
-                           name= 'initialize_3', refpulse = 'initialize_1', refpoint = 'end')
-
-
-
-manipulation = Element('manipulation', pulsar=pulsar)
-
-dd = [4, 0, 1, 2, 3, 4, 0]
-manipulation.add(SquarePulse(channel = 'ch%d' % plungerchannel, amplitude=0.35, length=1e-6), 
-                 name='m0',)
-manipulation.add(SquarePulse(channel = 'ch%d' %microwavechannel, amplitude=0.1, length=1e-6), 
-                 name='m0_m', )
-
-for i, d in enumerate(dd):
-    manipulation.add(SquarePulse(channel = 'ch%d' % plungerchannel, amplitude=base_amplitude * d / np.max(dd), length=1e-6),
-                   name='m%d' % (i + 1), refpulse='m%d' % i, refpoint='end')
-    manipulation.add(SquarePulse(channel = 'ch%d' %microwavechannel, amplitude=2*base_amplitude * d / np.max(dd), length=1e-6),
-                   name='m%d_m' % (i + 1), refpulse='m%d_m' % i, refpoint='end')
-
-manipulation.print_overview()
-
-readout = Element('readout', pulsar=pulsar)
-readout.add(SquarePulse(channel = 'ch%d' % plungerchannel, amplitude=readout_amplitude, length=5e-6), name = 'readout_0')
-
-for i in range(3):
-    readout.add(SquarePulse(channel = 'ch%d' % plungerchannel, amplitude=readout_amplitude/(i+1), length=5e-6), 
-                name = 'readout_%d' %(i+1), refpulse ='readout_%d' % i, refpoint = 'end')
-
-
-  
-readout.add(SquarePulse(channel = 'ch%d_marker1'%plungerchannel, amplitude=base_amplitude/(i+1), length=1e-6), 
-            name = 'readout_marker1', refpulse ='readout_0', refpoint = 'start')
-readout.add(SquarePulse(channel = 'ch%d_marker2'%plungerchannel, amplitude=base_amplitude/(i+1), length=1e-6), 
-            name = 'readout_marker2', refpulse ='readout_0', refpoint = 'start')
-    
-readout.print_overview()
-print('Element overview:')
-initialize.print_overview()
-print()
 
 awg = station.awg
 print('a')
-elts = [initialize, manipulation, readout]
-#elts = [initialize]
+#elts = [initialize, manipulation, readout]
+elts = []
 
-print('b')
 myseq = Sequence('ASequence')
-print('c')
-myseq.append(name='initialize', wfname='initialize', repetitions = 2, trigger_wait=False,)
-myseq.append(name='manipulation', wfname='manipulation', trigger_wait=False,)
-myseq.append(name='readout', wfname='readout', trigger_wait=False,)
+
+def initialize(num):
+    
+    initialize = Element('initialize%d' % num, pulsar=pulsar)
+
+
+    initialize.add(SquarePulse(channel = 'ch%d' % plungerchannel, name = 'initialize_1', amplitude = initialize_amplitude,
+                               length = 0.5e-6), name = 'initialize_1')
+
+    initialize.add(SquarePulse(channel = 'ch%d' % plungerchannel, name = 'initialize_2', 
+                               amplitude = 0.5*initialize_amplitude, length =0.5e-6,),
+                               name= 'initialize_2', refpulse = 'initialize_1', refpoint = 'center')
+    
+#    initialize.add(CosPulse(channel = 'ch%d' % plungerchannel, name = 'initialize_3', frequency = 1e6,
+#                            amplitude = 0.5*initialize_amplitude, length =150e-6,),
+#                               name= 'initialize_3', refpulse = 'initialize_1', refpoint = 'end')
+    elts.append(initialize)
+    myseq.append(name='initialize%d' % num, wfname='initialize%d' % num, repetitions = 350, trigger_wait=False,)
+    return initialize
+
+def initialize_add(num):
+    initialize_add = Element('initialize_add%d' % num, pulsar=pulsar)
+    initialize_add.add(SquarePulse(channel = 'ch%d' % plungerchannel, name = 'initialize_1', amplitude = initialize_amplitude,
+                               length = 1e-6), name = 'initialize_1')
+    elts.append(initialize_add)
+    myseq.append(name='initialize_add%d' % num, wfname='initialize_add%d' % num, repetitions = 100, trigger_wait=False,)
+    return initialize_add
+
+def manipulation(num):
+    
+    manipulation = Element('manipulation%d' % num, pulsar=pulsar)
+
+    dd = [4, 0, 1, 2, 3, 4, 0]
+    manipulation.add(SquarePulse(channel = 'ch%d' % plungerchannel, amplitude=0.35, length=30e-6), 
+                     name='m0',)
+    manipulation.add(SquarePulse(channel = 'ch%d' %microwavechannel, amplitude=0.1, length=1e-6), 
+                     name='m0_m', )
+
+    for i, d in enumerate(dd):
+        manipulation.add(SquarePulse(channel = 'ch%d' % plungerchannel, amplitude=base_amplitude * d / np.max(dd), length=10e-6),
+                         name='m%d' % (i + 1), refpulse='m%d' % i, refpoint='end')
+        manipulation.add(SquarePulse(channel = 'ch%d' %microwavechannel, amplitude=2*base_amplitude * d / np.max(dd), length=5e-6),
+                         name='m%d_m' % (i + 1), refpulse='m%d_m' % i, refpoint='end')
+    elts.append(manipulation)
+    myseq.append(name='manipulation%d'%num, wfname='manipulation%d'%num, trigger_wait=False,)
+    return manipulation
+
+
+
+#manipulation.print_overview()
+
+
+def readout(num):
+    
+    readout = Element('readout%d' % num, pulsar=pulsar)
+    readout.add(SquarePulse(channel = 'ch%d' % plungerchannel, amplitude=readout_amplitude, length=1e-6), name = 'readout_0')
+    
+    for i in range(3):
+        readout.add(SquarePulse(channel = 'ch%d' % plungerchannel, amplitude=readout_amplitude/(i+1), length=0.5e-6), 
+                    name = 'readout_%d' %(i+1), refpulse ='readout_%d' % i, refpoint = 'end')
+        
+    readout.add(SquarePulse(channel = 'ch%d' % plungerchannel, amplitude=0*readout_amplitude, length=3e-6), 
+                name = 'readout_4', refpulse = 'readout_3', refpoint = 'end')
+    
+    readout.add(CosPulse(channel = 'ch%d' % plungerchannel, name = 'readout_5', frequency = 1e6,
+                            amplitude = 0.5*initialize_amplitude, length =1.5e-6,),
+                   name= 'readout_5', start = -2e-6, refpulse = 'readout_4', refpoint = 'end')
+    
+    readout.add(SquarePulse(channel = 'ch%d' % plungerchannel, amplitude=0*readout_amplitude, length=5e-6), 
+                name = 'readout_6', refpulse = 'readout_5', refpoint = 'end')
+
+
+    readout.add(SquarePulse(channel = 'ch%d_marker1'%plungerchannel, amplitude=base_amplitude, length=0.1e-6), 
+                name = 'readout_marker1', refpulse ='readout_0', refpoint = 'start')
+    readout.add(SquarePulse(channel = 'ch%d_marker2'%plungerchannel, amplitude=base_amplitude, length=0.1e-6), 
+                name = 'readout_marker2', refpulse ='readout_0', refpoint = 'start')
+    elts.append(readout)
+    myseq.append(name='readout%d'%num, wfname='readout%d'%num, reprtitions = 800, trigger_wait=False,)
+    return readout
+    
+#readout.print_overview()
+#print('Element overview:')
+#initialize.print_overview()
+#print()
+
+#myseq.append(name='initialize', wfname='initialize', repetitions = 2, trigger_wait=False,)
+#myseq.append(name='manipulation', wfname='manipulation', trigger_wait=False,)
+#myseq.append(name='readout', wfname='readout', trigger_wait=False,)
+
+
+#
+#for exp in range(5):
+#    for elem in range(5):
+#        num = exp*5+elem 
+#        initialize(num)
+#        manipulation(num)
+#        readout(num)
+#
+#for count in range(20):
+#    exp=count*15
+#    initialize(exp+1)
+#    initialize_add(exp+2)
+#    initialize(exp+3)
+#    initialize_add(exp+4)
+#    initialize(exp+5)
+#    manipulation(exp+6)
+#    readout(exp+7)
+#    initialize(exp+8)
+#    initialize_add(exp+9)
+#    initialize(exp+10)
+#    manipulation(exp+11)
+#    readout(exp+12)
+#    initialize(exp+13)
+#    manipulation(exp+14)
+#    readout(exp+15)
+#
+#a = initialize(1)
+#b = initialize_add(2)
+#c = initialize(3)
+#d = manipulation(4)
+e = readout(5)
+
+
 
 awg.delete_all_waveforms_from_list()
 print('e')
 awg.stop()
 print('f')
 awg_file = pulsar.program_awg(myseq, *elts)
-
+print('r')
 v = awg.write('SOUR1:ROSC:SOUR INT')
-
+print('erer')
 awg.ch2_state.set(1)
 awg.ch3_state.set(1)
 awg.force_trigger()
 awg.run()
-
-
-
-
-
-
+#
+#awg.get_sqel_waveform(channel = 2, element_no =1)
+#
+#awg.set_sqel_waveform(waveform_name = 'ini11_ch3',channel = 2, element_no =1)
+#
+#awg.send_waveform_to_list(w = wfs['ch3'], m1 = wfs['ch3_marker1'], m2 = wfs['ch3_marker2'], wfmname = 'ini11_ch3')
+#awg.send_waveform_to_list(w = wfs['ch3'], m1 = wfs['ch3_marker1'], m2 = wfs['ch3_marker2'], wfmname = '"ini11_ch3"\n')
+#awg.send_waveform_to_list()
 
 
 

@@ -11,7 +11,7 @@ from pycqed.measurement.waveform_control.sequence import Sequence
 from pycqed.measurement.waveform_control.element import Element
 from Gates import Single_Qubit_Gate#, Two_Qubit_Gate
 from manipulation import Manipulation
-from initialization import Initialization
+from initialize import Initialize
 from readout import Readout
 from qubit import Qubit
 from pycqed.measurement.waveform_control.pulse import CosPulse, SquarePulse, LinearPulse
@@ -19,13 +19,43 @@ from pycqed.measurement.waveform_control.pulse import CosPulse, SquarePulse, Lin
 
 class Experiment:
     
-    def __init__(self, name, qubits_name, awg, pulsar, **kw):
+    def __init__(self, name, qubits, qubits_name, awg, pulsar, **kw):
         
         self.qubits_name = qubits_name
         
+        self.qubits = qubits
+        
+        self.qubits_number = len(qubits)
+        
         self.sequence = Sequence(name = name)
         
+        self.SP1 = 0
+        self.SP2 = 0
         
+        self.sweep_type = '2D'
+        
+        
+        self.init_cfg = {
+                'step1' : {},
+                'step2' : {},
+                'setp3' : {},
+                         }
+        
+        self.read_cfg = {
+                'step1' : {},
+                'step2' : {},
+                'setp3' : {},
+                }
+        
+        self.manip_cfg = {
+                'step1' : {},
+                'step2' : {},
+                'setp3' : {},
+                }
+        
+        self.initialze_segment = []
+        
+        self.readout_segment = []
         
         self.element = {}           ##  will be used in    pulsar.program_awg(myseq, self.elements)
          ##  a dic with {'init': ele, 'manip_1': ele, 'manip_2': ele, 'manip_3': ele, 'readout': ele,......}
@@ -42,7 +72,7 @@ class Experiment:
         
         self.experiment = {}        ## {'Ramsey': , 'Rabi': ,}  it is a list of manipulation element for different experiment
         
-        self.sweep_matrix = []
+        self.sweep_matrix = np.array([])
         
         
         
@@ -59,24 +89,59 @@ class Experiment:
 #        
 #        return True
     
-    def initialize(self, name = None, qubits_name = None):
+
+
+    def initialize_element(self, name, amplitude, length):
+        
+        initialize = Initialize(name = name)
+        
+        for qubit in self.qubits:        
+            initialize.add(SquarePulse(name='init', channel='ch1', amplitude=amplitude, length=length), name='init')
+        
+        return initialize
+    
+    
+    
+    def readout_element(self, name):
+        
+        readout = Readout(name = name)
+        
+        readout.add(SquarePulse(name='square_load', channel='ch1', amplitude=0.05, length=10e-6), name='Load')
+        
+        return readout
+    
+    def manipulation_element(self, name):
+        
+        manipulation = Manipulation(name = name)
+        
+        return manipulation
+    
+    
+    
+    
+    def make_initialize(self, name = None, qubits_name = None):
+        
         if self.sweep_matrix == []:
-            initialize = Initialization(name = 'initialize', pulsar = self.pulsar)
-            initialize.add(SquarePulse(name='square_load', channel='ch1', amplitude=0.05, length=10e-6), name='Load')
-            self.element['Initialize'] = initialize
+            
+            for i in range(len(self.init_cfg)):
+                step = self.init_cfg['step%d'%i]
+                self.initialize_segment.append(self.initialize_element(name = name,amplitude=step[''],length = ))
             
         else:
-            for i in range(len(self.sweep_matrix)):
-                initialize = Initialization('Initialize_%d'%i, pulsar = self.pulsar)
-                initialize.add(SquarePulse(name='square_load', channel='ch1', amplitude=0.05, length=1e-6), name='Load')
-                self.element['Initialize_%d'%i] = initialize
+            for sweep_item in self.sweep_matrix:
                 
-        
-#        self.element.append(initialize)
-        
+#                self.SP1 = sweep
+                
+                for i in range(len(self.init_cfg)):
+                    self.initialize_segment.append(self.initialize_element(name = name))
+                
+                sweep_item['initialize'] = self.initialze_segment
+                
+                self.initialze_segment = []
+
         return True
     
-    def manipulation(self, name, qubits_name = None):
+    def make_manipulation(self, name, qubits_name = None):
         
 #        manipulation = self.experiment['name']
         
@@ -88,7 +153,7 @@ class Experiment:
         
         return True
     
-    def readout(self, name = None, qubits_name = None):           ## consists of Elzerman, PSB...
+    def make_readout(self, name = None, qubits_name = None):           ## consists of Elzerman, PSB...
     
         readout = Element('readout', pulsar = self.pulsar)
         readout.add(SquarePulse(name='square_empty', channel='ch1', amplitude=0.05, length=10e-6), name='Load')
@@ -105,10 +170,10 @@ class Experiment:
 #            self.sequence.append(name = element.name, wfname = element.name, trigger_wait=False,)
         
         for d in range(len(self.sweep_matrix)):
+            
             self.sequence.append(name = 'Initialize_%d'%d, wfname = 'Initialize_%d'%d, trigger_wait=False)
-#            self.elts.append()
             self.sequence.append(name = 'Manipulation_%d'%d, wfname = 'Manipulation_%d'%d, trigger_wait=False)
-#            self.sequence.append(name = self.element['Readout_%d'%d], wfname = self.element['Readout_%d'%d], trigger_wait=False)
+            self.sequence.append(name = 'Readout_%d'%d, wfname = 'Readout_%d'%d, trigger_wait=False)
             
         return True
     
@@ -116,6 +181,10 @@ class Experiment:
         elts = list(self.element.values())
         self.pulsar.program_awg(self.sequence, *elts)       ## elts should be list(self.element.values)
         
+        return True
+    
+    
+    def update_element(self,):
         return True
     
     
@@ -158,11 +227,10 @@ class Experiment:
 #        sweep_array.tolist()
 #        self.sweep_matrix = sweep_array
         self.sweep_matrix = [{parameter: value} for value in sweep_array]
-        for i in range(points):
-#            self.initialize()
-            self.sweep_matrix.append({parameter: sweep_array[i]})
+#        for i in range(points):
+#            self.sweep_matrix.append({parameter: sweep_array[i]})
             
-        return True
+        return self.sweep_matrix
     
     def Sweep_2D(self, parameter1, start1, stop1, points1, parameter2, start2, stop2, points2):
         
@@ -170,13 +238,12 @@ class Experiment:
         
         sweep_array2 = np.linspace(start2, stop2, points2)
         
-        for i in range(points1):
-            for j in range(points2):
-                self.sweep_matrix[i][j] = {parameter1: sweep_array1[i], parameter2: sweep_array2[j]}
+        
+        self.sweep_matrix = [[{parameter1: value1, parameter2:value2} for value1 in sweep_array1] for value2 in sweep_array2]
+        
+#        for i in range(points1):
+#            for j in range(points2):
+#                self.sweep_matrix[i][j] = {parameter1: sweep_array1[i], parameter2: sweep_array2[j]}
         
         
-#        self.Sweep_1D(parameter1, start1, stop1, points1)
-#        
-#        self.Sweep_1D(parameter2, start2, stop2, points2)
-        
-        return True
+        return self.sweep_matrix
