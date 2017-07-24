@@ -8,47 +8,92 @@ import numpy as np
 from pycqed.measurement.waveform_control.pulsar import Pulsar
 from pycqed.measurement.waveform_control.element import Element
 from experiment import Experiment
-
+from manipulation import Manipulation
 
 #%% make experiment
 
-def set_step(time = 0, qubits = [], voltages = []):
+def set_step(time = 0, qubits = [], voltages = [], **kw):
 
     if len(qubits)!=len(voltages):
         raise ValueError('qubits should be same length with voltages')
-
+        
+    microwave_frequencies = kw.pop('microwave_ferquencies', [qubit.frequency for qubit in qubits])
+    microwave_powers = kw.pop('amplitudes', [qubit.microwave_power for qubit in qubits])
+    Pi_pulse_lengths = kw.pop('Pi_pulse_lengths', [qubit.Pi_pulse_lenght for qubit in qubits])
+    IQ_amplitudes = kw.pop('IQ_amplitudes', [qubit.IQ_amplitude for qubit in qubits])
+    IQ_frequencies = kw.pop('IQ_frequencies', [qubit.IQ_frequency for qubit in qubits])
+    
+    
     step = {'time' : time}
 
     for i in range(len(qubits)):
         qubit = qubits[i]
-        step[qubit] = voltages[i]
+        step['voltage_%d'%(i+1)] = voltages[i]
+        step['microwave_frequency_%d'%(i+1)] = microwave_frequencies[i]
+        step['microwave_power_%d'%(i+1)] = microwave_powers[i]
+        step['Pi_pulse_length_%d'%(i+1)] = Pi_pulse_lengths[i]
+        step['IQ_amplitude_%d'%(i+1)] = IQ_amplitudes[i]
+        step['IQ_frequency_%d'%(i+1)] = IQ_frequencies[i]
 
     return step
+#%%  Sweep
+
+def sweep_array(start, stop, points):
+
+    sweep_array = np.linspace(start, stop, points)
+
+    return list(sweep_array)
+
+
+#%% make manipulation
+
+def make_manipulation(manipulation = Manipulation(name = 'Manip'),):
+    
+    manipulation.add_X()
+    manipulation.add_Y()
+    manipulation.add_CPhase()
+    manipulation.addX()
+    
+    return manipulation
+
 
 #%%
 
 def make_experiment_cfg(station):
 
-    experiment = Experiment()
+    experiment = Experiment(name = 'experiment_test', qubits = [Qubit_1, Qubit_2],)
 
     qubits = experiment.qubits_name
 
 #    experiment.Sweep_2D(parameter1 = 'time_step2', start1 = 0, stop1 = 10, points1 = 11,
 #                        parameter2 = 'voltage_q1_step1', start2 = 10, stop2=30, points2 =21)
 
-    experiment.sweep_set1 = np.array([1,2,3])
-    experiment.sweep_set2 = np.array([2,45,55])
-
+    experiment.sweep_loop1 = {
+            'para1': [1,2,3,4,5],
+            'para2': sweep_array(start = 1, stop = 5, points = 5),
+            }
+    
+    experiment.sweep_loop2 = {
+            'para1': [2,45,55],
+            }
+    
+#    loop1_para1 = [1,2,344,553,3]
+#    loop1_para2 = [33,2,11,22,3]
+#    loop2_para1 = [1,2,3,4]
+    
+#    experiment.construct_sweep_matrix(loop1,loop2)
+    
     init_cfg = {
-            'step1' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
-            'step2' : set_step(time = experiment.sweep_point1, qubits = qubits, voltages = [0.3, 0.2]),
+            'step1' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 'loop1_para1']),
+            'step2' : set_step(time = experiment.sweep_point1, qubits = qubits, voltages = [0.3, 'loop1_para2']),
             'setp3' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, experiment.sweep_point2]),
             }
 
     manip_cfg = {
-            'step1' : set_step(time = 10e-6, qubits = qubits, operations = ['X', 'Y']),
-            'step2' : set_step(time = 10e-6, qubits = qubits, operations = ['X', 'Y']),
-            'step3' : [],
+            'step1' : set_step(time = 10e-6, qubits = qubits, microwave_frequencies = [ ], IQ_amplitudes = [],
+                               microwave_powers = [], IQ_frequencies = [], Pi_pulse_lengths = []),
+#            'step2' : set_step(time = 10e-6, qubits = qubits, operations = ['X', 'Y']),
+#            'step3' : [],
             }
 
     read_cfg = {

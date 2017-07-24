@@ -7,8 +7,8 @@ Created on Wed Jun 14 16:31:17 2017
 
 
 import numpy as np
-from pycqed.measurement.waveform_control.sequence import Sequence
 from pycqed.measurement.waveform_control.element import Element
+from pycqed.measurement.waveform_control.sequence import Sequence
 from Gates import Single_Qubit_Gate#, Two_Qubit_Gate
 from manipulation import Manipulation
 from initialize import Initialize
@@ -32,15 +32,18 @@ class Experiment:
         self.sweep_point1 = 0
         self.sweep_point2 = 0
 
-        self.sweep_set1 = np.array([])
-        self.sweep_set2 = np.array([])
-
+        self.sweep_loop1 = {}
+        self.sweep_loop2 = {}
+        self.sweep_loop3 = np.array([])
+        
+        self.sweep_loop = []
+        
         self.sweep_set = []
 
         self.sweep_type = '2D'
 
         self.sequence_cfg = []      ## [segment1, segment2, segment3]
-"""
+        """
         self.init_cfg = {
                 'step1' : {},
                 'step2' : {},
@@ -58,10 +61,11 @@ class Experiment:
                 'step2' : {},
                 'setp3' : {},
                 }
-    """
-        #for element in self.sequence_cfg.keys():
+        """
+#        for element in self.sequence_cfg.keys():
         sweep_dimension = 0
         segment_number = 0
+
         for segment in self.sequence_cfg:
             for step in segment.keys():
                 for parameter in segment[step].keys():
@@ -74,8 +78,27 @@ class Experiment:
                         self.sweep_set.append(ss)
                         sweep_dimension+=1
             segment_number+=1
+        
 
-"""
+
+
+        for segment in self.sequence_cfg:
+            for step in segment.keys():
+                for parameter in segment[step].keys():
+                    if type(segment[step][parameter]) == str:
+                        ss = {}
+                        ss['segment_number'] = segment_number
+                        ss['step'] = step
+                        ss['parameter'] = parameter
+                        ss['loop_number'] = segment[step][parameter][5]
+                        ss['parameter_number'] = segment[step][parameter][-1]
+#                        ss['values'] = segment[step][parameter]
+                        self.sweep_set.append(ss)
+                        sweep_dimension+=1
+            segment_number+=1
+        
+            
+        """
         i = 0
         for step in self.init_cfg.keys():
             for parameter in self.init_cfg[step].keys():
@@ -92,7 +115,8 @@ class Experiment:
                 if type(self.read_cfg[step][parameter]) == list:
                     self.sweep_set[i] = self.read_cfg[step][parameter]
                     i+=1
-"""
+        """
+
         self.initialze_segment = []
 
         self.readout_segment = []
@@ -116,11 +140,13 @@ class Experiment:
 
 
 
-
+    def set_cfg(self,):
+        
+        return True
 
     def initialize_element(self, name, step = 'step1'):
 
-        initialize = Initialize(name = name)
+        initialize = Element(name = name)
 
         for i in range(len(self.qubits)):
             refpulse = None if i ==0 else 'init1'
@@ -133,9 +159,13 @@ class Experiment:
 
     def readout_element(self, name):
 
-        readout = Readout(name = name)
+        readout = Element(name = name)
+        
+        for i in range(len(self.qubits)):
+            refpulse = None if i ==0 else 'init1'
+            initialize.add(SquarePulse(name='init', channel='ch1', amplitude=value['Qubit_%d'%i], length=value['time']),
+                           name='init%d'%(i+1),refpulse = None)
 
-        readout.add(SquarePulse(name='square_load', channel='ch1', amplitude=0.05, length=10e-6), name='Load')
 
         return readout
 
@@ -189,10 +219,24 @@ class Experiment:
 
         return True
 
-
+    def generate_sweep_matrix(self,):
+        
+        for i in range(len(self.sweep_loop1['para1'])):
+            
+            for j in range(len(self.sweep_loop2['para1'])):
+                
+                0
+        
+        return True
+    
     def generate_sequence(self, name):
-
-        for i
+        
+        if len(self.sweep_loop1) != 0:
+            for i in range(len(self.sweep_loop1['para1'])):
+                
+                if len(self.sweep_loop2) != 0:
+                    for j in range(len(self.sweep_loop2['para1']))
+            
 
 """
         for d in range(len(self.sweep_matrix)):
