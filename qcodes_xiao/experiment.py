@@ -229,6 +229,12 @@ class Experiment:
 
         return True
 
+
+    def generate_unit_sequence(self,):
+        for segment in self.sequence_cfg:
+            self.sequence.append()
+
+
     def generate_sequence(self, name):
         if len(self.sweep_loop1) == 0:
 
