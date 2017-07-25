@@ -5,7 +5,7 @@ Created on Wed Jun 14 16:31:17 2017
 @author: X.X
 """
 
-
+import station
 import numpy as np
 from pycqed.measurement.waveform_control.element import Element
 from pycqed.measurement.waveform_control.sequence import Sequence
@@ -27,6 +27,9 @@ class Experiment:
 
         self.qubits_number = len(qubits)
 
+        self.awg = station.awg
+        self.digitizer = station.digitizer
+
         self.sequence = Sequence(name = name)
 
         self.sweep_point1 = 0
@@ -35,10 +38,10 @@ class Experiment:
         self.sweep_loop1 = {}
         self.sweep_loop2 = {}
         self.sweep_loop3 = np.array([])
-        
+
         self.sweep_loop = []
-        
-        self.sweep_set = []
+
+        self.sweep_set = {}         ## {''}
 
         self.sweep_type = '2D'
 
@@ -78,7 +81,7 @@ class Experiment:
                         self.sweep_set.append(ss)
                         sweep_dimension+=1
             segment_number+=1
-        
+
 
 
 
@@ -88,16 +91,15 @@ class Experiment:
                     if type(segment[step][parameter]) == str:
                         ss = {}
                         ss['segment_number'] = segment_number
+                        ss['segment'] = segment
                         ss['step'] = step
                         ss['parameter'] = parameter
-                        ss['loop_number'] = segment[step][parameter][5]
-                        ss['parameter_number'] = segment[step][parameter][-1]
-#                        ss['values'] = segment[step][parameter]
-                        self.sweep_set.append(ss)
+#                        ss['loop_number'] = segment[step][parameter][5]
+                        self.sweep_set[segment[step][parameter]] = ss
                         sweep_dimension+=1
             segment_number+=1
-        
-            
+
+
         """
         i = 0
         for step in self.init_cfg.keys():
@@ -128,8 +130,6 @@ class Experiment:
 #        self.readout_element = None
 #        self.manipulation_element = {}
 
-        self.awg = awg              ## list of AWG used in experiment
-
         self.pulsar = pulsar
 
         self.channel = {}          ## unsure if it is necessary yet
@@ -141,7 +141,7 @@ class Experiment:
 
 
     def set_cfg(self,):
-        
+
         return True
 
     def initialize_element(self, name, step = 'step1'):
@@ -160,7 +160,7 @@ class Experiment:
     def readout_element(self, name):
 
         readout = Element(name = name)
-        
+
         for i in range(len(self.qubits)):
             refpulse = None if i ==0 else 'init1'
             initialize.add(SquarePulse(name='init', channel='ch1', amplitude=value['Qubit_%d'%i], length=value['time']),
@@ -220,23 +220,35 @@ class Experiment:
         return True
 
     def generate_sweep_matrix(self,):
-        
+
         for i in range(len(self.sweep_loop1['para1'])):
-            
+
             for j in range(len(self.sweep_loop2['para1'])):
-                
+
                 0
-        
+
         return True
-    
+
     def generate_sequence(self, name):
-        
-        if len(self.sweep_loop1) != 0:
+        if len(self.sweep_loop1) == 0:
+
+        elif len(self.sweep_loop1) != 0:
             for i in range(len(self.sweep_loop1['para1'])):
-                
-                if len(self.sweep_loop2) != 0:
-                    for j in range(len(self.sweep_loop2['para1']))
-            
+                segment = [self.sweep_set['loop1_para%d'%(k+1)][segment] for k in range(len(self.sweep_set))]
+                step = [self.sweep_set['loop1_para%d'%(k+1)][step] for k in in range(len(self.sweep_set))]
+                parameter = [self.sweep_set['loop1_para%d'%(k+1)][parameter] for k in range(len(self.sweep_set))]
+                segment[step[k]][parameter[k]] = self.sweep_loop1['para%d'%(k+1)][i] for k in range(len(segment))
+
+                if len(self.sweep_loop2) == 0:
+                    self.generate_unit_sequence()
+
+                elif le(self.sweep_loop2) != 0:
+                    for j in range(len(self.sweep_loop2['para1'])):
+                        segment = [self.sweep_set['loop1_para%d'%(k+1)][segment] for k in range(len(self.sweep_set))]
+                        step = [self.sweep_set['loop1_para%d'%(k+1)][step] for k in in range(len(self.sweep_set))]
+                        parameter = [self.sweep_set['loop1_para%d'%(k+1)][parameter] for k in range(len(self.sweep_set))]
+                        segment[step[k]][parameter[k]] = self.sweep_loop1['para%d'%(k+1)][i] for k in range(len(segment))
+                        self.generate_unit_sequence()
 
 """
         for d in range(len(self.sweep_matrix)):

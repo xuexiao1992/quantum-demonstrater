@@ -16,14 +16,14 @@ def set_step(time = 0, qubits = [], voltages = [], **kw):
 
     if len(qubits)!=len(voltages):
         raise ValueError('qubits should be same length with voltages')
-        
+
     microwave_frequencies = kw.pop('microwave_ferquencies', [qubit.frequency for qubit in qubits])
     microwave_powers = kw.pop('amplitudes', [qubit.microwave_power for qubit in qubits])
     Pi_pulse_lengths = kw.pop('Pi_pulse_lengths', [qubit.Pi_pulse_lenght for qubit in qubits])
     IQ_amplitudes = kw.pop('IQ_amplitudes', [qubit.IQ_amplitude for qubit in qubits])
     IQ_frequencies = kw.pop('IQ_frequencies', [qubit.IQ_frequency for qubit in qubits])
-    
-    
+
+
     step = {'time' : time}
 
     for i in range(len(qubits)):
@@ -48,12 +48,12 @@ def sweep_array(start, stop, points):
 #%% make manipulation
 
 def make_manipulation(manipulation = Manipulation(name = 'Manip'),):
-    
-    manipulation.add_X()
-    manipulation.add_Y()
-    manipulation.add_CPhase()
-    manipulation.addX()
-    
+
+    manipulation.add_X(name='X1_Q1',)
+    manipulation.add_Y(name='Y1_Q1')
+    manipulation.add_CPhase(name='CP1')
+    manipulation.addX(name='X2_Q1')
+
     return manipulation
 
 
@@ -72,17 +72,17 @@ def make_experiment_cfg(station):
             'para1': [1,2,3,4,5],
             'para2': sweep_array(start = 1, stop = 5, points = 5),
             }
-    
+
     experiment.sweep_loop2 = {
             'para1': [2,45,55],
             }
-    
+
 #    loop1_para1 = [1,2,344,553,3]
 #    loop1_para2 = [33,2,11,22,3]
 #    loop2_para1 = [1,2,3,4]
-    
+
 #    experiment.construct_sweep_matrix(loop1,loop2)
-    
+
     init_cfg = {
             'step1' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 'loop1_para1']),
             'step2' : set_step(time = experiment.sweep_point1, qubits = qubits, voltages = [0.3, 'loop1_para2']),
