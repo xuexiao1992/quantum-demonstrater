@@ -24,6 +24,10 @@ class Experiment:
         self.qubits_name = qubits_name
 
         self.qubits = qubits
+        
+        self.channel_I = [qubit.microwave_gate['channel_I'] for qubit in qubits]
+        self.channel_Q = 
+        self.channel_VP =
 
         self.qubits_number = len(qubits)
 
@@ -144,13 +148,13 @@ class Experiment:
 
         return True
 
-    def initialize_element(self, name, step = 'step1'):
+    def initialize_element(self, name, amplitudes = []):
 
         initialize = Element(name = name)
 
         for i in range(len(self.qubits)):
             refpulse = None if i ==0 else 'init1'
-            initialize.add(SquarePulse(name='init', channel='ch1', amplitude=value['Qubit_%d'%i], length=value['time']),
+            initialize.add(SquarePulse(name='init', channel='ch1', amplitude=amplitudes[i], length=1e-6),
                            name='init%d'%(i+1),refpulse = None)
 
         return initialize
@@ -163,7 +167,7 @@ class Experiment:
 
         for i in range(len(self.qubits)):
             refpulse = None if i ==0 else 'init1'
-            initialize.add(SquarePulse(name='init', channel='ch1', amplitude=value['Qubit_%d'%i], length=value['time']),
+            readout.add(SquarePulse(name='init', channel='ch1', amplitude=value['Qubit_%d'%i], length=value['time']),
                            name='init%d'%(i+1),refpulse = None)
 
 
@@ -179,24 +183,12 @@ class Experiment:
 
 
 
-    def make_initialize(self, name = None, qubits_name = None):
+    def make_initialize(self, segment_num, name = None, qubits_name = None,):
 
-        if self.sweep_matrix == []:
-
-            for i in range(len(self.init_cfg)):
-                step = self.init_cfg['step%d'%i]
-                self.initialize_segment.append(self.initialize_element(name = name,amplitude=step[''],length = ))
-
-        else:
-            for sweep_item in self.sweep_matrix:
-
-                for i in range(len(self.init_cfg)):
-                    self.initialize_segment.append(self.initialize_element(name = name))
-
-                sweep_item['initialize'] = self.initialze_segment
-
-                self.initialze_segment = []
-
+        for i in range(len(self.sequence_cfg[segment_num])):
+            step = self.sequence_cfg[segment_num]['step%d'%i]
+            self.sequence.append(self.initialize_element(name = name, amplitude=step['voltages'],), repetitions= step['time']/(1e-6))
+        
         return True
 
     def make_manipulation(self, name, qubits_name = None):
@@ -231,8 +223,23 @@ class Experiment:
 
 
     def generate_unit_sequence(self,):
-        for segment in self.sequence_cfg:
-            self.sequence.append()
+        
+        i = 0
+        
+        for segment_type in self.sequence_cfg_type:
+            
+            if segment_type == 'init':
+                self.make_initialize(segment_num = i)
+            
+            elif segment_type == 'manip':
+                self.make_mainipulation(segment_num = i)
+            
+            elif segment_type == 'read':
+                self.make_readout(segment_num = i)
+
+            i+=1            
+#        for element in segment:
+#            self.sequence.append(element)
 
 
     def generate_sequence(self, name):

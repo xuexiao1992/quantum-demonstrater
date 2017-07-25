@@ -103,6 +103,7 @@ def make_experiment_cfg(station):
             }
 
     experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg]
+    experiment.sequence_cfg_type = ['init', 'manip','read',]
 
 
 #    experiment.Sweep_2D(parameter1 = T, name1 = 'time_step2', )
