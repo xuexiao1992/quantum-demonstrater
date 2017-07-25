@@ -37,7 +37,7 @@ class Single_Qubit_Gate(Gate):
         super().__init__(name,)
         
         self.qubit = qubit.name
-        self.frequency = qubit.Rabi_frequency if frequency == None else frequency
+        self.frequency = qubit.frequency if frequency == None else frequency
         self.channel_I = qubit.microwave_gate['channel_I']
         self.channel_Q = qubit.microwave_gate['channel_Q']
         self.channel_PM = qubit.microwave_gate['channel_PM']

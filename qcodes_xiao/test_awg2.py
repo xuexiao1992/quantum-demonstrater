@@ -18,7 +18,7 @@ import qcodes
 from qcodes.plots.qcmatplotlib import MatPlot
 import pycqed
 #import stationV2
-import temp
+import stationF006
 
 from pycqed.measurement.waveform_control import pulse
 from pycqed.measurement.waveform_control.sequence import Sequence
@@ -41,7 +41,7 @@ from qcodes.instrument.sweep_values import SweepFixedValues
 #station = qcodes.station.Station()
 
 server_name = None
-station = temp.initialize(server_name=server_name)
+station = stationF006.initialize(server_name=server_name)
 #temp.initialize(server_name=server_name)
 
 def make5014pulsar(awg):

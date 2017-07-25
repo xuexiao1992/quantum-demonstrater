@@ -9,6 +9,8 @@ from pycqed.measurement.waveform_control.pulsar import Pulsar
 from pycqed.measurement.waveform_control.element import Element
 from experiment import Experiment
 from manipulation import Manipulation
+import stationF006
+#from stationF006 import station
 
 #%% make experiment
 
@@ -19,7 +21,7 @@ def set_step(time = 0, qubits = [], voltages = [], **kw):
 
     microwave_frequencies = kw.pop('microwave_ferquencies', [qubit.frequency for qubit in qubits])
     microwave_powers = kw.pop('amplitudes', [qubit.microwave_power for qubit in qubits])
-    Pi_pulse_lengths = kw.pop('Pi_pulse_lengths', [qubit.Pi_pulse_lenght for qubit in qubits])
+    Pi_pulse_lengths = kw.pop('Pi_pulse_lengths', [qubit.Pi_pulse_length for qubit in qubits])
     IQ_amplitudes = kw.pop('IQ_amplitudes', [qubit.IQ_amplitude for qubit in qubits])
     IQ_frequencies = kw.pop('IQ_frequencies', [qubit.IQ_frequency for qubit in qubits])
 
@@ -47,69 +49,75 @@ def sweep_array(start, stop, points):
 
 #%% make manipulation
 
-def make_manipulation(manipulation = Manipulation(name = 'Manip'),):
+def make_manipulation(manipulation = Manipulation(name = 'Manip'), qubits = []):
+    
+    qubit_1 = qubits[0]
+#    qubit_2 = qubits[1]
 
-    manipulation.add_X(name='X1_Q1',)
-    manipulation.add_Y(name='Y1_Q1')
-    manipulation.add_CPhase(name='CP1')
-    manipulation.addX(name='X2_Q1')
+    manipulation.add_single_qubit_gate(name = 'G1_Q1', qubit = qubit_1, axis = [1,0,0], frequency = 0, degree = 180, rephase = 0)
+    manipulation.add_X(name='X1_Q1', refgate = 'G1_Q1', qubit = qubit_1, waiting_time = 100e-9, qubit = qubit_1)
+    manipulation.add_Y(name='Y1_Q1', refgate = 'X1_Q1', qubit = qubit_1, waiting_time = 150e-9, qubit = qubit_1)
+#    manipulation.add_CPhase(name='CP1')
+#    manipulation.addX(name='X2_Q1')
 
     return manipulation
 
 
 #%%
 
-def make_experiment_cfg(station):
+def make_experiment_cfg():
+    
+    station = stationF006.initialize()
+    awg = station.awg
+#    awg.ch3_amp
+    pulsar = set_5014pulsar(awg = awg)
+    
+    qubit_1 = station.qubit_1
+    qubit_2 = station.qubit_2
+    
+    qubits = [qubit_1, qubit_2]
 
-    experiment = Experiment(name = 'experiment_test', qubits = [Qubit_1, Qubit_2],)
 
-    qubits = experiment.qubits_name
-
-#    experiment.Sweep_2D(parameter1 = 'time_step2', start1 = 0, stop1 = 10, points1 = 11,
-#                        parameter2 = 'voltage_q1_step1', start2 = 10, stop2=30, points2 =21)
+    experiment = Experiment(name = 'experiment_test', qubits = [qubit_1, qubit_2], awg = awg, pulsar = pulsar)
 
     experiment.sweep_loop1 = {
-            'para1': [1,2,3,4,5],
-            'para2': sweep_array(start = 1, stop = 5, points = 5),
+            'para1': [0.8,0.2,0.53,0.14,0.3],
+            'para2': sweep_array(start = 0.1, stop = 0.5, points = 5),
             }
 
     experiment.sweep_loop2 = {
-            'para1': [2,45,55],
+            'para1': [0,0.5],
             }
 
 #    loop1_para1 = [1,2,344,553,3]
 #    loop1_para2 = [33,2,11,22,3]
 #    loop2_para1 = [1,2,3,4]
-
-#    experiment.construct_sweep_matrix(loop1,loop2)
-
     init_cfg = {
-            'step1' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 'loop1_para1']),
-            'step2' : set_step(time = experiment.sweep_point1, qubits = qubits, voltages = [0.3, 'loop1_para2']),
-            'setp3' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, experiment.sweep_point2]),
+            'step1' : set_step(time = 10e-6, qubits = qubits, voltages = ['loop1_para1',0.3]),
+            'step2' : set_step(time = 20e-6, qubits = qubits, voltages = ['loop1_para2',0.3]),
+            'step3' : set_step(time = 10e-6, qubits = qubits, voltages = ['loop2_para1', 0.5]),
             }
 
-    manip_cfg = {
-            'step1' : set_step(time = 10e-6, qubits = qubits, microwave_frequencies = [ ], IQ_amplitudes = [],
-                               microwave_powers = [], IQ_frequencies = [], Pi_pulse_lengths = []),
-#            'step2' : set_step(time = 10e-6, qubits = qubits, operations = ['X', 'Y']),
-#            'step3' : [],
-            }
-
-    read_cfg = {
-            'step1' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
-            'step2' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
-            'step3' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
-            }
-
-    experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg]
-    experiment.sequence_cfg_type = ['init', 'manip','read',]
-
-
-#    experiment.Sweep_2D(parameter1 = T, name1 = 'time_step2', )
-#    experiment.Sweep_2D(parameter1 = 'time_step2', start1 = 0, stop1 = 10, points1 = 11,
-#                        parameter2 = 'voltage_q1_step1', start2 = 10, stop2=30, points2 =21)
+#    manip_cfg = {
+#            'step1' : set_step(time = 10e-6, qubits = qubits, microwave_frequencies = [ ], IQ_amplitudes = [],
+#            }
 #
+#    read_cfg = {
+#            'step1' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
+#            'step2' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
+#            'step3' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
+#            }
+
+#    experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg]
+#    experiment.sequence_cfg_type = ['init', 'manip','read',]
+
+    experiment.sequence_cfg = [init_cfg]
+    experiment.sequence_cfg_type = ['init']
+    
+    experiment.set_sweep()
+    
+    
+
     return experiment
 
 
@@ -131,7 +139,7 @@ def set_5014pulsar(awg):
         pulsar.define_channel(id='ch{}'.format(i + 1),
                               name='ch{}'.format(i + 1), type='analog',
                               # max safe IQ voltage
-                              high=.7, low=-.7,
+                              high=1, low=-1,
                               offset=0.0, delay=0, active=True)
         pulsar.define_channel(id='ch{}_marker1'.format(i + 1),
                               name='ch{}_marker1'.format(i + 1),
@@ -167,4 +175,12 @@ def set_5014pulsar(awg):
 
 
 
-#%%
+#%% test
+
+experiment = make_experiment_cfg()
+
+experiment.generate_sequence()
+
+experiment.load_sequence()
+
+experiment.run_experiment()

@@ -12,7 +12,7 @@ import qcodes.instrument_drivers.tektronix.AWG5014 as AWG5014
 import qcodes.instrument_drivers.tektronix.Keithley_2700 as Keithley_2700
 #import qcodes.instrument_drivers.QuTech.IVVI as IVVI
 import qcodes.instrument_drivers.Spectrum.M4i as M4i
-
+from qubit import Qubit 
 #import users.boterjm.Drivers.QuTech.IVVI as IVVI
 #import users.boterjm.Drivers.Spectrum.M4i as M4i
 #import users.boterjm.Drivers.american_magnetics.AMI430_IP as AMI430
@@ -68,6 +68,9 @@ magnet=None
 sig_gen=None
 keithley=None
 
+qubit_1 = None
+qubit_2=None
+
 mwindows=None
 
 location_matfiles = 'D:/Measurements/Apr72017UNSW-19th&20th_Devices_NewBatch/data/BOTTOM/Matlab'
@@ -94,7 +97,7 @@ def close(verbose=1):
 
 #%%
 def initialize(reinit=False, server_name=None):
-    global ivvi, digitizer, lockin1, lockin2, awg, magnet, sig_gen, keithley, gate_map, station, mwindows, output_map
+    global ivvi, digitizer, lockin1, lockin2, awg, magnet, sig_gen, keithley, gate_map, station, mwindows, output_map, qubit_1, qubit_2
     
     #qcodes.installZMQlogger()
     logging.info('LD400: initialize')
@@ -102,6 +105,25 @@ def initialize(reinit=False, server_name=None):
     
     if _initialized and not reinit:
         return station
+    
+    
+    # initialize qubit object
+    
+    qubit_1 = Qubit(name = 'qubit_1')
+
+    qubit_2 = Qubit(name = 'qubit_2')
+
+    qubit_1.define_gate(gate_name = 'LP1', gate_number = 1, microwave = 1, channel_I = 'ch1', channel_Q = 'ch2', channel_PM = 'ch2_marker1')
+
+#   Qubit_1.define_gate(gate_name = 'RP1', gate_number = 2, microwave = 1, channel_I = 'RP1I', channel_Q = 'RP1Q')
+#
+    qubit_1.define_gate(gate_name = 'Plunger1', gate_number = 3, gate_function = 'plunger', channel_VP = 'ch3')
+#
+    qubit_2.define_gate(gate_name = 'LP2', gate_number = 4, microwave = 1, channel_I = 'LP2I', channel_Q = 'LP2Q', channel_PM = 'ch1_marker1')
+#
+    qubit_2.define_gate(gate_name = 'Plunger2', gate_number = 5, gate_function = 'plunger', channel_VP = 'ch4')
+
+
     
     
     # Loading AWG
@@ -149,7 +171,7 @@ def initialize(reinit=False, server_name=None):
     #station = qcodes.Station(ivvi, awg, lockin1, lockin2, digitizer, gates)
 #    station = qcodes.Station(ivvi, lockin1, lockin2, digitizer, gates)
     # station = qcodes.Station(awg, digitizer)
-    station = qcodes.Station(awg, digitizer)
+    station = qcodes.Station(awg, digitizer, qubit_1, qubit_2)
     logging.info('Initialized LDHe station')
     print('Initialized LDHe station\n')
     

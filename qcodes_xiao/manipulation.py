@@ -9,7 +9,7 @@ import numpy as np
 
 from pycqed.measurement.waveform_control.element import Element
 from pycqed.measurement.waveform_control.pulse import SquarePulse
-from Gates import Single_Qubit_Gate, Two_Qubit_Gate, CPhase_Gate, CNot_Gate, CRotation_Gate
+from gate import Single_Qubit_Gate, Two_Qubit_Gate, CPhase_Gate, CNot_Gate, CRotation_Gate
 
 
 class Manipulation(Element):

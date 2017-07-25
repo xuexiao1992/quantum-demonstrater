@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
 Created on Fri May 19 16:57:10 2017
-@author: steph
+@author: X.X
 """
 
 #import stations and all libs there in.
-import temp
-station = temp.initialize()
+import stationF006
+station = stationF006.initialize()
 
 
 
@@ -79,7 +79,7 @@ station.pulsar = pulsar
 
 #%% MAKE test segment.
 
-awg = temp.awg
+awg = stationF006.awg
 
 
 
