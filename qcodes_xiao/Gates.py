@@ -99,7 +99,6 @@ class Single_Qubit_Gate(Gate):
                                          length = degree*self.Pi_pulse_length/180)
             
             
-
         self.pulses[0] = {
                 'pulse': voltage_pulse,
                 'pulse_name': voltage_pulse.name,
