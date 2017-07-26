@@ -23,7 +23,7 @@ class Qubit(Instrument):
         self.frequency = 0
         
         self.Pi_pulse_length = 50e-9
-        
+        self.halfPi_pulse_length = 25e-9
         self.refphase = 0
         
         self.microwave_power = 0.3

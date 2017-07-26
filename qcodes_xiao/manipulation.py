@@ -15,7 +15,7 @@ from gate import Single_Qubit_Gate, Two_Qubit_Gate, CPhase_Gate, CNot_Gate, CRot
 class Manipulation(Element):
     
     
-    def __init__(self, name, qubits_name = [], operations = {}, **kw):            ## operation is a set of objects: basic one(two) qubit(s) gates
+    def __init__(self, name, qubits = [], qubits_name = [], operations = {}, **kw):            ## operation is a set of objects: basic one(two) qubit(s) gates
     
         super().__init__(name, **kw)
         self.operations = {}
@@ -24,15 +24,19 @@ class Manipulation(Element):
         
         self.total_time = 0     ## used for finally adding the gate voltage pulse
         
+        self.qubits = qubits
+        self.qubits_name = [qubit.name for qubit in qubits]
         
-        for qubitname in qubits_name:
-             self.refphase[qubitname] = 0
+        self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        
+#        for qubitname in qubits_name:
+#             self.refphase[qubitname] = 0
              
              
         
 #        self.add(SquarePulse(channel = 'ch%d' % plungerchannel, name = 'initialize_1', amplitude = initialize_amplitude,
 #                             length = 0.5e-6), name = 'initialize_1')
-
+#    def __call__
 
     
     def _add_all_pulses_of_qubit_gate(self, name = None, qubit_gate = None):
@@ -60,7 +64,7 @@ class Manipulation(Element):
 
     
     def add_single_qubit_gate(self, name = None, qubit = None, axis = [1,0,0], degree = 90,
-                              frequency = None, refphase = 0,
+                              length = 50e-9, frequency = None, refphase = 0,
                               refgate = None, refpoint = 'end', waiting_time = 0, refpoint_new = 'start'):
         # no idea yet  perhaps call the element.add() function but just to add the first pulse
         # and record the information of the last pulse
@@ -74,7 +78,7 @@ class Manipulation(Element):
             if axis[2]!=0:
                 raise ValueError('should be either in X-Y plane or Z axis')
             else:
-                single_qubit_gate.XY_rotation(degree = degree, waiting_time = waiting_time,
+                single_qubit_gate.XY_rotation(degree = degree, length = length, waiting_time = waiting_time,
                                               refgate = None if refgate == None else self.operations[refgate])
         
         else:
@@ -177,7 +181,7 @@ class Manipulation(Element):
         
         refphase = self.refphase[qubit.name]
         
-        self.add_single_qubit_gate(name = name, qubit = qubit, axis = [1, 0, 0], degree = 90, 
+        self.add_single_qubit_gate(name = name, qubit = qubit, axis = [1, 0, 0], degree = 90, length = qubit.halfPi_pulse_length,
                                    refgate = refgate, refpoint = refpoint, refphase = refphase, 
                                    waiting_time = waiting_time, refpoint_new = refpoint_new)
         

@@ -10,6 +10,7 @@ from pycqed.measurement.waveform_control.element import Element
 from experiment import Experiment
 from manipulation import Manipulation
 import stationF006
+from manipulation_library import Ramsey
 #from stationF006 import station
 
 #%% make experiment
@@ -19,12 +20,27 @@ def set_step(time = 0, qubits = [], voltages = [], **kw):
     if len(qubits)!=len(voltages):
         raise ValueError('qubits should be same length with voltages')
 
+    step = {'time' : time}
+
+    for i in range(len(qubits)):
+        qubit = qubits[i]
+        step['voltage_%d'%(i+1)] = voltages[i]
+
+    return step
+
+
+def set_manip(time = 0, qubits = [], voltages = [], **kw):
+
+    if len(qubits)!=len(voltages):
+        raise ValueError('qubits should be same length with voltages')
+
     microwave_frequencies = kw.pop('microwave_ferquencies', [qubit.frequency for qubit in qubits])
     microwave_powers = kw.pop('amplitudes', [qubit.microwave_power for qubit in qubits])
     Pi_pulse_lengths = kw.pop('Pi_pulse_lengths', [qubit.Pi_pulse_length for qubit in qubits])
     IQ_amplitudes = kw.pop('IQ_amplitudes', [qubit.IQ_amplitude for qubit in qubits])
     IQ_frequencies = kw.pop('IQ_frequencies', [qubit.IQ_frequency for qubit in qubits])
-
+    waiting_time = kw.pop('waiting_time', 0)
+    duration_time = kw.pop('duration_time', 0)
 
     step = {'time' : time}
 
@@ -38,6 +54,9 @@ def set_step(time = 0, qubits = [], voltages = [], **kw):
         step['IQ_frequency_%d'%(i+1)] = IQ_frequencies[i]
 
     return step
+
+
+
 #%%  Sweep
 
 def sweep_array(start, stop, points):
@@ -48,24 +67,15 @@ def sweep_array(start, stop, points):
 
 
 #%% make manipulation
-
 def make_manipulation(manipulation = Manipulation(name = 'Manip'), qubits = [], **kw):
 
     waiting_time = kw.pop('waiting_time', None)
     amplitude = kw.pop('amplitude', None)
 
-    manip= make_Ramsey(manipulation = manipulation, waiting_time = waiting_time)
+    manip = make_Ramsey(manipulation = manipulation, qubits = qubits, waiting_time = waiting_time)
 
     return manip
 
-def make_Ramsey(manipulation = Manipulation(name = 'Manip'), qubits = [], waiting_time = 0):
-
-    qubit_1 = qubits[0]
-
-    manipulation.add_X(name='X1_Q1', qubit = qubit_1, qubit = qubit_1)
-    manipulation.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = qubit_1, waiting_time = waiting_time, qubit = qubit_1)
-
-    return manipulation
 
 
 #%%
@@ -96,43 +106,52 @@ def make_experiment_cfg():
 
 
     experiment = Experiment(name = 'experiment_test', qubits = [qubit_1, qubit_2], awg = awg, pulsar = pulsar)
+    
 
     experiment.sweep_loop1 = {
-            'para1': [0.8,0.2,0.53,0.14,0.3],
-            'para2': sweep_array(start = 0.1, stop = 0.5, points = 5),
+#            'para1': [0.8,0.2,0.53,0.14,0.3],
+#            'para2': sweep_array(start = 0.1, stop = 0.5, points = 5),
             }
 
     experiment.sweep_loop2 = {
-            'para1': [0,0.5],
+#            'para1': [0,0.5],
             }
 
 #    loop1_para1 = [1,2,344,553,3]
 #    loop1_para2 = [33,2,11,22,3]
 #    loop2_para1 = [1,2,3,4]
+
+    loop1_para1 = 'loop1_para1'
+    loop1_para2 = 'loop1_para2'
+    loop2_para1 = 'loop2_para1'
+    
     init_cfg = {
-            'step1' : set_step(time = 10e-6, qubits = qubits, voltages = ['loop1_para1',0.3]),
-            'step2' : set_step(time = 20e-6, qubits = qubits, voltages = ['loop1_para2',0.3]),
-            'step3' : set_step(time = 10e-6, qubits = qubits, voltages = ['loop2_para1', 0.5]),
+            'step1' : set_step(time = 10e-6, qubits = qubits, voltages = [0.2, 0.3]),
+            'step2' : set_step(time = 20e-6, qubits = qubits, voltages = [0.8, 0.3]),
+            'step3' : set_step(time = 10e-6, qubits = qubits, voltages = [0.4, 0.5]),
             }
 
-#    manip_cfg = {
-#            'step1' : set_step(time = 10e-6, qubits = qubits, microwave_frequencies = [ ], IQ_amplitudes = [],
-#            }
+    manip_cfg = {
+            'step1' : set_manip(time = 10e-6, qubits = qubits, voltages = [0.6,0.6], waiting_time1 = 'loop1_para1', waiting_time2 =0)
+            }
 #
-#    read_cfg = {
-#            'step1' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
-#            'step2' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
-#            'step3' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
-#            }
+    read_cfg = {
+            'step1' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
+            'step2' : set_step(time = 10e-6, qubits = qubits, voltages = [0.4, 0.2]),
+            'step3' : set_step(time = 10e-6, qubits = qubits, voltages = [0.5, 0.2]),
+            }
 
 #    experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg]
 #    experiment.sequence_cfg_type = ['init', 'manip','read',]
 
-    experiment.sequence_cfg = [init_cfg]
-    experiment.sequence_cfg_type = ['init']
+    experiment.sequence_cfg = [init_cfg,manip_cfg,read_cfg]
+    experiment.sequence_cfg_type = ['init', 'manip','read']
 
     experiment.set_sweep()
-
+    
+    experiment.manip_elem = Ramsey(name = 'Ramsey',)
+    
+#    experiment.manipulation_element(name = 'manip', manip_element = Ramsey(name = 'Ramsey', qubits = qubits, waiting_time = 1e-6))
 
 
     return experiment

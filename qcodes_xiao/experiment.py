@@ -8,7 +8,7 @@ Created on Wed Jun 14 16:31:17 2017
 import numpy as np
 from pycqed.measurement.waveform_control.element import Element
 from pycqed.measurement.waveform_control.sequence import Sequence
-from Gates import Single_Qubit_Gate#, Two_Qubit_Gate
+from gate import Single_Qubit_Gate#, Two_Qubit_Gate
 from manipulation import Manipulation
 #from initialize import Initialize
 #from readout import Readout
@@ -16,7 +16,10 @@ from qubit import Qubit
 from pycqed.measurement.waveform_control.pulse import CosPulse, SquarePulse, LinearPulse
 import stationF006
 #from stationF006 import station
+from copy import deepcopy
+from manipulation_library import Ramsey
 
+#%%
 class Experiment:
 
     def __init__(self, name, qubits, awg, pulsar, **kw):
@@ -53,6 +56,7 @@ class Experiment:
 
         self.sweep_type = '2D'
 
+        self.manip_elem = None
         self.sequence_cfg = []      ## [segment1, segment2, segment3]
 #        for element in self.sequence_cfg.keys():
 #        sweep_dimension = 0
@@ -160,20 +164,34 @@ class Experiment:
             readout.add(SquarePulse(name='read', channel=self.channel_VP[i], amplitude=amplitudes[i], length=1e-6),
                            name='read%d'%(i+1), refpulse = refpulse, refpoint = 'start')
 
-
         return readout
 
+    def manipulation_element(self, name, **kw):
 
-    def manipulation_element(self, name):
+#        manipulation = Manipulation(name = name, pulsar = self.pulsar)
 
-        manipulation = Manipulation(name = name, pulsar = self.pulsar)
+#        self.manipulation = manip_element
+        
+#        self.manipulation(waiting_time = )
+        
+#        manip = deepcopy(self.manip_elem)
+       
+        manip = Ramsey(name=name)
+        
+        waiting_time = kw.pop('waiting_time', None)
+        duration_time = kw.pop('duration_time', None)
+        frequency = kw.pop('frequency', None)
+            
+        manipulation = manip(qubits = self.qubits, pulsar = self.pulsar, waiting_time = waiting_time, duration_time = duration_time, frequency = frequency)
+        
+        manipulation.make_circuit()
 
-
+#        for i in range(len(self.qubits)):
+#            refpulse = None if i ==0 else 'init1'
+#            manipulation.add(SquarePulse(name='init', channel=self.channel_VP[i], amplitude=amplitudes[i], length=time),
+#                           name='init%d'%(i+1),refpulse = refpulse, refpoint = 'start')
 
         return manipulation
-
-
-
 
     def make_initialize(self, segment_num, name = 'initialize', rep_idx = 1, qubits_name = None,):
 
@@ -187,26 +205,40 @@ class Experiment:
 
         return True
 
-    def make_manipulation(self, name, qubits_name = None):
+    def make_manipulation(self, segment_num, name = 'manipulation', rep_idx=1, qubits_name = [None, None]):
 
-#        manipulation = self.experiment['name']
 
-        manipulation = Manipulation(name = name, qubits_name = qubits_name)
-#        manipulation = self.experiment['name']
-#        self.manipulation_element.append(manipulation)
-        self.element['Manipulation_%d'%(len(self.element)-1)] = manipulation
-
+        for i in range(len(self.sequence_cfg[segment_num])):
+            
+            step = self.sequence_cfg[segment_num]['step%d'%(i+1)]
+            
+            amplitudes = [step['voltage_%d'%(i+1)] for i in range(self.qubits_number)]
+            
+            time = step['time']
+            
+            waiting_time = step.pop('waiting_time', 0)
+            
+#            duration_time
+            
+            manipulation_element = self.manipulation_element(name = name+'%d%d'%(rep_idx,(i+1)), 
+                                                             amplitudes = amplitudes, time = time,
+                                                             waiting_time = waiting_time,)
+            
+            self.elts.append(manipulation_element)
+            
+            self.sequence.append(name = name+'%d%d'%(rep_idx,(i+1)), wfname = name+'%d%d'%(rep_idx,(i+1)),
+                                 trigger_wait=False, )
 
         return True
 
-    def make_readout(self, segment_num, name = 'readout', qubits_name = None):           ## consists of Elzerman, PSB...
+    def make_readout(self, segment_num, name = 'readout', rep_idx = 1, qubits_name = None):           ## consists of Elzerman, PSB...
 
         for i in range(len(self.sequence_cfg[segment_num])):
             step = self.sequence_cfg[segment_num]['step%d'%(i+1)]
             amplitudes = [step['voltage_%d'%(i+1)] for i in range(self.qubits_number)]
-            readout_element = self.readout_element(name = name+'%d%d'%(segment_num,(i+1)), amplitudes=amplitudes,)
+            readout_element = self.readout_element(name = name+'%d%d'%(rep_idx,(i+1)), amplitudes=amplitudes,)
             self.elts.append(readout_element)
-            self.sequence.append(name = name+'%d%d'%(segment_num,(i+1)), wfname = name+'%d%d'%(segment_num,(i+1)),
+            self.sequence.append(name = name+'%d%d'%(rep_idx,(i+1)), wfname = name+'%d%d'%(rep_idx,(i+1)),
                                  trigger_wait=False, repetitions= int(step['time']/(1e-6)))
 
         return True
@@ -232,7 +264,7 @@ class Experiment:
                 self.make_initialize(segment_num = i, rep_idx = rep_idx)
 
             elif segment_type == 'manip':
-                self.make_mainipulation(segment_num = i, rep_idx = rep_idx)
+                self.make_manipulation(segment_num = i, rep_idx = rep_idx)
 
             elif segment_type == 'read':
                 self.make_readout(segment_num = i, rep_idx = rep_idx)
