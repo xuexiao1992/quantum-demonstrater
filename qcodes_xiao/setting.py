@@ -49,32 +49,49 @@ def sweep_array(start, stop, points):
 
 #%% make manipulation
 
-def make_manipulation(manipulation = Manipulation(name = 'Manip'), qubits = []):
-    
-    qubit_1 = qubits[0]
-#    qubit_2 = qubits[1]
+def make_manipulation(manipulation = Manipulation(name = 'Manip'), qubits = [], **kw):
 
-    manipulation.add_single_qubit_gate(name = 'G1_Q1', qubit = qubit_1, axis = [1,0,0], frequency = 0, degree = 180, rephase = 0)
-    manipulation.add_X(name='X1_Q1', refgate = 'G1_Q1', qubit = qubit_1, waiting_time = 100e-9, qubit = qubit_1)
-    manipulation.add_Y(name='Y1_Q1', refgate = 'X1_Q1', qubit = qubit_1, waiting_time = 150e-9, qubit = qubit_1)
-#    manipulation.add_CPhase(name='CP1')
-#    manipulation.addX(name='X2_Q1')
+    waiting_time = kw.pop('waiting_time', None)
+    amplitude = kw.pop('amplitude', None)
+
+    manip= make_Ramsey(manipulation = manipulation, waiting_time = waiting_time)
+
+    return manip
+
+def make_Ramsey(manipulation = Manipulation(name = 'Manip'), qubits = [], waiting_time = 0):
+
+    qubit_1 = qubits[0]
+
+    manipulation.add_X(name='X1_Q1', qubit = qubit_1, qubit = qubit_1)
+    manipulation.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = qubit_1, waiting_time = waiting_time, qubit = qubit_1)
 
     return manipulation
 
 
 #%%
+def make_manipulation_cfg():
+
+    manipulation_cfg = {
+            'gate1': ['X','Y'],
+            'gate2': ['Y','X'],
+            'gate3': [],
+            'gate4': []
+            }
+
+    return manipulation_cfg
+
+#%%
 
 def make_experiment_cfg():
-    
+
     station = stationF006.initialize()
     awg = station.awg
 #    awg.ch3_amp
     pulsar = set_5014pulsar(awg = awg)
-    
+
     qubit_1 = station.qubit_1
     qubit_2 = station.qubit_2
-    
+
     qubits = [qubit_1, qubit_2]
 
 
@@ -113,10 +130,10 @@ def make_experiment_cfg():
 
     experiment.sequence_cfg = [init_cfg]
     experiment.sequence_cfg_type = ['init']
-    
+
     experiment.set_sweep()
-    
-    
+
+
 
     return experiment
 

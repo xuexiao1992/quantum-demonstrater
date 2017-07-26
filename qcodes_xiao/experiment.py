@@ -20,14 +20,14 @@ import stationF006
 class Experiment:
 
     def __init__(self, name, qubits, awg, pulsar, **kw):
-        
+
 #        self.station = stationF006.initialize()
 
 #        self.qubits_name = qubits_name
 
         self.awg = awg
         self.qubits = qubits
-        
+
         self.channel_I = [qubit.microwave_gate['channel_I'] for qubit in qubits]
         self.channel_Q = [qubit.microwave_gate['channel_Q'] for qubit in qubits]
         self.channel_VP = [qubit.plunger_gate['channel_VP'] for qubit in qubits]
@@ -57,8 +57,8 @@ class Experiment:
 #        for element in self.sequence_cfg.keys():
 #        sweep_dimension = 0
 #        segment_number = 0
-        
-        
+
+
 #        for segment in self.sequence_cfg:
 #            for step in segment.keys():
 #                for parameter in segment[step].keys():
@@ -118,7 +118,7 @@ class Experiment:
     def set_sweep(self,):
         sweep_dimension = 0
         segment_number = 0
-        
+
         for segment in self.sequence_cfg:
             for step in segment.keys():
                 for parameter in segment[step].keys():
@@ -139,7 +139,7 @@ class Experiment:
     def initialize_element(self, name, amplitudes = []):
 
 #        print(amplitudes[0])
-        
+
         initialize = Element(name = name, pulsar = self.pulsar)
 
         for i in range(len(self.qubits)):
@@ -168,6 +168,8 @@ class Experiment:
 
         manipulation = Manipulation(name = name, pulsar = self.pulsar)
 
+
+
         return manipulation
 
 
@@ -180,9 +182,9 @@ class Experiment:
             amplitudes = [step['voltage_%d'%(i+1)] for i in range(self.qubits_number)]
             initialize_element = self.initialize_element(name = name+'%d%d'%(rep_idx,(i+1)), amplitudes=amplitudes,)
             self.elts.append(initialize_element)
-            self.sequence.append(name = name+'%d%d'%(rep_idx,(i+1)), wfname = name+'%d%d'%(rep_idx,(i+1)), 
+            self.sequence.append(name = name+'%d%d'%(rep_idx,(i+1)), wfname = name+'%d%d'%(rep_idx,(i+1)),
                                  trigger_wait=False, repetitions= int(step['time']/(1e-6)))
-        
+
         return True
 
     def make_manipulation(self, name, qubits_name = None):
@@ -206,7 +208,7 @@ class Experiment:
             self.elts.append(readout_element)
             self.sequence.append(name = name+'%d%d'%(segment_num,(i+1)), wfname = name+'%d%d'%(segment_num,(i+1)),
                                  trigger_wait=False, repetitions= int(step['time']/(1e-6)))
-        
+
         return True
 
     def generate_sweep_matrix(self,):
@@ -221,21 +223,21 @@ class Experiment:
 
 
     def generate_unit_sequence(self, rep_idx = 0):
-        
+
         i = 0
-        
+
         for segment_type in self.sequence_cfg_type:
-            
+
             if segment_type == 'init':
                 self.make_initialize(segment_num = i, rep_idx = rep_idx)
-            
+
             elif segment_type == 'manip':
                 self.make_mainipulation(segment_num = i, rep_idx = rep_idx)
-            
+
             elif segment_type == 'read':
                 self.make_readout(segment_num = i, rep_idx = rep_idx)
 
-            i+=1            
+            i+=1
 
 
 
@@ -251,7 +253,7 @@ class Experiment:
                 parameter = [self.sweep_set['loop1_para%d'%(k+1)]['parameter'] for k in range(len(self.sweep_loop1))]
                 for k in range(len(segment_number)):
                     self.sequence_cfg[segment_number[k]][step[k]][parameter[k]] = self.sweep_loop1['para%d'%(k+1)][i]
-#                    segment[step[k]][parameter[k]] = self.sweep_loop1['para%d'%(k+1)][i]  
+#                    segment[step[k]][parameter[k]] = self.sweep_loop1['para%d'%(k+1)][i]
 
                 if len(self.sweep_loop2) == 0:
                     self.generate_unit_sequence(rep_idx = i)
@@ -262,10 +264,10 @@ class Experiment:
                         segment_number = [self.sweep_set['loop2_para%d'%(k+1)]['segment_number'] for k in range(len(self.sweep_loop2))]
                         step = [self.sweep_set['loop2_para%d'%(k+1)]['step'] for k in range(len(self.sweep_loop2))]
                         parameter = [self.sweep_set['loop2_para%d'%(k+1)]['parameter'] for k in range(len(self.sweep_loop2))]
-                        
+
                         for k in range(len(segment_number)):
                             self.sequence_cfg[segment_number[k]][step[k]][parameter[k]] = self.sweep_loop2['para%d'%(k+1)][j]
-                        
+
                         self.generate_unit_sequence(rep_idx = 10*i+j)
 
         """
@@ -293,12 +295,12 @@ class Experiment:
 
 
     def run_experiment(self,):
-        
+
         self.awg.write('SOUR1:ROSC:SOUR INT')
-        
+
         self.awg.ch3_state.set(1)
         self.awg.force_trigger()
-        
+
         self.awg.run()
 
         return True
