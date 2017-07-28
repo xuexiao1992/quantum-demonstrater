@@ -52,6 +52,8 @@ def set_manip(time = 0, qubits = [], voltages = [], **kw):
         step['Pi_pulse_length_%d'%(i+1)] = Pi_pulse_lengths[i]
         step['IQ_amplitude_%d'%(i+1)] = IQ_amplitudes[i]
         step['IQ_frequency_%d'%(i+1)] = IQ_frequencies[i]
+        step['waiting_time'] = waiting_time
+        step['duration_time'] = duration_time
 
     return step
 
@@ -96,6 +98,7 @@ def make_experiment_cfg():
 
     station = stationF006.initialize()
     awg = station.awg
+    digitizer = station.digitizer
 #    awg.ch3_amp
     pulsar = set_5014pulsar(awg = awg)
 
@@ -110,6 +113,7 @@ def make_experiment_cfg():
 
     experiment.sweep_loop1 = {
 #            'para1': [0.8,0.2,0.53,0.14,0.3],
+            'para1': sweep_array(start = 50e-9, stop = 250e-9, points = 5)
 #            'para2': sweep_array(start = 0.1, stop = 0.5, points = 5),
             }
 
@@ -132,7 +136,7 @@ def make_experiment_cfg():
             }
 
     manip_cfg = {
-            'step1' : set_manip(time = 10e-6, qubits = qubits, voltages = [0.6,0.6], waiting_time1 = 'loop1_para1', waiting_time2 =0)
+            'step1' : set_manip(time = 10e-6, qubits = qubits, voltages = [0.6,0.6], waiting_time = loop1_para1, waiting_time2 =0)
             }
 #
     read_cfg = {
@@ -144,8 +148,8 @@ def make_experiment_cfg():
 #    experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg]
 #    experiment.sequence_cfg_type = ['init', 'manip','read',]
 
-    experiment.sequence_cfg = [init_cfg,manip_cfg,read_cfg]
-    experiment.sequence_cfg_type = ['init', 'manip','read']
+    experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg]
+    experiment.sequence_cfg_type = ['init','manip','read']
 
     experiment.set_sweep()
     

@@ -29,6 +29,7 @@ class Experiment:
 #        self.qubits_name = qubits_name
 
         self.awg = awg
+#        self.digitizer = 
         self.qubits = qubits
 
         self.channel_I = [qubit.microwave_gate['channel_I'] for qubit in qubits]
@@ -211,7 +212,7 @@ class Experiment:
         for i in range(len(self.sequence_cfg[segment_num])):
             
             step = self.sequence_cfg[segment_num]['step%d'%(i+1)]
-            
+            print(step)
             amplitudes = [step['voltage_%d'%(i+1)] for i in range(self.qubits_number)]
             
             time = step['time']
@@ -271,7 +272,13 @@ class Experiment:
 
             i+=1
 
-
+    def _1D_sweep(self,):
+        
+        return 0 
+    
+    def _2D_sweep(self,):
+        
+        return 0
 
     def generate_sequence(self,):
         if len(self.sweep_loop1) == 0:

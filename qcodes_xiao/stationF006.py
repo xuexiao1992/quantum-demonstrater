@@ -143,7 +143,7 @@ def initialize(reinit=False, server_name=None):
 #    keithley = Keithley_2700.Keithley_2700(name='keithley', address='GPIB0::15::INSTR', server_name=server_name)
     
 
-    # Loading digitizer
+#     Loading digitizer
     logging.info('LD400: load digitizer driver')
     digitizer = M4i.M4i(name='digitizer', server_name=server_name)
     if digitizer==None:

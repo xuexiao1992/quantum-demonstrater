@@ -111,8 +111,9 @@ class new_ex(Manipulation):
 
         return self
     
-sweep_x(name = 'X1_Q1', parameter = 'waiting_time')
-sweep_y
+    
+#sweep_x(name = 'X1_Q1', parameter = 'waiting_time')
+#sweep_y
 
 
 #%% by functions
