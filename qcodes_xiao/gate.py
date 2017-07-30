@@ -79,10 +79,10 @@ class Single_Qubit_Gate(Gate):
             pulse_length = self.halfPi_pulse_length if degree == 90 else degree*self.Pi_pulse_length/180
 
         voltage_pulse = SquarePulse(channel = self.channel_VP, name = '%s_voltage_pulse'%self.name,
-                                    amplitude = 0.4, length = pulse_length + waiting_time)
+                                    amplitude = 0, length = pulse_length + waiting_time)
         
         PM_pulse = SquarePulse(channel = self.channel_PM, name = '%s_PM_pulse'%self.name,
-                               amplitude = 2, length = pulse_length)
+                               amplitude = 2, length = pulse_length+200e-9)
         
         if 1:
             microwave_pulse_I = SquarePulse(channel = self.channel_I, name = '%s_microwave_pulse_I'%self.name, 

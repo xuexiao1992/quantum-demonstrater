@@ -32,10 +32,6 @@ class Manipulation(Element):
 #        for qubitname in qubits_name:
 #             self.refphase[qubitname] = 0
              
-             
-        
-#        self.add(SquarePulse(channel = 'ch%d' % plungerchannel, name = 'initialize_1', amplitude = initialize_amplitude,
-#                             length = 0.5e-6), name = 'initialize_1')
 #    def __call__
 
     

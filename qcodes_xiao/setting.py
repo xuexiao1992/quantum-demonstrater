@@ -86,8 +86,8 @@ def make_manipulation_cfg():
     manipulation_cfg = {
             'gate1': ['X','Y'],
             'gate2': ['Y','X'],
-            'gate3': [],
-            'gate4': []
+            'gate3': ['CPhase'],
+            'gate4': ['Z','X']
             }
 
     return manipulation_cfg
@@ -98,6 +98,8 @@ def make_experiment_cfg():
 
     station = stationF006.initialize()
     awg = station.awg
+    awg.clock_freq(1e9)
+
     digitizer = station.digitizer
 #    awg.ch3_amp
     pulsar = set_5014pulsar(awg = awg)
@@ -138,7 +140,7 @@ def make_experiment_cfg():
     manip_cfg = {
             'step1' : set_manip(time = 10e-6, qubits = qubits, voltages = [0.6,0.6], waiting_time = loop1_para1, waiting_time2 =0)
             }
-#
+
     read_cfg = {
             'step1' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
             'step2' : set_step(time = 10e-6, qubits = qubits, voltages = [0.4, 0.2]),

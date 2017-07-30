@@ -28,10 +28,10 @@ class Ramsey(Manipulation):
         if self.qubits is not None:
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
-        self.pulsar = kw.pop('pulsar', None)
+#        self.pulsar = kw.pop('pulsar', None)
         
     def __call__(self, **kw):
-        
+        self.name = kw.pop('name', self.name)
         self.qubits = kw.pop('qubits', None)
         if self.qubits is not None:
             self.qubits_name = [qubit.name for qubit in self.qubits]

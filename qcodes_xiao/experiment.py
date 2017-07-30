@@ -167,7 +167,7 @@ class Experiment:
 
         return readout
 
-    def manipulation_element(self, name, **kw):
+    def manipulation_element(self, name, time = 0, amplitudes = [], **kw):
 
 #        manipulation = Manipulation(name = name, pulsar = self.pulsar)
 
@@ -175,17 +175,23 @@ class Experiment:
         
 #        self.manipulation(waiting_time = )
         
-#        manip = deepcopy(self.manip_elem)
+        manip = deepcopy(self.manip_elem)
        
-        manip = Ramsey(name=name)
+#        manip = self.manip_elem
+#        manip = Ramsey(name=name, pulsar = self.pulsar)
         
         waiting_time = kw.pop('waiting_time', None)
         duration_time = kw.pop('duration_time', None)
         frequency = kw.pop('frequency', None)
-            
-        manipulation = manip(qubits = self.qubits, pulsar = self.pulsar, waiting_time = waiting_time, duration_time = duration_time, frequency = frequency)
-        
+        print(name)
+        manipulation = manip(name = name, qubits = self.qubits, pulsar = self.pulsar, waiting_time = waiting_time, duration_time = duration_time, frequency = frequency)
+
         manipulation.make_circuit()
+
+        for i in range(len(self.qubits)):
+            refpulse = None if i ==0 else 'manip1'
+            manipulation.add(SquarePulse(name='manip', channel=self.channel_VP[i], amplitude=amplitudes[i], length=time),
+                           name='manip%d'%(i+1), refpulse = refpulse, refpoint = 'start')
 
 #        for i in range(len(self.qubits)):
 #            refpulse = None if i ==0 else 'init1'
