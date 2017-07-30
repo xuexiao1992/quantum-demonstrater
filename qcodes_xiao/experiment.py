@@ -29,7 +29,7 @@ class Experiment:
 #        self.qubits_name = qubits_name
 
         self.awg = awg
-#        self.digitizer = 
+#        self.digitizer =
         self.qubits = qubits
 
         self.channel_I = [qubit.microwave_gate['channel_I'] for qubit in qubits]
@@ -49,13 +49,16 @@ class Experiment:
 
         self.sweep_loop1 = {}
         self.sweep_loop2 = {}
-        self.sweep_loop3 = np.array([])
 
-        self.sweep_loop = []
+        self.sweep_loop = {
+            'loop1': self.sweep_loop1,
+            'loop2': self.sweep_loop2,
+            }
+
+        self.sweep_loop3 = {}
 
         self.sweep_set = {}         ## {''}
-
-        self.sweep_type = '2D'
+        self.sweep_type = 'NoSweep'
 
         self.manip_elem = None
         self.sequence_cfg = []      ## [segment1, segment2, segment3]
@@ -139,6 +142,14 @@ class Experiment:
                         sweep_dimension+=1
             segment_number+=1
 
+
+        if len(self.sweep_loop1) != 0:
+            if len(self.sweep_loop2) != 0:
+                self.sweep_type = '2D'
+            else:
+                self.sweep_type = '1D'
+
+
         return True
 
     def initialize_element(self, name, amplitudes = []):
@@ -169,17 +180,10 @@ class Experiment:
 
     def manipulation_element(self, name, time = 0, amplitudes = [], **kw):
 
-#        manipulation = Manipulation(name = name, pulsar = self.pulsar)
-
-#        self.manipulation = manip_element
-        
-#        self.manipulation(waiting_time = )
-        
         manip = deepcopy(self.manip_elem)
-       
-#        manip = self.manip_elem
+
 #        manip = Ramsey(name=name, pulsar = self.pulsar)
-        
+
         waiting_time = kw.pop('waiting_time', None)
         duration_time = kw.pop('duration_time', None)
         frequency = kw.pop('frequency', None)
@@ -192,11 +196,6 @@ class Experiment:
             refpulse = None if i ==0 else 'manip1'
             manipulation.add(SquarePulse(name='manip', channel=self.channel_VP[i], amplitude=amplitudes[i], length=time),
                            name='manip%d'%(i+1), refpulse = refpulse, refpoint = 'start')
-
-#        for i in range(len(self.qubits)):
-#            refpulse = None if i ==0 else 'init1'
-#            manipulation.add(SquarePulse(name='init', channel=self.channel_VP[i], amplitude=amplitudes[i], length=time),
-#                           name='init%d'%(i+1),refpulse = refpulse, refpoint = 'start')
 
         return manipulation
 
@@ -216,23 +215,23 @@ class Experiment:
 
 
         for i in range(len(self.sequence_cfg[segment_num])):
-            
+
             step = self.sequence_cfg[segment_num]['step%d'%(i+1)]
             print(step)
             amplitudes = [step['voltage_%d'%(i+1)] for i in range(self.qubits_number)]
-            
+
             time = step['time']
-            
+
             waiting_time = step.pop('waiting_time', 0)
-            
+
 #            duration_time
-            
-            manipulation_element = self.manipulation_element(name = name+'%d%d'%(rep_idx,(i+1)), 
+
+            manipulation_element = self.manipulation_element(name = name+'%d%d'%(rep_idx,(i+1)),
                                                              amplitudes = amplitudes, time = time,
                                                              waiting_time = waiting_time,)
-            
+
             self.elts.append(manipulation_element)
-            
+
             self.sequence.append(name = name+'%d%d'%(rep_idx,(i+1)), wfname = name+'%d%d'%(rep_idx,(i+1)),
                                  trigger_wait=False, )
 
@@ -278,15 +277,59 @@ class Experiment:
 
             i+=1
 
+        return True
+
+    def _update_loop(loop = 1):
+
+        length = len(self.sweep_loop['loop%d'%loop])
+#        if loop == 1:
+#            length = len(self.sweep_loop1)
+#        elif loop == 2:
+#            length == len(self.sweep_loop2)
+
+        segment_number = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['segment_number'] for k in range(length)]
+        step = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['step'] for k in range(length)]
+        parameter = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['parameter'] for k in range(length)]
+
+        for k in range(len(segment_number)):
+#            self.sequence_cfg[segment_number[k]][step[k]][parameter[k]] = self.sweep_loop1['para%d'%(k+1)][i]
+            self.sequence_cfg[segment_number[k]][step[k]][parameter[k]] = self.sweep_loop['loop%d'%loop]['para%d'%(k+1)][i]
+
+        return True
+
     def _1D_sweep(self,):
-        
-        return 0 
-    
+
+        for i in range(len(self.sweep_loop1['para1'])):
+
+            self._update_loop(loop = 1)
+
+            self.generate_unit_sequence(rep_idx = i)
+
+        return True
+
     def _2D_sweep(self,):
-        
-        return 0
+
+        for i in range(len(self.sweep_loop1['para1'])):
+            self._update_loop(loop = 1)
+
+            for j in range(len(self.sweep_loop2['para1'])):
+                self._update_loop(loop = 2)
+
+                self.generate_unit_sequence(rep_idx = 10*i+j)
+
+        return True
 
     def generate_sequence(self,):
+
+        if self.sweep_type == '1D':
+            self._1D_sweep()
+        elif self.sweep_type == '2D':
+            self._2D_sweep()
+
+        return True
+
+
+    def _generate_sequence(self,):
         if len(self.sweep_loop1) == 0:
             self.generate_unit_sequence()
 
@@ -360,7 +403,7 @@ class Experiment:
 
 #        self.manipulation(name = manipulate)
 
-        self.generate_sequence(name)
+        self._generate_sequence(name)
 
         self.awg.delete_all_waveforms_from_list()
 
