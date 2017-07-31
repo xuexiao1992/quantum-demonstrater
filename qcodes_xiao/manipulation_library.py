@@ -11,6 +11,8 @@ from pycqed.measurement.waveform_control.element import Element
 #from experiment import Experiment
 from manipulation import Manipulation
 import stationF006
+#%%
+
 
 #%% by objects
 
@@ -57,6 +59,16 @@ class Ramsey(Manipulation):
     
         self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = self.waiting_time,)
 
+        self.add_Y(name='Y1_Q1', refgate = 'X2_Q1', qubit = self.qubits[0], waiting_time = self.waiting_time,)
+        
+        self.add_Z(name='Z1_Q1', qubit = self.qubits[0], degree = 45)
+
+        self.add_X(name='X3_Q1', refgate = 'Y1_Q1', qubit = self.qubits[0], waiting_time = self.waiting_time,)
+        
+        self.add_single_qubit_gate(name = 'T1_Q1', refgate = 'X3_Q1', qubit = self.qubits[0], amplitude = 0.1, waiting_time = self.waiting_time)
+        
+#        self.add_Z(name='Z1_Q1', qubit = self.qubits[0],)
+        
         return self
     
 
@@ -103,9 +115,9 @@ class new_ex(Manipulation):
         
         self.add_X(name='X1_Q1', qubit = self.qubits[0],)
     
-        self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = self.waiting_time,)
+        self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = self.waiting_time1,)
 
-        self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = self.waiting_time,)
+        self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = self.waiting_time2,)
 
         self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = 1,)
 

@@ -179,6 +179,7 @@ print('c')
 myseq.append(name='test_element', wfname='test_element', trigger_wait=False,)
 myseq.append(name='my_element', wfname='my_element', trigger_wait=False,)
 myseq.append(name='your_element', wfname='your_element', trigger_wait=False,)
+myseq.append(name='test_element1', wfname='test_element', trigger_wait=False,)
 
 print('d')
 awg.delete_all_waveforms_from_list()

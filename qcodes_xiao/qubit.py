@@ -31,7 +31,7 @@ class Qubit(Instrument):
         if self.microwave_power >= 1:
             raise ValueError('should be set in a safe value less than ')
         
-        self.IQ_amplitude = 1
+        self.IQ_amplitude = 0.5
         
         if self.IQ_amplitude>1 or self.IQ_amplitude<-1:
             raise ValueError('should be set in a safe value within (-1,1)')

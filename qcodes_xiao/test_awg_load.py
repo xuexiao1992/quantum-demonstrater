@@ -251,7 +251,7 @@ awg.run()
 #awg.set_sqel_waveform(waveform_name = 'ini11_ch3',channel = 2, element_no =1)
 #
 #awg.send_waveform_to_list(w = wfs['ch3'], m1 = wfs['ch3_marker1'], m2 = wfs['ch3_marker2'], wfmname = 'ini11_ch3')
-#awg.send_waveform_to_list(w = wfs['ch3'], m1 = wfs['ch3_marker1'], m2 = wfs['ch3_marker2'], wfmname = '"ini11_ch3"\n')
+#awg.send_waveform_to_list(w = wfs['ch3'], m1 = wfs['ch3_marker1'], m2 = wfs['ch3_marker2'], wfmname = '"ini11_ch3"\n') ## wrong!!!
 #awg.send_waveform_to_list()
 
 

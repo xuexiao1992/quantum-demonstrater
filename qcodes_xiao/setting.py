@@ -132,19 +132,19 @@ def make_experiment_cfg():
     loop2_para1 = 'loop2_para1'
     
     init_cfg = {
-            'step1' : set_step(time = 10e-6, qubits = qubits, voltages = [0.2, 0.3]),
-            'step2' : set_step(time = 20e-6, qubits = qubits, voltages = [0.8, 0.3]),
-            'step3' : set_step(time = 10e-6, qubits = qubits, voltages = [0.4, 0.5]),
+            'step1' : set_step(time = 2e-6, qubits = qubits, voltages = [0.2, 0.3]),
+            'step2' : set_step(time = 5e-6, qubits = qubits, voltages = [0.8, 0.3]),
+            'step3' : set_step(time = 1e-6, qubits = qubits, voltages = [0.4, 0.5]),
             }
 
     manip_cfg = {
-            'step1' : set_manip(time = 10e-6, qubits = qubits, voltages = [0.6,0.6], waiting_time = loop1_para1, waiting_time2 =0)
+            'step1' : set_manip(time = 2e-6, qubits = qubits, voltages = [0.6,0.6], waiting_time = loop1_para1,)
             }
 
     read_cfg = {
-            'step1' : set_step(time = 10e-6, qubits = qubits, voltages = [0.3, 0.2]),
-            'step2' : set_step(time = 10e-6, qubits = qubits, voltages = [0.4, 0.2]),
-            'step3' : set_step(time = 10e-6, qubits = qubits, voltages = [0.5, 0.2]),
+            'step1' : set_step(time = 1e-6, qubits = qubits, voltages = [0.3, 0.2]),
+            'step2' : set_step(time = 1e-6, qubits = qubits, voltages = [0.4, 0.2]),
+            'step3' : set_step(time = 1e-6, qubits = qubits, voltages = [0.5, 0.2]),
             }
 
 #    experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg]

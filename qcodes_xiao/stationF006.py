@@ -113,15 +113,15 @@ def initialize(reinit=False, server_name=None):
 
     qubit_2 = Qubit(name = 'qubit_2')
 
-    qubit_1.define_gate(gate_name = 'LP1', gate_number = 1, microwave = 1, channel_I = 'ch2', channel_Q = 'ch1', channel_PM = 'ch2_marker1')
+    qubit_1.define_gate(gate_name = 'LP1', gate_number = 1, microwave = 1, channel_I = 'ch3', channel_Q = 'ch4', channel_PM = 'ch2_marker1')
 
 #   Qubit_1.define_gate(gate_name = 'RP1', gate_number = 2, microwave = 1, channel_I = 'RP1I', channel_Q = 'RP1Q')
 #
-    qubit_1.define_gate(gate_name = 'Plunger1', gate_number = 3, gate_function = 'plunger', channel_VP = 'ch3')
+    qubit_1.define_gate(gate_name = 'Plunger1', gate_number = 3, gate_function = 'plunger', channel_VP = 'ch2')
 #
     qubit_2.define_gate(gate_name = 'LP2', gate_number = 4, microwave = 1, channel_I = 'LP2I', channel_Q = 'LP2Q', channel_PM = 'ch1_marker1')
 #
-    qubit_2.define_gate(gate_name = 'Plunger2', gate_number = 5, gate_function = 'plunger', channel_VP = 'ch4')
+    qubit_2.define_gate(gate_name = 'Plunger2', gate_number = 5, gate_function = 'plunger', channel_VP = 'ch1')
 
 
     

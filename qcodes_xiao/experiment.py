@@ -149,6 +149,10 @@ class Experiment:
             else:
                 self.sweep_type = '1D'
 
+        self.sweep_loop = {
+            'loop1': self.sweep_loop1,
+            'loop2': self.sweep_loop2,
+            }
 
         return True
 
@@ -194,8 +198,9 @@ class Experiment:
 
         for i in range(len(self.qubits)):
             refpulse = None if i ==0 else 'manip1'
-            manipulation.add(SquarePulse(name='manip', channel=self.channel_VP[i], amplitude=amplitudes[i], length=time),
-                           name='manip%d'%(i+1), refpulse = refpulse, refpoint = 'start')
+            start = -500e-9 if i ==0 else 0
+            manipulation.add(SquarePulse(name='manip%d'%(i+1), channel=self.channel_VP[i], amplitude=amplitudes[i], length=time),
+                           name='manip%d'%(i+1), refpulse = refpulse, refpoint = 'start', start = start)
 
         return manipulation
 
@@ -217,7 +222,6 @@ class Experiment:
         for i in range(len(self.sequence_cfg[segment_num])):
 
             step = self.sequence_cfg[segment_num]['step%d'%(i+1)]
-            print(step)
             amplitudes = [step['voltage_%d'%(i+1)] for i in range(self.qubits_number)]
 
             time = step['time']
@@ -260,6 +264,17 @@ class Experiment:
         return True
 
 
+
+    def update_element(self, element):
+        
+        tvals, wfs = element.normalized_waveforms()
+        for i in range(1,5):
+            self.awg.send_waveform_to_list(w = wfs['ch%d'%i], m1 = wfs['ch%d_marker1'%i], m2 = wfs['ch%d_marker2'%i], wfmname = 'ini11_ch3')
+        
+        return True
+
+
+
     def generate_unit_sequence(self, rep_idx = 0):
 
         i = 0
@@ -279,20 +294,16 @@ class Experiment:
 
         return True
 
-    def _update_loop(loop = 1):
+    def _update_loop(self, loop = 1, idx = 1):
 
-        length = len(self.sweep_loop['loop%d'%loop])
-#        if loop == 1:
-#            length = len(self.sweep_loop1)
-#        elif loop == 2:
-#            length == len(self.sweep_loop2)
-
-        segment_number = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['segment_number'] for k in range(length)]
-        step = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['step'] for k in range(length)]
-        parameter = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['parameter'] for k in range(length)]
+        para_num = len(self.sweep_loop['loop%d'%loop])      ## number of parameter in one loop e.g. loop1: para1, para2,,,,para_num = 2
+        i = idx
+        
+        segment_number = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['segment_number'] for k in range(para_num)]
+        step = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['step'] for k in range(para_num)]
+        parameter = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['parameter'] for k in range(para_num)]
 
         for k in range(len(segment_number)):
-#            self.sequence_cfg[segment_number[k]][step[k]][parameter[k]] = self.sweep_loop1['para%d'%(k+1)][i]
             self.sequence_cfg[segment_number[k]][step[k]][parameter[k]] = self.sweep_loop['loop%d'%loop]['para%d'%(k+1)][i]
 
         return True
@@ -301,7 +312,7 @@ class Experiment:
 
         for i in range(len(self.sweep_loop1['para1'])):
 
-            self._update_loop(loop = 1)
+            self._update_loop(loop = 1, idx = i)
 
             self.generate_unit_sequence(rep_idx = i)
 
@@ -310,10 +321,10 @@ class Experiment:
     def _2D_sweep(self,):
 
         for i in range(len(self.sweep_loop1['para1'])):
-            self._update_loop(loop = 1)
+            self._update_loop(loop = 1, idx = i)
 
             for j in range(len(self.sweep_loop2['para1'])):
-                self._update_loop(loop = 2)
+                self._update_loop(loop = 2, idx = j)
 
                 self.generate_unit_sequence(rep_idx = 10*i+j)
 

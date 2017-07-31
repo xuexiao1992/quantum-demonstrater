@@ -33,10 +33,11 @@ class Gate:
 
 class Single_Qubit_Gate(Gate):
     
-    def __init__(self, name, qubit, rotating_axis = [1, 0, 0], frequency = None, refphase = 0):
+    def __init__(self, name, qubit, rotating_axis = [1, 0, 0], amplitude = None, frequency = None, refphase = 0):
         super().__init__(name,)
         
         self.qubit = qubit.name
+        self.amplitude = qubit.IQ_amplitude if amplitude == None else amplitude
         self.frequency = qubit.frequency if frequency == None else frequency
         self.channel_I = qubit.microwave_gate['channel_I']
         self.channel_Q = qubit.microwave_gate['channel_Q']
@@ -51,10 +52,10 @@ class Single_Qubit_Gate(Gate):
         
         self.voltage_pulse_length = 0
         
-        self.refphase = refphase
+        self.refphase = refphase*C.pi/180
         
         self.axis = np.array(rotating_axis)
-        self.axis_angle = np.arctan(self.axis[1]/self.axis[0])
+        self.axis_angle = np.arctan(self.axis[1]/self.axis[0]) if self.axis[0]!=0 else C.pi/2
         
 #        self.pulses = {
 #                ##  'microwave': None,
@@ -78,6 +79,9 @@ class Single_Qubit_Gate(Gate):
         else:
             pulse_length = self.halfPi_pulse_length if degree == 90 else degree*self.Pi_pulse_length/180
 
+        pulse_amp = self.amplitude
+        
+        ## voltage pulse is not used here
         voltage_pulse = SquarePulse(channel = self.channel_VP, name = '%s_voltage_pulse'%self.name,
                                     amplitude = 0, length = pulse_length + waiting_time)
         
@@ -86,11 +90,11 @@ class Single_Qubit_Gate(Gate):
         
         if 1:
             microwave_pulse_I = SquarePulse(channel = self.channel_I, name = '%s_microwave_pulse_I'%self.name, 
-                                            amplitude = 0.2*np.cos(self.refphase + self.axis_angle), 
+                                            amplitude = pulse_amp*np.cos(self.refphase + self.axis_angle), 
                                             length = pulse_length)
             
             microwave_pulse_Q = SquarePulse(channel = self.channel_Q, name = '%s_microwave_pulse_Q'%self.name, 
-                                            amplitude = 0.2*np.sin(self.refphase + self.axis_angle), 
+                                            amplitude = pulse_amp*np.sin(self.refphase + self.axis_angle), 
                                             length = pulse_length)
             
             

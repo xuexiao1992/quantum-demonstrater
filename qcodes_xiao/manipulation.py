@@ -60,7 +60,7 @@ class Manipulation(Element):
 
     
     def add_single_qubit_gate(self, name = None, qubit = None, axis = [1,0,0], degree = 90,
-                              length = 50e-9, frequency = None, refphase = 0,
+                              amplitude = None, length = 50e-9, frequency = None, refphase = 0,
                               refgate = None, refpoint = 'end', waiting_time = 0, refpoint_new = 'start'):
         # no idea yet  perhaps call the element.add() function but just to add the first pulse
         # and record the information of the last pulse
@@ -68,7 +68,7 @@ class Manipulation(Element):
             raise NameError('Name already used')            ## need to stop the program or maybe randomly give a name
         
         single_qubit_gate = Single_Qubit_Gate(name = name, qubit = qubit, rotating_axis = axis, 
-                                              frequency = frequency, refphase = refphase)
+                                              frequency = frequency, amplitude = amplitude, refphase = refphase)
         
         if axis[0]!=0 or axis[1]!=0:
             if axis[2]!=0:
@@ -177,8 +177,8 @@ class Manipulation(Element):
         
         refphase = self.refphase[qubit.name]
         
-        self.add_single_qubit_gate(name = name, qubit = qubit, axis = [1, 0, 0], degree = 90, length = qubit.halfPi_pulse_length,
-                                   refgate = refgate, refpoint = refpoint, refphase = refphase, 
+        self.add_single_qubit_gate(name = name, qubit = qubit, axis = [1, 0, 0], degree = 90, 
+                                   length = qubit.halfPi_pulse_length, refgate = refgate, refpoint = refpoint, refphase = refphase, 
                                    waiting_time = waiting_time, refpoint_new = refpoint_new)
         
         return True
@@ -188,7 +188,7 @@ class Manipulation(Element):
         
         refphase = self.refphase[qubit.name]
         
-        self.add_single_qubit_gate(name = name, qubit = qubit, axis = [0, 1, 0], degree = 90, 
+        self.add_single_qubit_gate(name = name, qubit = qubit, axis = [0, 1, 0], degree = 90, length = qubit.halfPi_pulse_length,
                                    refgate = refgate, refpoint = refpoint, refphase = refphase, 
                                    waiting_time = waiting_time, refpoint_new = refpoint_new)
         
