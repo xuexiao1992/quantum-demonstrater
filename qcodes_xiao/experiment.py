@@ -235,6 +235,13 @@ class Experiment:
             
             idx_i = rep_idx//10
             idx_j = rep_idx%10
+            
+            if self.sweep_type == '2D':
+                idx_i = rep_idx//10
+                idx_j = rep_idx%10
+            else:
+                idx_i = rep_idx
+                idx_j = 0
 
             if loop_num == '1':
                 idx = idx_i
@@ -269,7 +276,7 @@ class Experiment:
             
         return True
 
-    def make_manipulation_segment(self, segment_num, name = 'manipulation', rep_idx=1, qubits_name = [None, None]):
+    def make_manipulation_segment(self, segment_num, name = 'manipulation', rep_idx=0, qubits_name = [None, None]):
 
 
         for i in range(len(self.sequence_cfg[segment_num])):
@@ -280,8 +287,12 @@ class Experiment:
             
             print('is_in_loop, loop_num',is_in_loop, loop_num)
             
-            idx_i = rep_idx//10
-            idx_j = rep_idx%10
+            if self.sweep_type == '2D':
+                idx_i = rep_idx//10
+                idx_j = rep_idx%10
+            else:
+                idx_i = rep_idx
+                idx_j = 0
 
             if loop_num == '1':
                 idx = idx_i
@@ -295,13 +306,17 @@ class Experiment:
                 idx = 0
                 other = 0
             
+            print('idx:', idx)
+            print('other:', other)
+            print('rep_idx:',rep_idx)
+            
             if is_in_loop or rep_idx == 0:
                 if other == 0:
                     amplitudes = [step['voltage_%d'%(i+1)] for i in range(self.qubits_number)]
 
                     time = step['time']
 
-#                  waiting_time = step.pop('waiting_time', 0)
+#                    waiting_time = step.pop('waiting_time', 0)
 
                     waiting_time = step['waiting_time']
             
@@ -414,6 +429,8 @@ class Experiment:
 
         return segment_number, step, parameter
 
+
+
     def _update_cfg(self, loop = 1, idx = 1):
 
         para_num = len(self.sweep_loop['loop%d'%loop])      ## number of parameter in one loop e.g. loop1: para1, para2,,,,para_num = 2
@@ -451,6 +468,36 @@ class Experiment:
 
                 self.generate_unit_sequence(rep_idx = 10*i+j, idx_i = i, idx_j = j)
 
+        return True
+
+    def _1D_sweep_new(self,):
+        
+        for i in range(len(self.sweep_loop1['para1'])):
+
+            self._update_cfg(loop = 1, idx = i)
+
+            self.generate_unit_sequence(rep_idx = i)
+        
+        self.load_sequence()
+        
+        return True
+
+
+    def _2D_sweep_new(self,):
+        
+        for j in range(len(self.sweep_loop2['para1'])):
+            
+            self._update_cfg(loop = 2, idx = j)
+            
+            if j == 0:
+                self._1D_sweep()
+            else:
+                self.add_new_element_to_awg_list()
+
+        return True
+
+    def generate_seq_new(self,):
+        
         return True
 
     def generate_sequence(self,):

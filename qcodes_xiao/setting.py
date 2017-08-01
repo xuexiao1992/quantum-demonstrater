@@ -115,12 +115,12 @@ def make_experiment_cfg():
 
     experiment.sweep_loop1 = {
 #            'para1': [0.8,0.2,0.53,0.14,0.3],
-            'para1': sweep_array(start = 50e-9, stop = 250e-9, points = 5)
-#            'para2': sweep_array(start = 0.1, stop = 0.5, points = 5),
+            'para1': sweep_array(start = 50e-9, stop = 250e-9, points = 5),
+            'para2': sweep_array(start = 0.1, stop = 0.5, points = 5),
             }
 
     experiment.sweep_loop2 = {
-            'para1': [0,0.5],
+#            'para1': [0,0.5,0.5,0,0.5],
             }
 
 #    loop1_para1 = [1,2,344,553,3]
@@ -133,12 +133,12 @@ def make_experiment_cfg():
     
     init_cfg = {
             'step1' : set_step(time = 2e-6, qubits = qubits, voltages = [0.2, 0.3]),
-            'step2' : set_step(time = 5e-6, qubits = qubits, voltages = [loop2_para1, 0.3]),
+            'step2' : set_step(time = 5e-6, qubits = qubits, voltages = [0.1, 0.3]),
             'step3' : set_step(time = 1e-6, qubits = qubits, voltages = [0.4, 0.5]),
             }
 
     manip_cfg = {
-            'step1' : set_manip(time = 2e-6, qubits = qubits, voltages = [0.6,0.6], waiting_time = loop1_para1,)
+            'step1' : set_manip(time = 2e-6, qubits = qubits, voltages = [loop1_para2,0.6], waiting_time = loop1_para1,)
             }
 
     read_cfg = {
