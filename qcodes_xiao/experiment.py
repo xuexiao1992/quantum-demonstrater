@@ -132,13 +132,14 @@ class Experiment:
                 for parameter in segment[step].keys():
                     if type(segment[step][parameter]) == str:
                         ss = {}
+                        sweep_parameter = segment[step][parameter]
                         ss['segment_number'] = segment_number
 #                        ss['segment'] = segment
                         ss['step'] = step
                         ss['parameter'] = parameter
 #                        print(segment[step][parameter])
 #                        ss['loop_number'] = segment[step][parameter][5]
-                        self.sweep_set[segment[step][parameter]] = ss       ## sweep_set: {'loop1_para1':   'loop1_para2'}
+                        self.sweep_set[sweep_parameter] = ss       ## sweep_set: {'loop1_para1':   'loop1_para2'}
                         sweep_dimension+=1
             segment_number+=1
 
@@ -204,52 +205,144 @@ class Experiment:
 
         return manipulation
 
-    def make_initialize(self, segment_num, name = 'initialize', rep_idx = 1, qubits_name = None,):
+    def _is_in_loop(self,segment_num,step,parameter = ''):
+        
+        is_in_loop = False
+        loop_num = 0
+        
+        
+        for para in self.sweep_set:
+            if segment_num == self.sweep_set[para]['segment_number'] and step == self.sweep_set[para]['step']:
+                if self.sequence_cfg_type[segment_num] == 'manip':
+                    is_in_loop = True
+                    loop_num = para[4]
+                else:
+                    for i in range(self.qubits_number):
+                        P = parameter+'_%d'%(i+1)
+                        if P == self.sweep_set[para]['parameter']:
+                            is_in_loop = True
+                            loop_num = para[4]
+        
+        return is_in_loop, loop_num
+    
+    def make_initialize_segment(self, segment_num, name = 'initialize', rep_idx = 0, qubits_name = None,):
 
         for i in range(len(self.sequence_cfg[segment_num])):
-            step = self.sequence_cfg[segment_num]['step%d'%(i+1)]
-            amplitudes = [step['voltage_%d'%(i+1)] for i in range(self.qubits_number)]
-            initialize_element = self.initialize_element(name = name+'%d%d'%(rep_idx,(i+1)), amplitudes=amplitudes,)
-            self.elts.append(initialize_element)
-            self.sequence.append(name = name+'%d%d'%(rep_idx,(i+1)), wfname = name+'%d%d'%(rep_idx,(i+1)),
-                                 trigger_wait=False, repetitions= int(step['time']/(1e-6)))
+            
+            step = self.sequence_cfg[segment_num]['step%d'%(i+1)]           ## i is step number in one segment
+            
+            is_in_loop, loop_num = self._is_in_loop(segment_num, 'step%d'%(i+1),'voltage')
+            
+            idx_i = rep_idx//10
+            idx_j = rep_idx%10
 
+            if loop_num == '1':
+                idx = idx_i
+                other = idx_j
+            
+            elif loop_num == '2':
+                idx = idx_j
+                other = idx_i
+            
+            else:
+                idx = 0
+                other = 0
+                
+            if is_in_loop or rep_idx == 0:
+                if other == 0:
+                    
+                    print('generate')
+                    
+                    amplitudes = [step['voltage_%d'%(i+1)] for i in range(self.qubits_number)]
+                    
+                    initialize_element = self.initialize_element(name = name+'%d%d'%(idx,(i+1)), amplitudes=amplitudes,)
+                
+                    self.elts.append(initialize_element)
+            
+            if is_in_loop:
+            
+                self.sequence.append(name = name+'%d%d'%(rep_idx,(i+1)), wfname = name+'%d%d'%(idx,(i+1)),
+                                     trigger_wait=False, repetitions= int(step['time']/(1e-6)))
+            else:
+                self.sequence.append(name = name+'%d%d'%(rep_idx,(i+1)), wfname = name+'%d%d'%(0,(i+1)),
+                                     trigger_wait=False, repetitions= int(step['time']/(1e-6)))
+            
         return True
 
-    def make_manipulation(self, segment_num, name = 'manipulation', rep_idx=1, qubits_name = [None, None]):
+    def make_manipulation_segment(self, segment_num, name = 'manipulation', rep_idx=1, qubits_name = [None, None]):
 
 
         for i in range(len(self.sequence_cfg[segment_num])):
-
+            
             step = self.sequence_cfg[segment_num]['step%d'%(i+1)]
-            amplitudes = [step['voltage_%d'%(i+1)] for i in range(self.qubits_number)]
+            
+            is_in_loop, loop_num = self._is_in_loop(segment_num, 'step%d'%(i+1),)
+            
+            print('is_in_loop, loop_num',is_in_loop, loop_num)
+            
+            idx_i = rep_idx//10
+            idx_j = rep_idx%10
 
-            time = step['time']
+            if loop_num == '1':
+                idx = idx_i
+                other = idx_j
+            
+            elif loop_num == '2':
+                idx = idx_j
+                other = idx_i
+            
+            else:
+                idx = 0
+                other = 0
+            
+            if is_in_loop or rep_idx == 0:
+                if other == 0:
+                    amplitudes = [step['voltage_%d'%(i+1)] for i in range(self.qubits_number)]
 
-            waiting_time = step.pop('waiting_time', 0)
+                    time = step['time']
 
-#            duration_time
+#                  waiting_time = step.pop('waiting_time', 0)
 
-            manipulation_element = self.manipulation_element(name = name+'%d%d'%(rep_idx,(i+1)),
-                                                             amplitudes = amplitudes, time = time,
-                                                             waiting_time = waiting_time,)
+                    waiting_time = step['waiting_time']
+            
 
-            self.elts.append(manipulation_element)
+                    manipulation_element = self.manipulation_element(name = name+'%d%d'%(idx,(i+1)),
+                                                                     amplitudes = amplitudes, time = time,
+                                                                     waiting_time = waiting_time,)
 
-            self.sequence.append(name = name+'%d%d'%(rep_idx,(i+1)), wfname = name+'%d%d'%(rep_idx,(i+1)),
-                                 trigger_wait=False, )
+                    self.elts.append(manipulation_element)
 
+            if is_in_loop:
+                self.sequence.append(name = name+'%d%d'%(rep_idx,(i+1)), wfname = name+'%d%d'%(idx,(i+1)),
+                                     trigger_wait=False, )
+            else:
+                self.sequence.append(name = name+'%d%d'%(rep_idx,(i+1)), wfname = name+'%d%d'%(0,(i+1)),
+                                     trigger_wait=False, )
+           
         return True
 
-    def make_readout(self, segment_num, name = 'readout', rep_idx = 1, qubits_name = None):           ## consists of Elzerman, PSB...
+    def make_readout_segment(self, segment_num, name = 'readout', rep_idx = 1, qubits_name = None):           ## consists of Elzerman, PSB...
 
         for i in range(len(self.sequence_cfg[segment_num])):
             step = self.sequence_cfg[segment_num]['step%d'%(i+1)]
-            amplitudes = [step['voltage_%d'%(i+1)] for i in range(self.qubits_number)]
-            readout_element = self.readout_element(name = name+'%d%d'%(rep_idx,(i+1)), amplitudes=amplitudes,)
-            self.elts.append(readout_element)
-            self.sequence.append(name = name+'%d%d'%(rep_idx,(i+1)), wfname = name+'%d%d'%(rep_idx,(i+1)),
-                                 trigger_wait=False, repetitions= int(step['time']/(1e-6)))
+            
+            is_in_loop, loop_num = self._is_in_loop(segment_num, 'step%d'%(i+1),'voltage')
+            
+            idx = rep_idx//10 if loop_num == 1 else rep_idx%10
+            
+            if is_in_loop or rep_idx == 0:
+                amplitudes = [step['voltage_%d'%(i+1)] for i in range(self.qubits_number)]
+            
+                readout_element = self.readout_element(name = name+'%d%d'%(idx,(i+1)), amplitudes=amplitudes,)
+            
+                self.elts.append(readout_element)
+            
+                self.sequence.append(name = name+'%d%d'%(rep_idx,(i+1)), wfname = name+'%d%d'%(idx,(i+1)),
+                                     trigger_wait=False, repetitions= int(step['time']/(1e-6)))
+
+            else:
+                self.sequence.append(name = name+'%d%d'%(rep_idx,(i+1)), wfname = name+'%d%d'%(0,(i+1)),
+                                     trigger_wait=False, repetitions= int(step['time']/(1e-6)))
 
         return True
 
@@ -289,26 +382,39 @@ class Experiment:
 
         return True
 
-    def generate_unit_sequence(self, rep_idx = 0):
+    def generate_unit_sequence(self, rep_idx = 0, idx_i = 0, idx_j = 0):          # rep_idx = 10*i+j
 
         i = 0
 
         for segment_type in self.sequence_cfg_type:
 
             if segment_type == 'init':
-                self.make_initialize(segment_num = i, rep_idx = rep_idx)
+                self.make_initialize_segment(segment_num = i, rep_idx = rep_idx)
 
             elif segment_type == 'manip':
-                self.make_manipulation(segment_num = i, rep_idx = rep_idx)
+                self.make_manipulation_segment(segment_num = i, rep_idx = rep_idx)
 
             elif segment_type == 'read':
-                self.make_readout(segment_num = i, rep_idx = rep_idx)
+                self.make_readout_segment(segment_num = i, rep_idx = rep_idx)
 
             i+=1
 
         return True
 
-    def _update_loop(self, loop = 1, idx = 1):
+    """
+    this function is to be used......
+    """
+    def _loop_information(self, loop = 1):
+        
+        para_num = len(self.sweep_loop['loop%d'%loop])
+        
+        segment_number = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['segment_number'] for k in range(para_num)]
+        step = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['step'] for k in range(para_num)]
+        parameter = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['parameter'] for k in range(para_num)]
+
+        return segment_number, step, parameter
+
+    def _update_cfg(self, loop = 1, idx = 1):
 
         para_num = len(self.sweep_loop['loop%d'%loop])      ## number of parameter in one loop e.g. loop1: para1, para2,,,,para_num = 2
         i = idx
@@ -316,17 +422,20 @@ class Experiment:
         segment_number = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['segment_number'] for k in range(para_num)]
         step = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['step'] for k in range(para_num)]
         parameter = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['parameter'] for k in range(para_num)]
+#        print('parameter:' , parameter)
 
-        for k in range(len(segment_number)):
+        for k in range(para_num):
             self.sequence_cfg[segment_number[k]][step[k]][parameter[k]] = self.sweep_loop['loop%d'%loop]['para%d'%(k+1)][i]
 
         return True
 
     def _1D_sweep(self,):
+        
+#        segment_number, step, parameter = self._loop_information(loop = 1)
 
         for i in range(len(self.sweep_loop1['para1'])):
 
-            self._update_loop(loop = 1, idx = i)
+            self._update_cfg(loop = 1, idx = i)
 
             self.generate_unit_sequence(rep_idx = i)
 
@@ -335,12 +444,12 @@ class Experiment:
     def _2D_sweep(self,):
 
         for i in range(len(self.sweep_loop1['para1'])):
-            self._update_loop(loop = 1, idx = i)
+            self._update_cfg(loop = 1, idx = i)
 
             for j in range(len(self.sweep_loop2['para1'])):
-                self._update_loop(loop = 2, idx = j)
+                self._update_cfg(loop = 2, idx = j)
 
-                self.generate_unit_sequence(rep_idx = 10*i+j)
+                self.generate_unit_sequence(rep_idx = 10*i+j, idx_i = i, idx_j = j)
 
         return True
 
