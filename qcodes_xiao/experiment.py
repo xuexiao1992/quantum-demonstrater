@@ -265,15 +265,29 @@ class Experiment:
 
 
 
-    def update_element(self, element):
-        
+    def add_new_element_to_awg_list(self, element):
+
+        name = element.name
+
         tvals, wfs = element.normalized_waveforms()
+
         for i in range(1,5):
-            self.awg.send_waveform_to_list(w = wfs['ch%d'%i], m1 = wfs['ch%d_marker1'%i], m2 = wfs['ch%d_marker2'%i], wfmname = 'ini11_ch3')
-        
+            self.awg.send_waveform_to_list(w = wfs['ch%d'%i], m1 = wfs['ch%d_marker1'%i],
+                                            m2 = wfs['ch%d_marker2'%i], wfmname = name)
+
         return True
 
+    def add_new_waveform_to_sequence(self, wfname, element_no):
 
+        for i in range(1,5):
+            self.awg.set_sqel_waveform(waveform_name = wfname+'_ch%d'%i, channel = i,
+                                        element_no = element_no)
+
+        return True
+
+    def replace_manip_in_sequence(self,):
+
+        return True
 
     def generate_unit_sequence(self, rep_idx = 0):
 
@@ -298,7 +312,7 @@ class Experiment:
 
         para_num = len(self.sweep_loop['loop%d'%loop])      ## number of parameter in one loop e.g. loop1: para1, para2,,,,para_num = 2
         i = idx
-        
+
         segment_number = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['segment_number'] for k in range(para_num)]
         step = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['step'] for k in range(para_num)]
         parameter = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['parameter'] for k in range(para_num)]
