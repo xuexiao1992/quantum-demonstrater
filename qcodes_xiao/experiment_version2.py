@@ -62,45 +62,10 @@ class Experiment:
 
         self.manip_elem = None
         self.sequence_cfg = []      ## [segment1, segment2, segment3]
-#        for element in self.sequence_cfg.keys():
-#        sweep_dimension = 0
-#        segment_number = 0
 
 
-#        for segment in self.sequence_cfg:
-#            for step in segment.keys():
-#                for parameter in segment[step].keys():
-#                    if type(segment[step][parameter]) == str:
-#                        ss = {}
-#                        ss['segment_number'] = segment_number
-##                        ss['segment'] = segment
-#                        ss['step'] = step
-#                        ss['parameter'] = parameter
-#                        print(segment[step][parameter])
-##                        ss['loop_number'] = segment[step][parameter][5]
-#                        self.sweep_set[segment[step][parameter]] = ss       ## sweep_set: {'loop1_para1':   'loop1_para2'}
-#                        sweep_dimension+=1
-#            segment_number+=1
 
 
-        """
-        i = 0
-        for step in self.init_cfg.keys():
-            for parameter in self.init_cfg[step].keys():
-                if type(self.init_cfg[step][parameter]) == list:
-                    self.sweep_set[i] = self.init_cfg[step][parameter]
-                    i+=1
-        for step in self.manip_cfg.keys():
-            for parameter in self.manip_cfg[step].keys():
-                if type(self.manip_cfg[step][parameter]) == list:
-                    self.sweep_set[i] = self.manip_cfg[step][parameter]
-                    i+=1
-        for step in self.read_cfg.keys():
-            for parameter in self.read_cfg[step].keys():
-                if type(self.read_cfg[step][parameter]) == list:
-                    self.sweep_set[i] = self.read_cfg[step][parameter]
-                    i+=1
-        """
 
         self.initialze_segment = []
 
@@ -109,9 +74,6 @@ class Experiment:
         self.element = {}           ##  will be used in    pulsar.program_awg(myseq, self.elements)
          ##  a dic with {'init': ele, 'manip_1': ele, 'manip_2': ele, 'manip_3': ele, 'readout': ele,......}
         self.elts = []
-#        self.initialize_element = None
-#        self.readout_element = None
-#        self.manipulation_element = {}
 
         self.pulsar = pulsar
 
@@ -210,9 +172,10 @@ class Experiment:
 
 
     def make_initialize_segment(self,):
-        
-        
-        
+
+        for i in range(len(self.sequence_cfg[segment_num])):
+            step = self.sequence_cfg[segment_num]['step%d'%(i+1)]
+
         return True
 
 

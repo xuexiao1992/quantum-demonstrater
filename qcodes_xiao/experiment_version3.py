@@ -62,45 +62,7 @@ class Experiment:
 
         self.manip_elem = None
         self.sequence_cfg = []      ## [segment1, segment2, segment3]
-#        for element in self.sequence_cfg.keys():
-#        sweep_dimension = 0
-#        segment_number = 0
 
-
-#        for segment in self.sequence_cfg:
-#            for step in segment.keys():
-#                for parameter in segment[step].keys():
-#                    if type(segment[step][parameter]) == str:
-#                        ss = {}
-#                        ss['segment_number'] = segment_number
-##                        ss['segment'] = segment
-#                        ss['step'] = step
-#                        ss['parameter'] = parameter
-#                        print(segment[step][parameter])
-##                        ss['loop_number'] = segment[step][parameter][5]
-#                        self.sweep_set[segment[step][parameter]] = ss       ## sweep_set: {'loop1_para1':   'loop1_para2'}
-#                        sweep_dimension+=1
-#            segment_number+=1
-
-
-        """
-        i = 0
-        for step in self.init_cfg.keys():
-            for parameter in self.init_cfg[step].keys():
-                if type(self.init_cfg[step][parameter]) == list:
-                    self.sweep_set[i] = self.init_cfg[step][parameter]
-                    i+=1
-        for step in self.manip_cfg.keys():
-            for parameter in self.manip_cfg[step].keys():
-                if type(self.manip_cfg[step][parameter]) == list:
-                    self.sweep_set[i] = self.manip_cfg[step][parameter]
-                    i+=1
-        for step in self.read_cfg.keys():
-            for parameter in self.read_cfg[step].keys():
-                if type(self.read_cfg[step][parameter]) == list:
-                    self.sweep_set[i] = self.read_cfg[step][parameter]
-                    i+=1
-        """
 
         self.initialze_segment = []
 
@@ -109,9 +71,6 @@ class Experiment:
         self.element = {}           ##  will be used in    pulsar.program_awg(myseq, self.elements)
          ##  a dic with {'init': ele, 'manip_1': ele, 'manip_2': ele, 'manip_3': ele, 'readout': ele,......}
         self.elts = []
-#        self.initialize_element = None
-#        self.readout_element = None
-#        self.manipulation_element = {}
 
         self.pulsar = pulsar
 
@@ -218,7 +177,7 @@ class Experiment:
                     loop_num = para[4]
                 else:
                     for i in range(self.qubits_number):
-                        P = parameter+'_%d'%(i+1)
+                        P = parameter
                         if P == self.sweep_set[para]['parameter']:
                             is_in_loop = True
                             loop_num = para[4]
@@ -230,8 +189,12 @@ class Experiment:
         for i in range(len(self.sequence_cfg[segment_num])):
 
             step = self.sequence_cfg[segment_num]['step%d'%(i+1)]           ## i is step number in one segment
-
-            is_in_loop, loop_num = self._is_in_loop(segment_num, 'step%d'%(i+1),'voltage')
+            is_in_loop = []
+            loop_num = []
+            for k in range(self.qubits_number):
+                m, n = self._is_in_loop(segment_num, 'step%d'%(i+1),'voltage_%d'%(k+1))
+                is_in_loop.append(m)
+                loop_num.append(n)
 
             idx_i = rep_idx//10
             idx_j = rep_idx%10
@@ -243,20 +206,24 @@ class Experiment:
                 idx_i = rep_idx
                 idx_j = 0
 
-            if loop_num == '1':
+            if '1' in loop_num and '2' in loop_num:
                 idx = idx_i
-                other = idx_j
+                outer = idx_j
 
-            elif loop_num == '2':
-                idx = idx_j
-                other = idx_i
+            elif '1' in loop_num:
+                idx = idx_i
+                outer = idx_j
+
+            elif '2' in loop_num:
+                idx = idx_i
+                outer = idx_j
 
             else:
                 idx = 0
-                other = 0
+                outer = 0
 
             if is_in_loop or rep_idx == 0:
-                if other == 0:
+                if outer == 0:
 
                     print('generate')
 
@@ -371,9 +338,7 @@ class Experiment:
 
         return True
 
-    def make_new_element(self,):
 
-        return True
 
     def add_new_element_to_awg_list(self, element):
 
@@ -498,9 +463,6 @@ class Experiment:
 
         return True
 
-    def generate_seq_new(self,):
-
-        return True
 
     def generate_sequence(self,):
 
