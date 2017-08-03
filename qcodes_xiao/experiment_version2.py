@@ -183,6 +183,65 @@ class Experiment:
 
 
 
+    def make_manipulation_segment_old(self, segment_num, name = 'manipulation', rep_idx=0, qubits_name = [None, None]):
+
+
+        for i in range(len(self.sequence_cfg[segment_num])):
+
+            step = self.sequence_cfg[segment_num]['step%d'%(i+1)]
+
+            is_in_loop, loop_num = self._is_in_loop(segment_num, 'step%d'%(i+1),)
+
+            print('is_in_loop, loop_num',is_in_loop, loop_num)
+
+            if self.sweep_type == '2D':
+                idx_i = rep_idx//10
+                idx_j = rep_idx%10
+            else:
+                idx_i = rep_idx
+                idx_j = 0
+
+            if loop_num == '1':
+                idx = idx_i
+                other = idx_j
+
+            elif loop_num == '2':
+                idx = idx_j
+                other = idx_i
+
+            else:
+                idx = 0
+                other = 0
+
+            print('idx:', idx)
+            print('other:', other)
+            print('rep_idx:',rep_idx)
+
+            if is_in_loop or rep_idx == 0:
+                if other == 0:
+                    amplitudes = [step['voltage_%d'%(i+1)] for i in range(self.qubits_number)]
+
+                    time = step['time']
+
+#                    waiting_time = step.pop('waiting_time', 0)
+
+                    waiting_time = step['waiting_time']
+
+
+                    manipulation_element = self.manipulation_element(name = name+'%d%d'%(idx,(i+1)),
+                                                                     amplitudes = amplitudes, time = time,
+                                                                     waiting_time = waiting_time,)
+
+                    self.elts.append(manipulation_element)
+
+            if is_in_loop:
+                self.sequence.append(name = name+'%d%d'%(rep_idx,(i+1)), wfname = name+'%d%d'%(idx,(i+1)),
+                                     trigger_wait=False, )
+            else:
+                self.sequence.append(name = name+'%d%d'%(rep_idx,(i+1)), wfname = name+'%d%d'%(0,(i+1)),
+                                     trigger_wait=False, )
+
+        return True
 
 
 

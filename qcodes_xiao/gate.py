@@ -45,7 +45,6 @@ class Single_Qubit_Gate(Gate):
         self.channel_FM = qubit.microwave_gate['channel_FM']
         self.channel_VP = qubit.plunger_gate['channel_VP']        
         
-#        self.degree = degree
         self.Pi_pulse_length = qubit.Pi_pulse_length
         self.halfPi_pulse_length = qubit.halfPi_pulse_length
         
@@ -63,12 +62,6 @@ class Single_Qubit_Gate(Gate):
 #                }      ## this will be the returned value and used in the manipulation object
         
         self.pulses = [None, None, None, None]            ## [microwave1_I, microwave1_Q, voltage, microwave2_I, microwave2_Q]
-        
-#        if (self.axis**2).sum != 1:
-#            self.axis =self.axis/np.sqrt((self.axis**2).sum)            ## normalize the axis
-        
-        
-       
         
     
     def XY_rotation(self, degree = 90, length = None, waiting_time = 0, refgate = None, refpoint = 'end'):
