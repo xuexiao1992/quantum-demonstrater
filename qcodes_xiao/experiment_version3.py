@@ -301,7 +301,7 @@ class Experiment:
         return segment, repetition
 
 
-    def make_initialize_segment(self, segment_num, name = 'initialize', rep_idx = 0, qubits_name = None,):
+    def make_initialize_segment_list(self, segment_num, name = 'initialize', rep_idx = 0, qubits_name = None,):
 
         for s in range(len(self.sequence_cfg[segment_num])):
 
@@ -309,7 +309,7 @@ class Experiment:
             
         return True
 
-    def make_readout_segment(self, segment_num, name = 'readout', rep_idx = 0, qubits_name = None,):
+    def make_readout_segment_list(self, segment_num, name = 'readout', rep_idx = 0, qubits_name = None,):
 
         for s in range(len(self.sequence_cfg[segment_num])):
 
@@ -317,13 +317,126 @@ class Experiment:
             
         return True
     
-    def make_manipulation_segment(self, segment_num, name = 'manipulation', rep_idx = 0, qubits_name = None,):
+    def make_manipulation_segment_list(self, segment_num, name = 'manipulation', rep_idx = 0, qubits_name = None,):
 
         for s in range(len(self.sequence_cfg[segment_num])):
 
            self.manipulation_segment['step%d'%s] = self.make_segment_step(segment_num = segment_num, step = s, name = name)[0]
             
         return True
+    
+    def make_all_segment_list(self, rep_idx = 0):
+        
+        i = 0
+
+        for segment_type in self.sequence_cfg_type:
+
+            if segment_type == 'init':
+                self.make_initialize_segment_list(segment_num = i, rep_idx = rep_idx)
+
+            elif segment_type == 'manip':
+                self.make_manipulation_segment_list(segment_num = i, rep_idx = rep_idx)
+
+            elif segment_type == 'read':
+                self.make_readout_segment_list(segment_num = i, rep_idx = rep_idx)
+
+            i+=1
+
+        return True
+    
+    
+    """
+    this function below organizes segments. e.g. self.initialize_segment = {'step1': element1, 'step2': 1D/2D list, 'step3': element3...}
+    """
+    
+    def add_segment_into_sequence_and_elts(self, segment, repetition, rep_idx = 0):         ## segment = self.initialize_segment
+        
+        j = rep_idx//10
+        
+        i = rep_idx%10
+        
+        for step in segment:
+            
+            if type(segment[step]) is not list:
+                element = segment[step]
+                wfname = element.name
+                name = wfname 
+                repe = self.repetition[step] 
+            else:
+                element = segment[step][j][i]
+                wfname=element.name
+                name = wfname + '_%d_%d'%(j,i)
+                repe = repetition[step][j][i]
+            
+            self.elts.append(element)
+            self.sequence.append(name = name, wfname = wfname, trigger_wait = False, repetitions = repe)
+        
+        return True
+    
+    def update_segment_into_sequence_and_elts(self, segment, repetition, rep_idx = 0):         ## segment = self.initialize_segment
+        
+        j = rep_idx//10
+        
+        i = rep_idx%10
+        
+        if segment == self.initialize_segment:
+            former_element = 0
+        elif segment == self.manipulation_segment:
+            former_element =  len(self.initialize_segment)
+        elif segment == self.readout_segment:
+            former_element =  len(self.initialize_segment)+len(self.manipulation_segment)
+        
+        
+        for step in segment:                                ## step = 'step1'... is a string
+            
+            if type(segment[step]) is list:
+                element = segment[step][j][i]
+                wfname=element.name
+                name = wfname + '_%d_%d'%(j,i)
+                repe = repetition[step][j][i]
+            
+            self.add_new_element_to_awg_list(element = element)
+            self.add_new_waveform_to_sequence(wfname = wfname, element_no = former_element+int(step[-1]), repetitions = repe)
+            
+#            self.sequence.append(name = name, wfname = wfname, trigger_wait = False, repetitions = repe)
+#            self.elts.append(element)
+        
+        return True
+    
+    def generate_unit_sequence(self, rep_idx = 0, idx_i = 0, idx_j = 0):          # rep_idx = 10*i+j
+        
+        i = 0
+
+        for segment_type in self.sequence_cfg_type:
+
+            if segment_type == 'init':
+                
+                segment = self.initialize_segment
+                
+                repetition = self.initialze_repetition
+                
+                self.add_segment_into_sequence_and_elts(segment = segment, repetition = repetition)
+                        
+            elif segment_type == 'manip':
+                
+                segment = self.manipulation_segment
+                
+                repetition = self.manipulation_repetition
+                
+                self.add_segment_into_sequence_and_elts(segment = segment, repetition = repetition)
+                
+            elif segment_type == 'read':
+                
+                segment = self.readout_segment
+                
+                repetition = self.readout_repetition
+                
+                self.add_segment_into_sequence_and_elts(segment = segment, repetition = repetition)
+                
+            i+=1
+
+        return True
+ 
     
     
     def make_1D_sweep_sequence(self, idx_j = 0):
@@ -365,6 +478,18 @@ class Experiment:
         for i in range(self.dimension_1):
             for segment_type in self.sequence_cfg_type:
                 if segment_type is 'init':
+                    for step in self.initialize_segment:
+                        
+                        element = self.initialize_segment[step] if '1' else self.initialize_segment[step][j][i]
+                        
+                        wfname = element.name
+                        
+                        name = wfname if '1' else wfname + '_%d_%d'%(j,i)
+                        
+                        repetitions = self.initialzie_repetition[step] if '1' else self.initialzie_repetition[step][j][i]
+                        
+                        self.sequence.append(name = name, wfname = wfname, trigger_wait = False, repetitions = repetitions)
+                        self.elts.append(element)
                     
         
         return
@@ -380,7 +505,9 @@ class Experiment:
         
         return True
     
-    def run_2D_sweep(self,)
+    def run_2D_sweep(self,):
+        
+        return True
     
     
     
@@ -417,19 +544,21 @@ class Experiment:
 
         return True
 
-    def add_new_waveform_to_sequence(self, wfname, element_no):
+    def add_new_waveform_to_sequence(self, wfname, element_no, repetitions):
 
         for i in range(1,5):
             self.awg.set_sqel_waveform(waveform_name = wfname+'_ch%d'%i, channel = i,
                                         element_no = element_no)
-
+        
+        self.awg.set_sqel_loopcnt(loopcount = repetitions, element_no = element_no)
+        
         return True
 
     def replace_manip_in_sequence(self,):
 
         return True
 
-    def generate_unit_sequence(self, rep_idx = 0, idx_i = 0, idx_j = 0):          # rep_idx = 10*i+j
+    def generate_unit_sequence_old(self, rep_idx = 0, idx_i = 0, idx_j = 0):          # rep_idx = 10*i+j
 
         i = 0
 

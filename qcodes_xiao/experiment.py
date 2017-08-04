@@ -387,11 +387,13 @@ class Experiment:
 
         return True
 
-    def add_new_waveform_to_sequence(self, wfname, element_no):
+    def add_new_waveform_to_sequence(self, wfname, element_no, repetitions):
 
         for i in range(1,5):
             self.awg.set_sqel_waveform(waveform_name = wfname+'_ch%d'%i, channel = i,
                                         element_no = element_no)
+        
+        self.awg.set_sqel_loopcnt(loopcount = repetitions, element_no = element_no)
 
         return True
 
