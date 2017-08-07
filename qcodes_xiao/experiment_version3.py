@@ -82,7 +82,7 @@ class Experiment:
                 'read': self.readout_segment,
                 }
         
-        self.initialzie_repetition = {
+        self.initialize_repetition = {
                 'step1': 1,
                 'step2': 1,
                 'step3': 1,
@@ -95,9 +95,9 @@ class Experiment:
                 }
 
         self.repetition = {
-                'init': self.initialize_repetitions,
+                'init': self.initialize_repetition,
                 'manip': None,
-                'read': self.readout_repetitions,
+                'read': self.readout_repetition,
                 }
         
         self.element = {}           ##  will be used in    pulsar.program_awg(myseq, self.elements)
@@ -115,6 +115,13 @@ class Experiment:
 
 
     def set_sweep(self,):
+        
+#        self.repetition = {
+#                'init': self.initialize_repetition,
+#                'manip': None,
+#                'read': self.readout_repetition,
+#                }
+        
         sweep_dimension = 0
         segment_number = 0
 
@@ -133,7 +140,6 @@ class Experiment:
                         sweep_dimension+=1
             segment_number+=1
 
-
         if len(self.sweep_loop1) != 0:
             self.dimension_1 = len(self.sweep_loop1['para1'])
             if len(self.sweep_loop2) != 0:
@@ -146,6 +152,8 @@ class Experiment:
             'loop1': self.sweep_loop1,
             'loop2': self.sweep_loop2,
             }
+        
+        self.make_all_segment_list()
 
         return True
 
@@ -183,6 +191,7 @@ class Experiment:
         duration_time = kw.pop('duration_time', None)
         frequency = kw.pop('frequency', None)
         print(name)
+#        manip = Ramsey()
         manipulation = manip(name = name, qubits = self.qubits, pulsar = self.pulsar, waiting_time = waiting_time, duration_time = duration_time, frequency = frequency)
 
         manipulation.make_circuit()
@@ -197,12 +206,13 @@ class Experiment:
 
     def make_element(self, name, segment, time = 0, amplitudes = [], **kw):
         
-        if segment == 'initialize':
-            element = self._initialize_element(name, amplitudes = [],)
-        elif segment == 'manipulation':
-            element = self._manipulation_element(name, time = 0, amplitudes = [],)
-        elif segment == 'readout':
-            element = self._readout_element(name, amplitudes = [],)
+        if segment == 'init':
+            element = self._initialize_element(name, amplitudes = amplitudes,)
+        elif segment == 'manip':
+            waiting_time = kw.pop('waiting_time',0)
+            element = self._manipulation_element(name, time = 0, amplitudes = amplitudes, waiting_time = waiting_time)
+        elif segment == 'read':
+            element = self._readout_element(name, amplitudes = amplitudes,)
         else:
             element = None
         
@@ -228,31 +238,33 @@ class Experiment:
 
         return is_in_loop, loop_num
     
-    def make_segment_step(self, segment_num, step_num, name):
+    def make_segment_step(self, segment_num, step_num, name):           ## each step consist 1 element is no sweep, 1D/2D list if is 1D/2D sweep
         
         s = step_num
         seg = self.sequence_cfg_type[segment_num]                       ## seg is string like 'init', 'manip', 'read'
         
-        step = self.sequence_cfg[segment_num]['step%d'%(s+1)]           ## s is step number in one segment
+        step = self.sequence_cfg[segment_num]['step%d'%s]           ## s is step number in one segment
         is_in_loop = []
         loop_num = []
         for k in range(self.qubits_number):
-            m, n = self._is_in_loop(segment_num, 'step%d'%(s+1),'voltage_%d'%(k+1))
+            m, n = self._is_in_loop(segment_num, 'step%d'%s,'voltage_%d'%(k+1))
             is_in_loop.append(m)
             loop_num.append(n)
-            
-        m, n = self._is_in_loop(segment_num, 'step%d'%(s+1),'time')
-        is_in_loop.append(m)
-        loop_num.append(n)
-            
-        dimension_1 = len(self.sweep_loop1['para1']) if '1' in loop_num else 1
-        dimension_2 = len(self.sweep_loop2['para1']) if '2' in loop_num else 1
         
-        if not is_in_loop:
+        for parameter in ['time', 'waiting_time',]:
+#            if parameter:
+#                continue
+            m, n = self._is_in_loop(segment_num, 'step%d'%s,parameter)
+            is_in_loop.append(m)
+            loop_num.append(n)
+        
+        
+        
+        if True not in is_in_loop:
                 
                 amplitudes = [step['voltage_%d'%(q+1)] for q in range(self.qubits_number)]
 
-                element = self.make_element(name = name+'step%d'%(s+1), segment = seg, amplitudes=amplitudes,)
+                element = self.make_element(name = name+'step%d'%s, segment = seg, amplitudes=amplitudes,)
                 
 #                self.segment[seg]['step%d'%(s+1)] = element
                 
@@ -262,7 +274,7 @@ class Experiment:
                 
                 repetition = int(step['time']/(1e-6))
                 
-        elif is_in_loop:
+        elif True in is_in_loop:
                 
 #            self.segment[seg]['step%d'%(s+1)] = []
             
@@ -270,7 +282,7 @@ class Experiment:
             
             repetition = []
             
-            for j in range(dimension_2):
+            for j in range(self.dimension_2):
                     
 #                self.segment[seg]['step%d'%(s+1)].append([])
                     
@@ -280,13 +292,13 @@ class Experiment:
                 
                 self._update_cfg(loop = 2, idx = j)
                     
-                for i in range(dimension_1):
+                for i in range(self.dimension_1):
                     
                     self._update_cfg(loop = 1, idx = i)
                         
                     amplitudes = [step['voltage_%d'%(q+1)] for q in range(self.qubits_number)]
                         
-                    element = self.make_element(name = name+'step%d_%d%d'%((s+1),j,i), segment = seg, amplitudes=amplitudes,)
+                    element = self.make_element(name = name+'step%d_%d%d'%(s,j,i), segment = seg, amplitudes=amplitudes,)
                 
 #                    self.initialize_segment['step%d'%(s+1)][j][i] = initialize_element
 #                    self.segment[seg]['step%d'%(s+1)][j].append(element)
@@ -301,44 +313,44 @@ class Experiment:
         return segment, repetition
 
 
-    def make_initialize_segment_list(self, segment_num, name = 'initialize', rep_idx = 0, qubits_name = None,):
+    def make_initialize_segment_list(self, segment_num, name = 'initialize', qubits_name = None,):
 
         for s in range(len(self.sequence_cfg[segment_num])):
 
-           self.initialize_segment['step%d'%s], self.initialize_repetition['step%d'%s] = self.make_segment_step(segment_num = segment_num, step = s, name = name)
+           self.initialize_segment['step%d'%(s+1)], self.initialize_repetition['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)
             
         return True
 
-    def make_readout_segment_list(self, segment_num, name = 'readout', rep_idx = 0, qubits_name = None,):
+    def make_readout_segment_list(self, segment_num, name = 'readout', qubits_name = None,):
 
         for s in range(len(self.sequence_cfg[segment_num])):
 
-           self.readout_segment['step%d'%s], self.readout_repetition['step%d'%s] = self.make_segment_step(segment_num = segment_num, step = s, name = name)
-            
-        return True
-    
-    def make_manipulation_segment_list(self, segment_num, name = 'manipulation', rep_idx = 0, qubits_name = None,):
-
-        for s in range(len(self.sequence_cfg[segment_num])):
-
-           self.manipulation_segment['step%d'%s] = self.make_segment_step(segment_num = segment_num, step = s, name = name)[0]
+           self.readout_segment['step%d'%(s+1)], self.readout_repetition['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)
             
         return True
     
-    def make_all_segment_list(self, rep_idx = 0):
+    def make_manipulation_segment_list(self, segment_num, name = 'manipulation', qubits_name = None,):
+
+        for s in range(len(self.sequence_cfg[segment_num])):
+
+           self.manipulation_segment['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)[0]
+            
+        return True
+    
+    def make_all_segment_list(self,):
         
         i = 0
 
         for segment_type in self.sequence_cfg_type:
 
             if segment_type == 'init':
-                self.make_initialize_segment_list(segment_num = i, rep_idx = rep_idx)
+                self.make_initialize_segment_list(segment_num = i,)
 
             elif segment_type == 'manip':
-                self.make_manipulation_segment_list(segment_num = i, rep_idx = rep_idx)
+                self.make_manipulation_segment_list(segment_num = i,)
 
             elif segment_type == 'read':
-                self.make_readout_segment_list(segment_num = i, rep_idx = rep_idx)
+                self.make_readout_segment_list(segment_num = i,)
 
             i+=1
 
@@ -349,7 +361,7 @@ class Experiment:
     this function below organizes segments. e.g. self.initialize_segment = {'step1': element1, 'step2': 1D/2D list, 'step3': element3...}
     """
     
-    def add_segment_into_sequence_and_elts(self, segment, repetition, rep_idx = 0):         ## segment = self.initialize_segment
+    def first_segment_into_sequence_and_elts(self, segment, repetition, rep_idx = 0):         ## segment = self.initialize_segment
         
         j = rep_idx//10
         
@@ -357,11 +369,11 @@ class Experiment:
         
         for step in segment:
             
-            if type(segment[step]) is not list:
+            if type(segment[step]) is not list:             ## smarter way for this
                 element = segment[step]
                 wfname = element.name
                 name = wfname 
-                repe = self.repetition[step] 
+                repe = self.repetition[step]
             else:
                 element = segment[step][j][i]
                 wfname=element.name
@@ -384,7 +396,7 @@ class Experiment:
         elif segment == self.manipulation_segment:
             former_element =  len(self.initialize_segment)
         elif segment == self.readout_segment:
-            former_element =  len(self.initialize_segment)+len(self.manipulation_segment)
+            former_element =  len(self.initialize_segment) + len(self.manipulation_segment)
         
         
         for step in segment:                                ## step = 'step1'... is a string
@@ -398,32 +410,38 @@ class Experiment:
             self.add_new_element_to_awg_list(element = element)
             self.add_new_waveform_to_sequence(wfname = wfname, element_no = former_element+int(step[-1]), repetitions = repe)
             
-#            self.sequence.append(name = name, wfname = wfname, trigger_wait = False, repetitions = repe)
-#            self.elts.append(element)
+        return True
+    
+    
+    def add_segment(self, segment, repetition, rep_idx = 0):
+        
+        j = rep_idx//10
+        
+        if j == 0:
+            self.first_segment_into_sequence_and_elts(segment, repetition, rep_idx = rep_idx)
+        else:
+            self.update_segment_into_sequence_and_elts(segment, repetition, rep_idx = rep_idx)
         
         return True
     
+    
     def generate_unit_sequence(self, rep_idx = 0, idx_i = 0, idx_j = 0):          # rep_idx = 10*i+j
         
-        i = 0
-
+        i = 0           ## not used in this version
+        
         for segment_type in self.sequence_cfg_type:
 
             if segment_type == 'init':
                 
                 segment = self.initialize_segment
                 
-                repetition = self.initialze_repetition
+                repetition = self.initialize_repetition
                 
-                self.add_segment_into_sequence_and_elts(segment = segment, repetition = repetition)
-                        
             elif segment_type == 'manip':
                 
                 segment = self.manipulation_segment
                 
                 repetition = self.manipulation_repetition
-                
-                self.add_segment_into_sequence_and_elts(segment = segment, repetition = repetition)
                 
             elif segment_type == 'read':
                 
@@ -431,82 +449,40 @@ class Experiment:
                 
                 repetition = self.readout_repetition
                 
-                self.add_segment_into_sequence_and_elts(segment = segment, repetition = repetition)
                 
+            self.add_segment(segment = segment, repetition = repetition, rep_idx = rep_idx)
             i+=1
 
         return True
  
     
-    
-    def make_1D_sweep_sequence(self, idx_j = 0):
-        
-        j = idx_j
+    def generate_1D_sequence(self, rep_idx = 0, idx_i = 0, idx_j = 0):
         
         for i in range(self.dimension_1):
-            
-            for segment_type in self.sequence_cfg_type:
-            
-                if segment_type is 'init':
-                
-                    for step in self.initialize_segment:
-                        
-                        element = self.initialize_segment[step] if '1' else self.initialize_segment[step][j][i]
-                        
-                        wfname = element.name
-                        
-                        name = wfname if '1' else wfname + '_%d_%d'%(j,i)
-                        
-                        repetitions = self.initialzie_repetition[step] if '1' else self.initialzie_repetition[step][j][i]
-                        
-                        self.sequence.append(name = name, wfname = wfname, trigger_wait = False, repetitions = repetitions)
-                        self.elts.append(element)
-                
-                
-#                elif segment_type is 'read':
-#                    self.sequence.append(name = , wfname = , trigger_wait = False, repetitions = )
-#                    self.elts.append()
-#                elif segment_type is 'manip':
-#                    self.sequence.append(name = , wfname = , trigger_wait = False, repetitions = )
-#                    self.elts.append()
-#        
+            self.generate_unit_sequence()
+
+        if idx_j == 0:
+            self.load_sequence()
         
-        return self.sequence, self.elts
+        return True
     
-    def update_1D_sweep_sequence(self,):
-        
-        for i in range(self.dimension_1):
-            for segment_type in self.sequence_cfg_type:
-                if segment_type is 'init':
-                    for step in self.initialize_segment:
-                        
-                        element = self.initialize_segment[step] if '1' else self.initialize_segment[step][j][i]
-                        
-                        wfname = element.name
-                        
-                        name = wfname if '1' else wfname + '_%d_%d'%(j,i)
-                        
-                        repetitions = self.initialzie_repetition[step] if '1' else self.initialzie_repetition[step][j][i]
-                        
-                        self.sequence.append(name = name, wfname = wfname, trigger_wait = False, repetitions = repetitions)
-                        self.elts.append(element)
-                    
-        
-        return
-    
+
     
     
     
     def run_1D_sweep(self,):
         
-        self.make_1D_sweep_sequence()
-        self.load_sequence()
-        self.run_experiment
+        self.generate_1D_sweep_sequence()
+        
+        self.run_experiment()
         
         return True
     
     def run_2D_sweep(self,):
         
+        for j in range(self.dimension_2):
+            self.run_1D_sweep()
+        
         return True
     
     
@@ -521,16 +497,7 @@ class Experiment:
     
     
     
-    
-    def generate_sweep_matrix(self,):
-
-        for i in range(len(self.sweep_loop1['para1'])):
-
-            for j in range(len(self.sweep_loop2['para1'])):
-
-                0
-
-        return True
+  
 
     def add_new_element_to_awg_list(self, element):
 
@@ -554,28 +521,7 @@ class Experiment:
         
         return True
 
-    def replace_manip_in_sequence(self,):
 
-        return True
-
-    def generate_unit_sequence_old(self, rep_idx = 0, idx_i = 0, idx_j = 0):          # rep_idx = 10*i+j
-
-        i = 0
-
-        for segment_type in self.sequence_cfg_type:
-
-            if segment_type == 'init':
-                self.make_initialize_segment(segment_num = i, rep_idx = rep_idx)
-
-            elif segment_type == 'manip':
-                self.make_manipulation_segment(segment_num = i, rep_idx = rep_idx)
-
-            elif segment_type == 'read':
-                self.make_readout_segment(segment_num = i, rep_idx = rep_idx)
-
-            i+=1
-
-        return True
 
     """
     this function is to be used......
@@ -607,74 +553,9 @@ class Experiment:
 
         return True
 
-    def make_elements(self,):
-        
-        i = 0
-
-        for segment_type in self.sequence_cfg_type:
-
-            if segment_type == 'init':
-                self.make_initialize_segment(segment_num = i,)
-
-            elif segment_type == 'manip':
-                self.make_manipulation_segment(segment_num = i,)
-
-            elif segment_type == 'read':
-                self.make_readout_segment(segment_num = i,)
-
-            i+=1
-        
-        return True
 
 
-
-    def generate_sequence(self,):
-
-        if self.sweep_type == '1D':
-            self._1D_sweep()
-        elif self.sweep_type == '2D':
-            self._2D_sweep()
-
-        return True
-
-
-    def _generate_sequence(self,):
-        if len(self.sweep_loop1) == 0:
-            self.generate_unit_sequence()
-
-        elif len(self.sweep_loop1) != 0:
-            for i in range(len(self.sweep_loop1['para1'])):
-#                segment = [self.sweep_set['loop1_para%d'%(k+1)]['segment'] for k in range(len(self.sweep_loop1))]
-                segment_number = [self.sweep_set['loop1_para%d'%(k+1)]['segment_number'] for k in range(len(self.sweep_loop1))]
-                step = [self.sweep_set['loop1_para%d'%(k+1)]['step'] for k in range(len(self.sweep_loop1))]
-                parameter = [self.sweep_set['loop1_para%d'%(k+1)]['parameter'] for k in range(len(self.sweep_loop1))]
-                for k in range(len(segment_number)):
-                    self.sequence_cfg[segment_number[k]][step[k]][parameter[k]] = self.sweep_loop1['para%d'%(k+1)][i]
-#                    segment[step[k]][parameter[k]] = self.sweep_loop1['para%d'%(k+1)][i]
-
-                if len(self.sweep_loop2) == 0:
-                    self.generate_unit_sequence(rep_idx = i)
-
-                elif len(self.sweep_loop2) != 0:
-                    for j in range(len(self.sweep_loop2['para1'])):
-#                        segment = [self.sweep_set['loop2_para%d'%(k+1)]['segment'] for k in range(len(self.sweep_loop2))]
-                        segment_number = [self.sweep_set['loop2_para%d'%(k+1)]['segment_number'] for k in range(len(self.sweep_loop2))]
-                        step = [self.sweep_set['loop2_para%d'%(k+1)]['step'] for k in range(len(self.sweep_loop2))]
-                        parameter = [self.sweep_set['loop2_para%d'%(k+1)]['parameter'] for k in range(len(self.sweep_loop2))]
-
-                        for k in range(len(segment_number)):
-                            self.sequence_cfg[segment_number[k]][step[k]][parameter[k]] = self.sweep_loop2['para%d'%(k+1)][j]
-
-                        self.generate_unit_sequence(rep_idx = 10*i+j)
-
-        """
-        for d in range(len(self.sweep_matrix)):
-
-            self.sequence.append(name = 'Initialize_%d'%d, wfname = 'Initialize_%d'%d, trigger_wait=False)
-            self.sequence.append(name = 'Manipulation_%d'%d, wfname = 'Manipulation_%d'%d, trigger_wait=False)
-            self.sequence.append(name = 'Readout_%d'%d, wfname = 'Readout_%d'%d, trigger_wait=False)
-        """
-        return True
+    
 
     def load_sequence(self,):
 #        elts = list(self.element.values())
@@ -685,9 +566,6 @@ class Experiment:
 
         return True
 
-
-    def update_element(self,):
-        return True
 
 
 
@@ -725,32 +603,6 @@ class Experiment:
         return True
 
 
-
-    def Sweep_1D(self, parameter, start, stop, points):
-
-        sweep_array = np.linspace(start, stop, points)
-
-
-#        sweep_array.tolist()
-#        self.sweep_matrix = sweep_array
-        self.sweep_matrix = [{parameter: value} for value in sweep_array]
-#        for i in range(points):
-#            self.sweep_matrix.append({parameter: sweep_array[i]})
-
-        return self.sweep_matrix
-
-    def Sweep_2D(self, parameter1, start1, stop1, points1, parameter2, start2, stop2, points2):
-
-        sweep_array1 = np.linspace(start1, stop1, points1)
-
-        sweep_array2 = np.linspace(start2, stop2, points2)
-
-
-        self.sweep_matrix = [[{parameter1: value1, parameter2:value2} for value1 in sweep_array1] for value2 in sweep_array2]
-
-#        for i in range(points1):
-#            for j in range(points2):
-#                self.sweep_matrix[i][j] = {parameter1: sweep_array1[i], parameter2: sweep_array2[j]}
 
 
         return self.sweep_matrix

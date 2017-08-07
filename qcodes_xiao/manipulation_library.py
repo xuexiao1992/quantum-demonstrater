@@ -53,19 +53,19 @@ class Ramsey(Manipulation):
                                     delay=delay)
         return self
     
-    def make_circuit(self,):
+    def make_circuit(self, waiting_time = 0):
         
         self.add_X(name='X1_Q1', qubit = self.qubits[0],)
     
         self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = self.waiting_time,)
 
-        self.add_Y(name='Y1_Q1', refgate = 'X2_Q1', qubit = self.qubits[0], waiting_time = self.waiting_time,)
-        
-        self.add_Z(name='Z1_Q1', qubit = self.qubits[0], degree = 45)
-
-        self.add_X(name='X3_Q1', refgate = 'Y1_Q1', qubit = self.qubits[0], waiting_time = self.waiting_time,)
-        
-        self.add_single_qubit_gate(name = 'T1_Q1', refgate = 'X3_Q1', qubit = self.qubits[0], amplitude = 0.1, waiting_time = self.waiting_time)
+#        self.add_Y(name='Y1_Q1', refgate = 'X2_Q1', qubit = self.qubits[0], waiting_time = self.waiting_time,)
+#        
+#        self.add_Z(name='Z1_Q1', qubit = self.qubits[0], degree = 45)
+#
+#        self.add_X(name='X3_Q1', refgate = 'Y1_Q1', qubit = self.qubits[0], waiting_time = self.waiting_time,)
+#        
+#        self.add_single_qubit_gate(name = 'T1_Q1', refgate = 'X3_Q1', qubit = self.qubits[0], amplitude = 0.1, waiting_time = self.waiting_time)
         
 #        self.add_Z(name='Z1_Q1', qubit = self.qubits[0],)
         

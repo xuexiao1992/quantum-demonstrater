@@ -7,7 +7,9 @@ Created on Sat Jul 22 15:02:29 2017
 import numpy as np
 from pycqed.measurement.waveform_control.pulsar import Pulsar
 from pycqed.measurement.waveform_control.element import Element
-from experiment import Experiment
+#from experiment import Experiment
+from experiment_version3 import Experiment
+
 from manipulation import Manipulation
 import stationF006
 from manipulation_library import Ramsey
@@ -153,9 +155,11 @@ def make_experiment_cfg():
     experiment.sequence_cfg = [init_cfg, manip_cfg,]
     experiment.sequence_cfg_type = ['init','manip',]
 
+    experiment.manip_elem = Ramsey(name = 'Ramsey',)
+
     experiment.set_sweep()
     
-    experiment.manip_elem = Ramsey(name = 'Ramsey',)
+    
     
 #    experiment.manipulation_element(name = 'manip', manip_element = Ramsey(name = 'Ramsey', qubits = qubits, waiting_time = 1e-6))
 
@@ -221,7 +225,7 @@ def set_5014pulsar(awg):
 
 experiment = make_experiment_cfg()
 
-experiment.generate_sequence()
+experiment.generate_1D_sequence()
 
 experiment.load_sequence()
 
