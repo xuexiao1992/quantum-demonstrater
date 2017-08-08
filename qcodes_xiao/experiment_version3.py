@@ -87,7 +87,9 @@ class Experiment:
                 'step2': 1,
                 'step3': 1,
                 }
-        
+        self.manipulation_repetition = {
+                'step1': 1,
+                }
         self.readout_repetition = {
                 'step1': 1,
                 'step2': 1,
@@ -116,12 +118,6 @@ class Experiment:
 
     def set_sweep(self,):
         
-#        self.repetition = {
-#                'init': self.initialize_repetition,
-#                'manip': None,
-#                'read': self.readout_repetition,
-#                }
-        
         sweep_dimension = 0
         segment_number = 0
 
@@ -132,10 +128,8 @@ class Experiment:
                         ss = {}
                         sweep_parameter = segment[step][parameter]
                         ss['segment_number'] = segment_number
-#                        ss['segment'] = segment
                         ss['step'] = step
                         ss['parameter'] = parameter
-#                        ss['loop_number'] = segment[step][parameter][5]
                         self.sweep_set[sweep_parameter] = ss       ## sweep_set: {'loop1_para1':   'loop1_para2'}
                         sweep_dimension+=1
             segment_number+=1
@@ -190,9 +184,12 @@ class Experiment:
         waiting_time = kw.pop('waiting_time', None)
         duration_time = kw.pop('duration_time', None)
         frequency = kw.pop('frequency', None)
+        gate_amp = kw.pop('gate_amp', None)
         print(name)
 #        manip = Ramsey()
-        manipulation = manip(name = name, qubits = self.qubits, pulsar = self.pulsar, waiting_time = waiting_time, duration_time = duration_time, frequency = frequency)
+        manipulation = manip(name = name, qubits = self.qubits, pulsar = self.pulsar, 
+                             waiting_time = waiting_time, duration_time = duration_time, 
+                             frequency = frequency)
 
         manipulation.make_circuit()
 
@@ -210,7 +207,7 @@ class Experiment:
             element = self._initialize_element(name, amplitudes = amplitudes,)
         elif segment == 'manip':
             waiting_time = kw.pop('waiting_time',0)
-            element = self._manipulation_element(name, time = 0, amplitudes = amplitudes, waiting_time = waiting_time)
+            element = self._manipulation_element(name, time = time, amplitudes = amplitudes, waiting_time = waiting_time)
         elif segment == 'read':
             element = self._readout_element(name, amplitudes = amplitudes,)
         else:
@@ -227,8 +224,10 @@ class Experiment:
         for para in self.sweep_set:
             if segment_num == self.sweep_set[para]['segment_number'] and step == self.sweep_set[para]['step']:
                 if self.sequence_cfg_type[segment_num] == 'manip':
-                    is_in_loop = True
-                    loop_num = para[4]
+                    P = parameter
+                    if P == self.sweep_set[para]['parameter']:
+                        is_in_loop = True
+                        loop_num = para[4]
                 else:
                     for i in range(self.qubits_number):
                         P = parameter
@@ -251,12 +250,15 @@ class Experiment:
             is_in_loop.append(m)
             loop_num.append(n)
         
-        for parameter in ['time', 'waiting_time',]:
-#            if parameter:
+        for parameter in ['time', 'waiting_time', 'duration_time', 'IQ_amplitude']:
+#            if parameter not in:
 #                continue
             m, n = self._is_in_loop(segment_num, 'step%d'%s,parameter)
             is_in_loop.append(m)
             loop_num.append(n)
+        
+        dimension_1 = self.dimension_1 if '1' in loop_num else 1
+        dimension_2 = self.dimension_2 if '2' in loop_num else 1
         
         
         
@@ -266,25 +268,17 @@ class Experiment:
 
                 element = self.make_element(name = name+'step%d'%s, segment = seg, amplitudes=amplitudes,)
                 
-#                self.segment[seg]['step%d'%(s+1)] = element
-                
                 segment = element
-                
-#                self.repetitions[seg]['step%d'%(s+1)] = int(step['time']/(1e-6))
                 
                 repetition = int(step['time']/(1e-6))
                 
         elif True in is_in_loop:
                 
-#            self.segment[seg]['step%d'%(s+1)] = []
-            
             segment = []
             
             repetition = []
             
-            for j in range(self.dimension_2):
-                    
-#                self.segment[seg]['step%d'%(s+1)].append([])
+            for j in range(dimension_2):
                     
                 segment.append([])
                 
@@ -292,24 +286,26 @@ class Experiment:
                 
                 self._update_cfg(loop = 2, idx = j)
                     
-                for i in range(self.dimension_1):
+                for i in range(dimension_1):
                     
                     self._update_cfg(loop = 1, idx = i)
                         
                     amplitudes = [step['voltage_%d'%(q+1)] for q in range(self.qubits_number)]
-                        
-                    element = self.make_element(name = name+'step%d_%d%d'%(s,j,i), segment = seg, amplitudes=amplitudes,)
+                    
+                    
+                    waiting_time = step.pop('waiting_time',None)
+                    element = self.make_element(name = name+'step%d_%d_%d'%(s,j,i), segment = seg, time = step['time'], amplitudes=amplitudes,
+                                                waiting_time = waiting_time)
                 
-#                    self.initialize_segment['step%d'%(s+1)][j][i] = initialize_element
-#                    self.segment[seg]['step%d'%(s+1)][j].append(element)
-                        
                     segment[j].append(element)
-                    
-#                    self.repetitions[seg]['step%d'%(s+1)][j].append(int(step['time']/(1e-6)))
-                    
-                    repetition[j].append(int(step['time']/(1e-6)))
+                    rep = 1 if seg is 'manip' else int(step['time']/(1e-6))
+                    repetition[j].append(rep)
         
-        
+        if seg is 'manip':
+            print('dimension2', dimension_2)
+            print('dimension1', dimension_1)
+            print('loop_num',loop_num)
+            print('repetition', repetition)
         return segment, repetition
 
 
@@ -333,8 +329,8 @@ class Experiment:
 
         for s in range(len(self.sequence_cfg[segment_num])):
 
-           self.manipulation_segment['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)[0]
-            
+           self.manipulation_segment['step%d'%(s+1)], self.manipulation_repetition['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)
+#           self.readout_repetition['step%d'%(s+1)] = 1
         return True
     
     def make_all_segment_list(self,):
@@ -366,21 +362,32 @@ class Experiment:
         j = rep_idx//10
         
         i = rep_idx%10
-        
+        print('rep_idx',rep_idx)
         for step in segment:
+            print('step',step)
             
             if type(segment[step]) is not list:             ## smarter way for this
                 element = segment[step]
                 wfname = element.name
-                name = wfname 
-                repe = self.repetition[step]
+                name = wfname + '_%d_%d'%(j,i)
+                repe = repetition[step]
+                if i == 0:
+                    self.elts.append(element)
             else:
-                element = segment[step][j][i]
+                jj = 0 if len(segment[step]) == 1 else j
+                ii = 0 if len(segment[step][0]) == 1 else i
+                element = segment[step][jj][ii]
                 wfname=element.name
                 name = wfname + '_%d_%d'%(j,i)
-                repe = repetition[step][j][i]
+#                if step is 'step2':
+#                    print('element name', element.name)
+#                    print('wfname', wfname)
+#                    print('jj,ii',jj,ii)
+#                    print('rep_idx',rep_idx)
+                
+                repe = repetition[step][jj][ii]
+                self.elts.append(element)
             
-            self.elts.append(element)
             self.sequence.append(name = name, wfname = wfname, trigger_wait = False, repetitions = repe)
         
         return True
@@ -390,7 +397,9 @@ class Experiment:
         j = rep_idx//10
         
         i = rep_idx%10
-        
+        unit_seq_length=0
+        for seg_type in self.sequence_cfg_type:
+            unit_seq_length += len(self.segment[seg_type])
         if segment == self.initialize_segment:
             former_element = 0
         elif segment == self.manipulation_segment:
@@ -402,13 +411,20 @@ class Experiment:
         for step in segment:                                ## step = 'step1'... is a string
             
             if type(segment[step]) is list:
-                element = segment[step][j][i]
+                jj = 0 if len(segment[step]) == 1 else j
+                ii = 0 if len(segment[step][0]) == 1 else i
+                element = segment[step][jj][ii]
                 wfname=element.name
                 name = wfname + '_%d_%d'%(j,i)
-                repe = repetition[step][j][i]
-            
-            self.add_new_element_to_awg_list(element = element)
-            self.add_new_waveform_to_sequence(wfname = wfname, element_no = former_element+int(step[-1]), repetitions = repe)
+                repe = repetition[step][jj][ii]
+                if jj != 0:
+                    wfname_to_delete = segment[step][jj-1][ii].name
+                    element_no = i*unit_seq_length + former_element + int(step[-1])
+                    print('element_no',element_no)
+                    if i == 0:
+                        self.add_new_element_to_awg_list(element = element)
+                    self.add_new_waveform_to_sequence(wfname = wfname, element_no = element_no, repetitions = repe)
+                    self.delete_element_from_awg_list(wfname = wfname_to_delete)
             
         return True
     
@@ -449,17 +465,17 @@ class Experiment:
                 
                 repetition = self.readout_repetition
                 
-                
             self.add_segment(segment = segment, repetition = repetition, rep_idx = rep_idx)
             i+=1
 
         return True
  
     
-    def generate_1D_sequence(self, rep_idx = 0, idx_i = 0, idx_j = 0):
+    def generate_1D_sequence(self, idx_j = 0):
         
-        for i in range(self.dimension_1):
-            self.generate_unit_sequence()
+        for idx_i in range(self.dimension_1):
+            rep_idx = 10*idx_j+idx_i
+            self.generate_unit_sequence(rep_idx = rep_idx)
 
         if idx_j == 0:
             self.load_sequence()
@@ -467,37 +483,23 @@ class Experiment:
         return True
     
 
-    
-    
-    
-    def run_1D_sweep(self,):
+    def run_1D_sweep(self, idx_j = 0):
         
-        self.generate_1D_sweep_sequence()
+        self.generate_1D_sweep_sequence( idx_j = idx_j)
         
         self.run_experiment()
         
         return True
     
-    def run_2D_sweep(self,):
+    def run_2D_sweep(self, ):
         
         for j in range(self.dimension_2):
-            self.run_1D_sweep()
+            self.run_1D_sweep(idx_j = j)
         
         return True
     
     
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-  
 
     def add_new_element_to_awg_list(self, element):
 
@@ -507,7 +509,7 @@ class Experiment:
 
         for i in range(1,5):
             self.awg.send_waveform_to_list(w = wfs['ch%d'%i], m1 = wfs['ch%d_marker1'%i],
-                                            m2 = wfs['ch%d_marker2'%i], wfmname = name)
+                                            m2 = wfs['ch%d_marker2'%i], wfmname = name+'_ch%d'%i)
 
         return True
 
@@ -520,7 +522,13 @@ class Experiment:
         self.awg.set_sqel_loopcnt(loopcount = repetitions, element_no = element_no)
         
         return True
-
+    
+    def delete_element_from_awg_list(self, wfname):
+        
+        for i in range(1,5):
+            self.awg.write('WLISt:WAVeform:DELete "{}"'.format(wfname+'_ch%d'%i))
+        
+        return True
 
 
     """
@@ -558,6 +566,8 @@ class Experiment:
     
 
     def load_sequence(self,):
+        
+        print('load sequence')
 #        elts = list(self.element.values())
         self.awg.delete_all_waveforms_from_list()
         elts = self.elts
@@ -570,10 +580,13 @@ class Experiment:
 
 
     def run_experiment(self,):
+        
+        print('run experiment')
 
         self.awg.write('SOUR1:ROSC:SOUR INT')
 
-        self.awg.ch3_state.set(1)
+#        self.awg.ch3_state.set(1)
+        self.awg.all_channels_on()
         self.awg.force_trigger()
 
         self.awg.run()

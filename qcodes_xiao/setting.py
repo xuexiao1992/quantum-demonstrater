@@ -122,7 +122,7 @@ def make_experiment_cfg():
             }
 
     experiment.sweep_loop2 = {
-#            'para1': [0,0.5,0.5,0,0.5],
+            'para1': [0,0.5,0.5,0,0.5],
             }
 
 #    loop1_para1 = [1,2,344,553,3]
@@ -135,7 +135,7 @@ def make_experiment_cfg():
     
     init_cfg = {
             'step1' : set_step(time = 2e-6, qubits = qubits, voltages = [0.2, 0.3]),
-            'step2' : set_step(time = 5e-6, qubits = qubits, voltages = [0.1, 0.3]),
+            'step2' : set_step(time = 5e-6, qubits = qubits, voltages = [loop2_para1, 0.3]),
             'step3' : set_step(time = 1e-6, qubits = qubits, voltages = [0.4, 0.5]),
             }
 
@@ -227,6 +227,6 @@ experiment = make_experiment_cfg()
 
 experiment.generate_1D_sequence()
 
-experiment.load_sequence()
+#experiment.load_sequence()
 
 experiment.run_experiment()

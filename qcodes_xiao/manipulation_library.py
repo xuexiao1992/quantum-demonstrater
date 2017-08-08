@@ -30,6 +30,8 @@ class Ramsey(Manipulation):
         if self.qubits is not None:
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
+            
+            
 #        self.pulsar = kw.pop('pulsar', None)
         
     def __call__(self, **kw):
@@ -40,6 +42,9 @@ class Ramsey(Manipulation):
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = kw.pop('pulsar', None)
         self.waiting_time = kw.pop('waiting_time', self.waiting_time)
+        self.waiting_time_1 = kw.pop('waiting_time_1', self.waiting_time)
+        self.waiting_time_2 = kw.pop('waiting_time_2', self.waiting_time)
+        
         
         if self.pulsar is not None:
             self.clock = self.pulsar.clock
