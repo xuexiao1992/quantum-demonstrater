@@ -26,6 +26,8 @@ class Experiment:
 
         self.awg = awg
         self.qubits = qubits
+        
+        self.awg_file = None
 
         self.channel_I = [qubit.microwave_gate['channel_I'] for qubit in qubits]
         self.channel_Q = [qubit.microwave_gate['channel_Q'] for qubit in qubits]
@@ -357,12 +359,12 @@ class Experiment:
     this function below organizes segments. e.g. self.initialize_segment = {'step1': element1, 'step2': 1D/2D list, 'step3': element3...}
     """
     
-    def first_segment_into_sequence_and_elts(self, segment, repetition, rep_idx = 0):         ## segment = self.initialize_segment
+    def first_segment_into_sequence_and_elts(self, segment, repetition, rep_idx = 0,idx_j = 0, idx_i = 0):         ## segment = self.initialize_segment
         
-        j = rep_idx//10
+        j = idx_j
         
-        i = rep_idx%10
-        print('rep_idx',rep_idx)
+        i = idx_i
+#        print('rep_idx',rep_idx)
         for step in segment:
             print('step',step)
             
@@ -386,17 +388,18 @@ class Experiment:
 #                    print('rep_idx',rep_idx)
                 
                 repe = repetition[step][jj][ii]
-                self.elts.append(element)
+                if ii != 0 or i==0:                                                         ## !!!!!!!!! here is a potential BUG!!!!!!
+                    self.elts.append(element)
             
             self.sequence.append(name = name, wfname = wfname, trigger_wait = False, repetitions = repe)
         
         return True
     
-    def update_segment_into_sequence_and_elts(self, segment, repetition, rep_idx = 0):         ## segment = self.initialize_segment
+    def update_segment_into_sequence_and_elts(self, segment, repetition, rep_idx = 0,idx_j = 0, idx_i = 0):         ## segment = self.initialize_segment
         
-        j = rep_idx//10
+        j = idx_j
         
-        i = rep_idx%10
+        i = idx_i
         unit_seq_length=0
         for seg_type in self.sequence_cfg_type:
             unit_seq_length += len(self.segment[seg_type])
@@ -429,14 +432,14 @@ class Experiment:
         return True
     
     
-    def add_segment(self, segment, repetition, rep_idx = 0):
+    def add_segment(self, segment, repetition, rep_idx = 0, idx_j = 0, idx_i = 0):
         
-        j = rep_idx//10
+        j = idx_j
         
         if j == 0:
-            self.first_segment_into_sequence_and_elts(segment, repetition, rep_idx = rep_idx)
+            self.first_segment_into_sequence_and_elts(segment, repetition, idx_j = idx_j, idx_i = idx_i)
         else:
-            self.update_segment_into_sequence_and_elts(segment, repetition, rep_idx = rep_idx)
+            self.update_segment_into_sequence_and_elts(segment, repetition, idx_j = idx_j, idx_i = idx_i)
         
         return True
     
@@ -465,7 +468,7 @@ class Experiment:
                 
                 repetition = self.readout_repetition
                 
-            self.add_segment(segment = segment, repetition = repetition, rep_idx = rep_idx)
+            self.add_segment(segment = segment, repetition = repetition, idx_j = idx_j, idx_i = idx_i)
             i+=1
 
         return True
@@ -475,7 +478,7 @@ class Experiment:
         
         for idx_i in range(self.dimension_1):
             rep_idx = 10*idx_j+idx_i
-            self.generate_unit_sequence(rep_idx = rep_idx)
+            self.generate_unit_sequence(idx_j = idx_j, idx_i = idx_i)
 
         if idx_j == 0:
             self.load_sequence()
@@ -529,7 +532,27 @@ class Experiment:
             self.awg.write('WLISt:WAVeform:DELete "{}"'.format(wfname+'_ch%d'%i))
         
         return True
-
+    
+    def store_sequence(self, filename,):
+        
+        self.awg.send_awg_file(filename = filename, awg_file = self.awg_file)
+        
+        return True
+    
+    def restore_previous_sequence(self, filename = 'setup_0_.AWG'):
+        
+        self.awg.load_awg_file(filename = filename)
+        
+#        self.awg.write('AWGCONTROL:SRESTORE "{}"'.format(filename))
+        
+        return True
+    
+    def save_sequence(self,filename,disk):
+        
+        self.awg.write('AWGCONTROL:SSAVE "{}","{}"'.format(filename,'C:'))
+        
+        return True
+#
 
     """
     this function is to be used......
@@ -572,7 +595,7 @@ class Experiment:
         self.awg.delete_all_waveforms_from_list()
         elts = self.elts
         sequence = self.sequence
-        self.pulsar.program_awg(sequence, *elts)       ## elts should be list(self.element.values)
+        self.awg_file = self.pulsar.program_awg(sequence, *elts)       ## elts should be list(self.element.values)
 
         return True
 

@@ -137,6 +137,13 @@ def make_experiment_cfg():
             'step1' : set_step(time = 2e-6, qubits = qubits, voltages = [0.2, 0.3]),
             'step2' : set_step(time = 5e-6, qubits = qubits, voltages = [loop2_para1, 0.3]),
             'step3' : set_step(time = 1e-6, qubits = qubits, voltages = [0.4, 0.5]),
+#            'step4' : set_step(time = 1000e-6, qubits = qubits, voltages = [0.4, 0.5]),
+#            'step5' : set_step(time = 500e-6, qubits = qubits, voltages = [0.4, 0.5]),
+#            'step6' : set_step(time = 2000e-6, qubits = qubits, voltages = [0.4, 0.5]),
+#            'step7' : set_step(time = 1e-6, qubits = qubits, voltages = [0.4, 0.5]),
+#            'step8' : set_step(time = 1000e-6, qubits = qubits, voltages = [0.4, 0.5]),
+#            'step9' : set_step(time = 500e-6, qubits = qubits, voltages = [0.4, 0.5]),
+#            'step10' : set_step(time = 2000e-6, qubits = qubits, voltages = [0.4, 0.5]),
             }
 
     manip_cfg = {
