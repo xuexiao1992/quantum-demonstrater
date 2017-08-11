@@ -17,7 +17,7 @@ from qubit import Qubit
 #import users.boterjm.Drivers.Spectrum.M4i as M4i
 #import users.boterjm.Drivers.american_magnetics.AMI430_IP as AMI430
 
-#import users.boterjm.Drivers.E8267D as E8267D
+import E8267D as E8267D
 
 #from qtt.qtt_toymodel import virtual_gates
 #from users.petitlp.measurements.virtual_gates import virtual_gates 
@@ -64,6 +64,7 @@ ivvi = None
 digitizer = None
 lockin = None
 awg = None
+awg2 = None
 magnet=None
 sig_gen=None
 keithley=None
@@ -97,7 +98,7 @@ def close(verbose=1):
 
 #%%
 def initialize(reinit=False, server_name=None):
-    global ivvi, digitizer, lockin1, lockin2, awg, magnet, sig_gen, keithley, gate_map, station, mwindows, output_map, qubit_1, qubit_2
+    global ivvi, digitizer, lockin1, lockin2, awg, awg2, magnet, sig_gen, keithley, gate_map, station, mwindows, output_map, qubit_1, qubit_2
     
     #qcodes.installZMQlogger()
     logging.info('LD400: initialize')
@@ -131,7 +132,9 @@ def initialize(reinit=False, server_name=None):
     awg = AWG5014.Tektronix_AWG5014(name='awg', address='TCPIP0::169.254.141.235::inst0::INSTR', server_name=server_name)
     print('awg loaded')
     
-    
+    logging.info('LD400: load AWG driver')
+    awg2 = AWG5014.Tektronix_AWG5014(name='awg2', address='TCPIP0::169.254.110.163::inst0::INSTR', server_name=server_name)
+    print('awg2 loaded')
 
     
     #Loading Microwave source
@@ -170,8 +173,7 @@ def initialize(reinit=False, server_name=None):
     #Creating the experimental station
     #station = qcodes.Station(ivvi, awg, lockin1, lockin2, digitizer, gates)
 #    station = qcodes.Station(ivvi, lockin1, lockin2, digitizer, gates)
-    # station = qcodes.Station(awg, digitizer)
-    station = qcodes.Station(awg, digitizer, qubit_1, qubit_2)
+    station = qcodes.Station(awg, awg2, digitizer, qubit_1, qubit_2)
     logging.info('Initialized LDHe station')
     print('Initialized LDHe station\n')
     

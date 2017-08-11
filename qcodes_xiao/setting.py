@@ -100,11 +100,14 @@ def make_experiment_cfg():
 
     station = stationF006.initialize()
     awg = station.awg
+    awg2 = station.awg2
     awg.clock_freq(1e9)
+    awg2.clock_freq(1e9)
 
     digitizer = station.digitizer
 #    awg.ch3_amp
     pulsar = set_5014pulsar(awg = awg)
+    pulsar2 = set_5014pulsar(awg = awg2)
 
     qubit_1 = station.qubit_1
     qubit_2 = station.qubit_2
@@ -173,6 +176,18 @@ def make_experiment_cfg():
 
     return experiment
 
+
+
+#%% set VSG
+
+def set_vector_signal_generator(VSG):
+    
+    VSG.frequency.set(0)
+    VSG.phase.set(0)
+    VSG.power.set(0)
+    VSG.frequency.set(0)
+    
+    return VSG
 
 
 #%% make pulsar

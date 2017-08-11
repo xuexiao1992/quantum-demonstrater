@@ -2,7 +2,7 @@
 """
 Created on Sun May 21 19:03:19 2017
 
-@author: think
+@author: X.X
 """
 
 import pyvisa

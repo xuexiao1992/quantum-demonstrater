@@ -93,7 +93,7 @@ class Single_Qubit_Gate(Gate):
             
         elif 0: ##here frequency and phase is not yet ready!!!!!!!!!!!
             microwave_pulse_I = CosPulse(channel = self.channel_I, name = '%s_microwave_pulse_I'%self.name, frequency = 1e6,
-                                         phase = 0, amplitude = 0.2*np.cos(self.refphase + self.axis_angle), 
+                                         phase = 0, amplitude = 0.2*np.cos(self.refphase + self.axis_angle),
                                          length = pulse_length)
             
             microwave_pulse_Q = CosPulse(channel = self.channel_Q, name = '%s_microwave_pulse_Q'%self.name, frequency = 1e6, 
