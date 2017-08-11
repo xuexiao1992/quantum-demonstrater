@@ -44,11 +44,13 @@ server_name = None
 station = stationF006.initialize(server_name=server_name)
 #temp.initialize(server_name=server_name)
 
-def make5014pulsar(awg):
+def make5014pulsar(awg, awg2):
     pulsar = ps.Pulsar()
     pulsar.AWG = awg
+    pulsar2 = ps.Pulsar()
+    pulsar2.AWG = awg2
 
-    marker1highs = [2, 2, 2.7, 2]
+    marker1highs = [2, 2, 2.7, 2, 2, 2, 2.7, 2]
 #    marker2highs = [2, 2, 2.7, 2]
     for i in range(4):
         # Note that these are default parameters and should be kept so.
@@ -89,12 +91,46 @@ def make5014pulsar(awg):
             'RUN_MODE': 4,  # Continuous | Triggered | Gated | Sequence
             'RUN_STATE': 0,  # On | Off
         }
+    for i in range(4):
+        pulsar2.define_channel(id='ch{}'.format(i + 1),
+                              name='ch{}'.format(i + 5), type='analog',
+                              high=.7, low=-.7,
+                              offset=0.0, delay=0, active=True)
+        pulsar2.define_channel(id='ch{}_marker1'.format(i + 1),
+                              name='ch{}_marker1'.format(i + 5),
+                              type='marker',
+                              high=marker1highs[i], low=0, offset=0.,
+                              delay=0, active=True)
+        pulsar2.define_channel(id='ch{}_marker2'.format(i + 1),
+                              name='ch{}_marker2'.format(i + 5),
+                              type='marker',
+                              high=2, low=0, offset=0.,
+                              delay=0, active=True)
 
-    return pulsar
+        pulsar2.AWG_sequence_cfg = {
+            'SAMPLING_RATE': 1e9,
+            'CLOCK_SOURCE': 1,  # Internal | External
+            'REFERENCE_SOURCE': 1,  # Internal | External
+            'EXTERNAL_REFERENCE_TYPE': 1,  # Fixed | Variable
+            'REFERENCE_CLOCK_FREQUENCY_SELECTION': 1,  # 10 MHz | 20 MHz | 100 MHz
+            'TRIGGER_SOURCE': 1,  # External | Internal
+            'TRIGGER_INPUT_IMPEDANCE': 1,  # 50 ohm | 1 kohm
+            'TRIGGER_INPUT_SLOPE': 1,  # Positive | Negative
+            'TRIGGER_INPUT_POLARITY': 1,  # Positive | Negative
+            'TRIGGER_INPUT_THRESHOLD': 0.6,  # V
+            'EVENT_INPUT_IMPEDANCE': 2,  # 50 ohm | 1 kohm
+            'EVENT_INPUT_POLARITY': 1,  # Positive | Negative
+            'EVENT_INPUT_THRESHOLD': 1.4,  # V
+            'JUMP_TIMING': 1,  # Sync | Async
+            'RUN_MODE': 4,  # Continuous | Triggered | Gated | Sequence
+            'RUN_STATE': 0,  # On | Off
+        }
 
-pulsar = make5014pulsar(station.components['awg'])
+    return pulsar, pulsar2
+
+pulsar, pulsar2 = make5014pulsar(awg = station.components['awg'], awg2 = station.components['awg2'])
 station.pulsar = pulsar
-
+station.pulsar2 = pulsar2
 
 
 
@@ -171,6 +207,7 @@ print()
 
 
 awg = station.awg
+awg2 = station.awg2
 print('a')
 elts = [test_element, my_element, your_element]
 print('b')
@@ -181,18 +218,29 @@ myseq.append(name='my_element', wfname='my_element', trigger_wait=False,)
 myseq.append(name='your_element', wfname='your_element', trigger_wait=False,)
 myseq.append(name='test_element1', wfname='test_element', trigger_wait=False,)
 
-print('d')
-awg.delete_all_waveforms_from_list()
-print('e')
-awg.stop()
-print('f')
-pulsar.program_awg(myseq, *elts)
-
-v = awg.write('SOUR1:ROSC:SOUR INT')
-
-awg.ch3_state.set(1)
-awg.force_trigger()
-awg.run()
+#print('d')
+#awg.delete_all_waveforms_from_list()
+#awg2.delete_all_waveforms_from_list()
+#
+#print('e')
+#awg.stop()
+#awg2.stop()
+#print('f')
+##pulsar.program_awg(myseq, *elts)
+#pulsar2.program_awg(myseq, *elts)
+#
+#v = awg.write('SOUR1:ROSC:SOUR INT')
+#w = awg2.write('SOUR1:ROSC:SOUR INT')
+#
+#
+#
+#awg.ch3_state.set(1)
+#awg.force_trigger()
+#awg.run()
+#
+#awg2.ch3_state.set(1)
+#awg2.force_trigger()
+#awg2.run()
 
 
 

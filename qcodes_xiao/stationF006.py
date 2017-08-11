@@ -65,6 +65,10 @@ digitizer = None
 lockin = None
 awg = None
 awg2 = None
+
+vsg = None
+vsg2 = None
+
 magnet=None
 sig_gen=None
 keithley=None
@@ -98,7 +102,7 @@ def close(verbose=1):
 
 #%%
 def initialize(reinit=False, server_name=None):
-    global ivvi, digitizer, lockin1, lockin2, awg, awg2, magnet, sig_gen, keithley, gate_map, station, mwindows, output_map, qubit_1, qubit_2
+    global ivvi, digitizer, lockin1, lockin2, awg, awg2, vsg, vsg2, magnet, sig_gen, keithley, gate_map, station, mwindows, output_map, qubit_1, qubit_2
     
     #qcodes.installZMQlogger()
     logging.info('LD400: initialize')
@@ -128,23 +132,37 @@ def initialize(reinit=False, server_name=None):
     
     
     # Loading AWG
+#    logging.info('LD400: load AWG driver')
+#    awg = AWG5014.Tektronix_AWG5014(name='awg', address='TCPIP0::169.254.141.235::inst0::INSTR', server_name=server_name)
+#    print('awg loaded')
+    
+#    logging.info('LD400: load AWG driver')
+#    awg2 = AWG5014.Tektronix_AWG5014(name='awg2', address='TCPIP0::169.254.110.163::inst0::INSTR', server_name=server_name)
+#    print('awg2 loaded')
     logging.info('LD400: load AWG driver')
-    awg = AWG5014.Tektronix_AWG5014(name='awg', address='TCPIP0::169.254.141.235::inst0::INSTR', server_name=server_name)
+    awg = AWG5014.Tektronix_AWG5014(name='awg', address='TCPIP0::192.168.0.8::inst0::INSTR', server_name=server_name)
     print('awg loaded')
     
     logging.info('LD400: load AWG driver')
-    awg2 = AWG5014.Tektronix_AWG5014(name='awg2', address='TCPIP0::169.254.110.163::inst0::INSTR', server_name=server_name)
+    awg2 = AWG5014.Tektronix_AWG5014(name='awg2', address='TCPIP0::192.168.0.9::inst0::INSTR', server_name=server_name)
     print('awg2 loaded')
 
     
     #Loading Microwave source
-#    logging.info('Keysight signal generator driver')
-#    sig_gen = E8267D.E8267D(name='sig_gen',address='TCPIP::192.168.2.2::INSTR',server_name=server_name)
-#    print('')
-
-#    load keithley driver
-#    keithley = Keithley_2700.Keithley_2700(name='keithley', address='GPIB0::15::INSTR', server_name=server_name)
+    logging.info('Keysight signal generator driver')
+    vsg = E8267D.E8267D(name='vsg',address='TCPIP::192.168.0.11::INSTR',server_name=server_name)
+    print('VSG loaded')
     
+    logging.info('Keysight signal generator driver')
+    vsg2 = E8267D.E8267D(name='vsg2',address='TCPIP::192.168.0.12::INSTR',server_name=server_name)
+    print('VSG2 loaded')
+
+
+
+
+#    #load keithley driver
+#    keithley = Keithley_2700.Keithley_2700(name='keithley', address='GPIB0::15::INSTR', server_name=server_name)
+#    
 
 #     Loading digitizer
     logging.info('LD400: load digitizer driver')
@@ -173,7 +191,7 @@ def initialize(reinit=False, server_name=None):
     #Creating the experimental station
     #station = qcodes.Station(ivvi, awg, lockin1, lockin2, digitizer, gates)
 #    station = qcodes.Station(ivvi, lockin1, lockin2, digitizer, gates)
-    station = qcodes.Station(awg, awg2, digitizer, qubit_1, qubit_2)
+    station = qcodes.Station(awg, awg2, vsg, vsg2, digitizer, qubit_1, qubit_2)
     logging.info('Initialized LDHe station')
     print('Initialized LDHe station\n')
     
