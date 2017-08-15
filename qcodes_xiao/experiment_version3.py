@@ -22,9 +22,10 @@ from manipulation_library import Ramsey
 #%%
 class Experiment:
 
-    def __init__(self, name, qubits, awg, pulsar, **kw):
+    def __init__(self, name, qubits, awg, awg2, pulsar, **kw):
 
         self.awg = awg
+        self.awg2 = awg2
         self.qubits = qubits
         
         self.awg_file = None
@@ -163,6 +164,11 @@ class Experiment:
             refpulse = None if i ==0 else 'init1'
             initialize.add(SquarePulse(name='init', channel=self.channel_VP[i], amplitude=amplitudes[i], length=1e-6),
                            name='init%d'%(i+1),refpulse = refpulse, refpoint = 'start')
+            
+        initialize.add(SquarePulse(name='init_c1m2', channel='ch1_marker2', amplitude=2, length=1e-6),
+                           name='init%d_c1m2'%(i+1),refpulse = 'init1', refpoint = 'start')
+        initialize.add(SquarePulse(name='init_c5m2', channel='ch5_marker2', amplitude=2, length=1e-6),
+                           name='init%d_c5m2'%(i+1),refpulse = 'init1', refpoint = 'start')
 
         return initialize
 
@@ -200,6 +206,11 @@ class Experiment:
             start = -500e-9 if i ==0 else 0
             manipulation.add(SquarePulse(name='manip%d'%(i+1), channel=self.channel_VP[i], amplitude=amplitudes[i], length=time),
                            name='manip%d'%(i+1), refpulse = refpulse, refpoint = 'start', start = start)
+            
+        manipulation.add(SquarePulse(name='manip_c1m2', channel='ch1_marker2', amplitude=2, length=time),
+                           name='manip%d_c1m2'%(i+1),refpulse = 'manip1', refpoint = 'start')
+        manipulation.add(SquarePulse(name='manip_c5m2', channel='ch5_marker2', amplitude=2, length=time),
+                           name='manip%d_c5m2'%(i+1),refpulse = 'manip1', refpoint = 'start')
 
         return manipulation
 
@@ -269,7 +280,12 @@ class Experiment:
                 amplitudes = [step['voltage_%d'%(q+1)] for q in range(self.qubits_number)]
 
                 element = self.make_element(name = name+'step%d'%s, segment = seg, amplitudes=amplitudes,)
-                
+                """
+                for trigger, not used
+                if segment_num == 0 and step_num == 1:
+                    element.add(SquarePulse(name = 'trigger', channel = 'ch4_marker2', amplitude = 2, length = 100e-9),
+                                name = 'trigger',)
+                """
                 segment = element
                 
                 repetition = int(step['time']/(1e-6))
@@ -298,7 +314,12 @@ class Experiment:
                     waiting_time = step.pop('waiting_time',None)
                     element = self.make_element(name = name+'step%d_%d_%d'%(s,j,i), segment = seg, time = step['time'], amplitudes=amplitudes,
                                                 waiting_time = waiting_time)
-                
+                    """
+                    for trigger, not used
+                    if segment_num == 0 and step_num == 1:
+                        element.add(SquarePulse(name = 'trigger', channel = 'ch4_marker2', amplitude = 2, length = 100e-9),
+                                    name = 'trigger',)
+                    """
                     segment[j].append(element)
                     rep = 1 if seg is 'manip' else int(step['time']/(1e-6))
                     repetition[j].append(rep)
@@ -381,11 +402,6 @@ class Experiment:
                 element = segment[step][jj][ii]
                 wfname=element.name
                 name = wfname + '_%d_%d'%(j,i)
-#                if step is 'step2':
-#                    print('element name', element.name)
-#                    print('wfname', wfname)
-#                    print('jj,ii',jj,ii)
-#                    print('rep_idx',rep_idx)
                 
                 repe = repetition[step][jj][ii]
                 if ii != 0 or i==0:                                                         ## !!!!!!!!! here is a potential BUG!!!!!!
@@ -586,16 +602,37 @@ class Experiment:
 
 
 
-    
+    def set_trigger(self,):
+        
+        trigger_element = Element('trigger', self.pulsar)
+
+        trigger_element.add(SquarePulse(name = 'TRG2', channel = 'ch8_marker2', amplitude=2, length=300e-9),
+                            name='trigger2',)
+        trigger_element.add(SquarePulse(name = 'TRG1', channel = 'ch4_marker2', amplitude=2, length=1570e-9),
+                            name='trigger1',refpulse = 'trigger2', refpoint = 'start', start = 200e-9)
+
+        self.elts.insert(0,trigger_element)
+        self.sequence.insert_element(name = 'trigger', wfname = 'trigger', pos = 0)
+        
+        return True
 
     def load_sequence(self,):
         
         print('load sequence')
 #        elts = list(self.element.values())
         self.awg.delete_all_waveforms_from_list()
+        self.awg2.delete_all_waveforms_from_list()
+        self.set_trigger()
         elts = self.elts
         sequence = self.sequence
-        self.awg_file = self.pulsar.program_awg(sequence, *elts)       ## elts should be list(self.element.values)
+        self.pulsar.program_awgs(sequence, *elts, AWGs = ['awg','awg2'],)       ## elts should be list(self.element.values)
+        
+        
+        self.awg2.trigger_level(0.5)
+        self.awg2.set_sqel_trigger_wait(element_no = 1, state = 1)
+        last_element_num = self.awg2.sequence_length()
+        self.awg.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 2)
+        self.awg2.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 2)
 
         return True
 
@@ -607,12 +644,15 @@ class Experiment:
         print('run experiment')
 
         self.awg.write('SOUR1:ROSC:SOUR INT')
-
+        self.awg2.write('SOUR1:ROSC:SOUR INT')
 #        self.awg.ch3_state.set(1)
         self.awg.all_channels_on()
         self.awg.force_trigger()
-
-        self.awg.run()
+        self.awg2.all_channels_on()
+#        self.awg2.force_trigger()
+#        self.awg.run()
+#        self.awg2.run()
+#        self.pulsar.start()
 
         return True
 

@@ -91,18 +91,18 @@ def make5014pulsar(awg, awg2):
             'RUN_MODE': 4,  # Continuous | Triggered | Gated | Sequence
             'RUN_STATE': 0,  # On | Off
         }
-    for i in range(4):
+    for i in range(8):
         pulsar2.define_channel(id='ch{}'.format(i + 1),
-                              name='ch{}'.format(i + 5), type='analog',
+                              name='ch{}'.format(i + 1), type='analog',
                               high=.7, low=-.7,
                               offset=0.0, delay=0, active=True)
         pulsar2.define_channel(id='ch{}_marker1'.format(i + 1),
-                              name='ch{}_marker1'.format(i + 5),
+                              name='ch{}_marker1'.format(i + 1),
                               type='marker',
                               high=marker1highs[i], low=0, offset=0.,
                               delay=0, active=True)
         pulsar2.define_channel(id='ch{}_marker2'.format(i + 1),
-                              name='ch{}_marker2'.format(i + 5),
+                              name='ch{}_marker2'.format(i + 1),
                               type='marker',
                               high=2, low=0, offset=0.,
                               delay=0, active=True)
@@ -137,7 +137,7 @@ station.pulsar2 = pulsar2
 
 
 # Generating an example sequence
-test_element = element.Element('test_element', pulsar=pulsar)
+test_element = element.Element('test_element', pulsar=pulsar2)
 # we copied the channel definition from out global pulsar
 print('Channel definitions: ')
 pprint.pprint(test_element._channels)
@@ -146,9 +146,9 @@ print()
 
 #%% define some bogus pulses.
 
-basechannel = 3
-VT_channel = 2
-VLP_channel = 4
+basechannel = 7
+VT_channel = 4
+VLP_channel = 6
 base_amplitude = 0.25  # some safe value for the sample
 
 sin_pulse = pulse.CosPulse(channel='ch%d' % basechannel, name='A cosine pulse on RF')
@@ -178,45 +178,45 @@ test_element.add(pulse.cp(sq_pulse1, amplitude=0.2, length=1e-6),
 
 test_element.add(pulse.cp(sin_pulse, frequency=2e6, amplitude=0.25 / np.sqrt(2), length=1e-6),
                  name='third pulse', refpulse='second pulse', refpoint='end')
+#
+#my_element = element.Element('my_element', pulsar=pulsar)
+#dd = [0, 0, 1, 2, 3, 4, 0]
+#my_element.add(pulse.cp(sq_pulse, amplitude=0.35, length=1e-6), name='d0', )
+#my_element.add(pulse.cp(sin_pulse_marker, amplitude=0.1, length=1e-6), name='d0_marker2', )
+#
+#for i, d in enumerate(dd):
+#    my_element.add(pulse.cp(sq_pulse, amplitude=base_amplitude * d / np.max(dd), length=1e-6),
+#                   name='d%d' % (i + 1), refpulse='d%d' % i, refpoint='end')
+#    my_element.add(pulse.cp(sq_pulse_marker, amplitude=2, length=1e-6),
+#                   name='d%d_marker' % (i + 1), refpulse='d%d' % i, refpoint='end')
+#
+#my_element.print_overview()
+#
+#your_element = element.Element('your_element', pulsar=pulsar)
+#your_element.add(pulse.cp(sq_pulse, amplitude=0.25, length=1e-6), name = 'your0')
+#
+#for i in range(3):
+#    your_element.add(pulse.cp(sq_pulse, amplitude=base_amplitude/(i+1), length=1e-6), name = 'your%d' %(i+1), refpulse ='your%d' % i, refpoint = 'end')
+#    your_element.add(pulse.cp(sq_pulse_marker, amplitude=base_amplitude/(i+1), length=1e-6), name = 'your%d_marker' %(i+1), refpulse ='your%d' % i, refpoint = 'end')
+#    
+#your_element.print_overview()
+#print('Element overview:')
+#test_element.print_overview()
+#print()
 
-my_element = element.Element('my_element', pulsar=pulsar)
-dd = [0, 0, 1, 2, 3, 4, 0]
-my_element.add(pulse.cp(sq_pulse, amplitude=0.35, length=1e-6), name='d0', )
-my_element.add(pulse.cp(sin_pulse_marker, amplitude=0.1, length=1e-6), name='d0_marker2', )
-
-for i, d in enumerate(dd):
-    my_element.add(pulse.cp(sq_pulse, amplitude=base_amplitude * d / np.max(dd), length=1e-6),
-                   name='d%d' % (i + 1), refpulse='d%d' % i, refpoint='end')
-    my_element.add(pulse.cp(sq_pulse_marker, amplitude=2, length=1e-6),
-                   name='d%d_marker' % (i + 1), refpulse='d%d' % i, refpoint='end')
-
-my_element.print_overview()
-
-your_element = element.Element('your_element', pulsar=pulsar)
-your_element.add(pulse.cp(sq_pulse, amplitude=0.25, length=1e-6), name = 'your0')
-
-for i in range(3):
-    your_element.add(pulse.cp(sq_pulse, amplitude=base_amplitude/(i+1), length=1e-6), name = 'your%d' %(i+1), refpulse ='your%d' % i, refpoint = 'end')
-    your_element.add(pulse.cp(sq_pulse_marker, amplitude=base_amplitude/(i+1), length=1e-6), name = 'your%d_marker' %(i+1), refpulse ='your%d' % i, refpoint = 'end')
-    
-your_element.print_overview()
-print('Element overview:')
-test_element.print_overview()
-print()
 
 
-
-awg = station.awg
-awg2 = station.awg2
-print('a')
-elts = [test_element, my_element, your_element]
-print('b')
-myseq = Sequence('ASequence')
-print('c')
-myseq.append(name='test_element', wfname='test_element', trigger_wait=False,)
-myseq.append(name='my_element', wfname='my_element', trigger_wait=False,)
-myseq.append(name='your_element', wfname='your_element', trigger_wait=False,)
-myseq.append(name='test_element1', wfname='test_element', trigger_wait=False,)
+#awg = station.awg
+#awg2 = station.awg2
+#print('a')
+#elts = [test_element, my_element, your_element]
+#print('b')
+#myseq = Sequence('ASequence')
+#print('c')
+#myseq.append(name='test_element', wfname='test_element', trigger_wait=False,)
+#myseq.append(name='my_element', wfname='my_element', trigger_wait=False,)
+#myseq.append(name='your_element', wfname='your_element', trigger_wait=False,)
+#myseq.append(name='test_element1', wfname='test_element', trigger_wait=False,)
 
 #print('d')
 #awg.delete_all_waveforms_from_list()
@@ -246,7 +246,7 @@ myseq.append(name='test_element1', wfname='test_element', trigger_wait=False,)
 
 
 
-def ideal_waveforms(element = my_element):
+def ideal_waveforms(element = None):
         wfs = {}
         tvals = np.arange(element.samples())/element.clock
 

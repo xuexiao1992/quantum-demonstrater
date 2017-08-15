@@ -15,6 +15,12 @@ import stationF006
 from manipulation_library import Ramsey
 #from stationF006 import station
 
+import sys
+sys.path.append('C:\\Users\\LocalAdmin\\Documents\\GitHub\\PycQED_py3\\pycqed\\measurement\\waveform_control')
+import pulsar as ps
+import element as ele
+
+
 #%% make experiment
 
 def set_step(time = 0, qubits = [], voltages = [], **kw):
@@ -71,15 +77,15 @@ def sweep_array(start, stop, points):
 
 
 #%% make manipulation
-def make_manipulation(manipulation = Manipulation(name = 'Manip'), qubits = [], **kw):
-
-    waiting_time = kw.pop('waiting_time', None)
-    amplitude = kw.pop('amplitude', None)
-
-    manip = make_Ramsey(manipulation = manipulation, qubits = qubits, waiting_time = waiting_time)
-
-    return manip
-
+#def make_manipulation(manipulation = Manipulation(name = 'Manip'), qubits = [], **kw):
+#
+#    waiting_time = kw.pop('waiting_time', None)
+#    amplitude = kw.pop('amplitude', None)
+#
+#    manip = make_Ramsey(manipulation = manipulation, qubits = qubits, waiting_time = waiting_time)
+#
+#    return manip
+#
 
 
 #%%
@@ -106,8 +112,7 @@ def make_experiment_cfg():
 
     digitizer = station.digitizer
 #    awg.ch3_amp
-    pulsar = set_5014pulsar(awg = awg)
-    pulsar2 = set_5014pulsar(awg = awg2)
+    pulsar = set_5014pulsar(awg = awg, awg2= awg2)
 
     qubit_1 = station.qubit_1
     qubit_2 = station.qubit_2
@@ -115,7 +120,7 @@ def make_experiment_cfg():
     qubits = [qubit_1, qubit_2]
 
 
-    experiment = Experiment(name = 'experiment_test', qubits = [qubit_1, qubit_2], awg = awg, pulsar = pulsar)
+    experiment = Experiment(name = 'experiment_test', qubits = [qubit_1, qubit_2], awg = awg, awg2 = awg2, pulsar = pulsar)
     
 
     experiment.sweep_loop1 = {
@@ -165,14 +170,13 @@ def make_experiment_cfg():
     experiment.sequence_cfg = [init_cfg, manip_cfg,]
     experiment.sequence_cfg_type = ['init','manip',]
 
-    experiment.manip_elem = Ramsey(name = 'Ramsey',)
+    experiment.manip_elem = Ramsey(name = 'Ramsey', pulsar = pulsar)
+    
+    experiment.manip_elem.pulsar = None
 
     experiment.set_sweep()
     
-    
-    
 #    experiment.manipulation_element(name = 'manip', manip_element = Ramsey(name = 'Ramsey', qubits = qubits, waiting_time = 1e-6))
-
 
     return experiment
 
@@ -193,54 +197,29 @@ def set_vector_signal_generator(VSG):
 #%% make pulsar
 
 
-def set_5014pulsar(awg):
-    pulsar = Pulsar()
-    pulsar.AWG = awg
+def set_5014pulsar(awg, awg2):
+    
+    awg = awg.name
+    awg2 = awg2.name
+    pulsar = Pulsar(name = 'PuLsAr', default_AWG = awg, master_AWG = awg)
 
-    marker1highs = [2, 2, 2.7, 2]
-#    marker2highs = [2, 2, 2.7, 2]
-    for i in range(4):
-        # Note that these are default parameters and should be kept so.
-        # the channel offset is set in the AWG itself. For now the amplitude is
-        # hardcoded. You can set it by hand but this will make the value in the
-        # sequencer different.
-        pulsar.define_channel(id='ch{}'.format(i + 1),
+    marker1highs = [2, 2, 2.7, 2, 2, 2, 2.7, 2]
+    for i in range(8):
+        pulsar.define_channel(id='ch{}'.format(i%4 + 1),
                               name='ch{}'.format(i + 1), type='analog',
-                              # max safe IQ voltage
-                              high=1, low=-1,
-                              offset=0.0, delay=0, active=True)
-        pulsar.define_channel(id='ch{}_marker1'.format(i + 1),
+                              high=.7, low=-.7,
+                              offset=0.0, delay=0, active=True, AWG = awg if i<4 else awg2)
+        pulsar.define_channel(id='ch{}_marker1'.format(i%4 + 1),
                               name='ch{}_marker1'.format(i + 1),
                               type='marker',
                               high=marker1highs[i], low=0, offset=0.,
-                              delay=0, active=True)
-        pulsar.define_channel(id='ch{}_marker2'.format(i + 1),
+                              delay=0, active=True, AWG = awg if i<4 else awg2)
+        pulsar.define_channel(id='ch{}_marker2'.format(i%4 + 1),
                               name='ch{}_marker2'.format(i + 1),
                               type='marker',
                               high=2, low=0, offset=0.,
-                              delay=0, active=True)
-
-        pulsar.AWG_sequence_cfg = {
-            'SAMPLING_RATE': 1e9,
-            'CLOCK_SOURCE': 1,  # Internal | External
-            'REFERENCE_SOURCE': 1,  # Internal | External
-            'EXTERNAL_REFERENCE_TYPE': 1,  # Fixed | Variable
-            'REFERENCE_CLOCK_FREQUENCY_SELECTION': 1,  # 10 MHz | 20 MHz | 100 MHz
-            'TRIGGER_SOURCE': 1,  # External | Internal
-            'TRIGGER_INPUT_IMPEDANCE': 1,  # 50 ohm | 1 kohm
-            'TRIGGER_INPUT_SLOPE': 1,  # Positive | Negative
-            'TRIGGER_INPUT_POLARITY': 1,  # Positive | Negative
-            'TRIGGER_INPUT_THRESHOLD': 0.6,  # V
-            'EVENT_INPUT_IMPEDANCE': 2,  # 50 ohm | 1 kohm
-            'EVENT_INPUT_POLARITY': 1,  # Positive | Negative
-            'EVENT_INPUT_THRESHOLD': 1.4,  # V
-            'JUMP_TIMING': 1,  # Sync | Async
-            'RUN_MODE': 4,  # Continuous | Triggered | Gated | Sequence
-            'RUN_STATE': 0,  # On | Off
-        }
-
+                              delay=0, active=True, AWG = awg if i<4 else awg2)
     return pulsar
-
 
 
 #%% test

@@ -15,9 +15,9 @@ from gate import Single_Qubit_Gate, Two_Qubit_Gate, CPhase_Gate, CNot_Gate, CRot
 class Manipulation(Element):
     
     
-    def __init__(self, name, qubits = [], qubits_name = [], operations = {}, **kw):            ## operation is a set of objects: basic one(two) qubit(s) gates
+    def __init__(self, name, pulsar, qubits = [], qubits_name = [], operations = {}, **kw):            ## operation is a set of objects: basic one(two) qubit(s) gates
     
-        super().__init__(name, **kw)
+        super().__init__(name, pulsar, **kw)
         self.operations = {}
                   
         self.refphase = {}       ##  {'Qubit_1': 0, 'Qubit_2': 0}  this is to keep track of the Z rotation
