@@ -6,7 +6,7 @@ Created on Sun Jul 30 17:21:04 2017
 """
 
 from copy import copy, deepcopy
-
+#import stationF006
 class ac():
     def __init__(self, a,b,):
         self.a = a

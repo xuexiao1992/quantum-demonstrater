@@ -49,6 +49,8 @@ def set_manip(time = 0, qubits = [], voltages = [], **kw):
     IQ_frequencies = kw.pop('IQ_frequencies', [qubit.IQ_frequency for qubit in qubits])
     waiting_time = kw.pop('waiting_time', 0)
     duration_time = kw.pop('duration_time', 0)
+    parameter1 = kw.pop('parameter1', 0)
+    parameter2 = kw.pop('parameter2', 0)
 
     step = {'time' : time}
 
@@ -62,6 +64,8 @@ def set_manip(time = 0, qubits = [], voltages = [], **kw):
         step['IQ_frequency_%d'%(i+1)] = IQ_frequencies[i]
         step['waiting_time'] = waiting_time
         step['duration_time'] = duration_time
+        step['parameter1'] = parameter1
+        step['parameter2'] = parameter2
 
     return step
 
@@ -119,9 +123,7 @@ def make_experiment_cfg():
 
     qubits = [qubit_1, qubit_2]
 
-
     experiment = Experiment(name = 'experiment_test', qubits = [qubit_1, qubit_2], awg = awg, awg2 = awg2, pulsar = pulsar)
-    
 
     experiment.sweep_loop1 = {
 #            'para1': [0.8,0.2,0.53,0.14,0.3],
@@ -155,7 +157,7 @@ def make_experiment_cfg():
             }
 
     manip_cfg = {
-            'step1' : set_manip(time = 2e-6, qubits = qubits, voltages = [loop1_para2,0.6], waiting_time = loop1_para1,)
+            'step1' : set_manip(time = 2e-6, qubits = qubits, voltages = [loop1_para2,0.6], waiting_time = loop1_para1, parameter1 = 0)
             }
 
     read_cfg = {
@@ -192,7 +194,13 @@ def set_vector_signal_generator(VSG):
     VSG.frequency.set(0)
     
     return VSG
+#%% set digitizer
 
+def set_digitizer(digitizer):
+    
+    
+    
+    return digitizer
 
 #%% make pulsar
 

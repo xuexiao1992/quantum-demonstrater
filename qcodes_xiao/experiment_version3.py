@@ -165,10 +165,10 @@ class Experiment:
             initialize.add(SquarePulse(name='init', channel=self.channel_VP[i], amplitude=amplitudes[i], length=1e-6),
                            name='init%d'%(i+1),refpulse = refpulse, refpoint = 'start')
             
-        initialize.add(SquarePulse(name='init_c1m2', channel='ch1_marker2', amplitude=2, length=1e-6),
+        initialize.add(SquarePulse(name='init_c1m2', channel='ch1_marker1', amplitude=2, length=1e-6),
                            name='init%d_c1m2'%(i+1),refpulse = 'init1', refpoint = 'start')
-        initialize.add(SquarePulse(name='init_c5m2', channel='ch5_marker2', amplitude=2, length=1e-6),
-                           name='init%d_c5m2'%(i+1),refpulse = 'init1', refpoint = 'start')
+        initialize.add(SquarePulse(name='init_c5m2', channel='ch7_marker2', amplitude=2, length=1e-6),
+                           name='init%d_c7m2'%(i+1),refpulse = 'init1', refpoint = 'start')
 
         return initialize
 
@@ -192,10 +192,13 @@ class Experiment:
         waiting_time = kw.pop('waiting_time', None)
         duration_time = kw.pop('duration_time', None)
         frequency = kw.pop('frequency', None)
-        gate_amp = kw.pop('gate_amp', None)
+        power = kw.pop('power', None)
+        parameter1 = kw.pop('parameter1', None)
+        parameter2 = kw.pop('parameter2', None)
         print(name)
 #        manip = Ramsey()
         manipulation = manip(name = name, qubits = self.qubits, pulsar = self.pulsar, 
+                             parameter1 = parameter1, parameter2 = parameter2,
                              waiting_time = waiting_time, duration_time = duration_time, 
                              frequency = frequency)
 
@@ -207,7 +210,7 @@ class Experiment:
             manipulation.add(SquarePulse(name='manip%d'%(i+1), channel=self.channel_VP[i], amplitude=amplitudes[i], length=time),
                            name='manip%d'%(i+1), refpulse = refpulse, refpoint = 'start', start = start)
             
-        manipulation.add(SquarePulse(name='manip_c1m2', channel='ch1_marker2', amplitude=2, length=time),
+        manipulation.add(SquarePulse(name='manip_c1m2', channel='ch1_marker1', amplitude=0.1, length=time),
                            name='manip%d_c1m2'%(i+1),refpulse = 'manip1', refpoint = 'start')
         manipulation.add(SquarePulse(name='manip_c5m2', channel='ch5_marker2', amplitude=2, length=time),
                            name='manip%d_c5m2'%(i+1),refpulse = 'manip1', refpoint = 'start')
@@ -610,10 +613,17 @@ class Experiment:
                             name='trigger2',)
         trigger_element.add(SquarePulse(name = 'TRG1', channel = 'ch4_marker2', amplitude=2, length=1570e-9),
                             name='trigger1',refpulse = 'trigger2', refpoint = 'start', start = 200e-9)
+        
+        extra_element = Element('extra', self.pulsar)
+        extra_element.add(SquarePulse(name = 'EXT2', channel = 'ch8_marker2', amplitude=2, length=5e-9),
+                            name='extra2',)
+        extra_element.add(SquarePulse(name = 'EXT1', channel = 'ch4_marker2', amplitude=2, length=1e-6),
+                            name='extra1',)
 
         self.elts.insert(0,trigger_element)
+        self.elts.append(extra_element)
         self.sequence.insert_element(name = 'trigger', wfname = 'trigger', pos = 0)
-        
+        self.sequence.append(name ='extra', wfname = 'extra', trigger_wait = False)
         return True
 
     def load_sequence(self,):

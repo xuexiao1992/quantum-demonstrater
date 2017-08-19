@@ -25,7 +25,7 @@ from pycqed.measurement.waveform_control.sequence import Sequence
 from pycqed.measurement.waveform_control.pulsar import Pulsar
 from pycqed.measurement.waveform_control.element import Element
 
-from pycqed.measurement.waveform_control import element
+
 
 
 import sys
@@ -80,7 +80,10 @@ print()
 
 awg = station.awg
 awg2 = station.awg2
-basechannel = 3
+awg.clock_freq(1e9)
+awg2.clock_freq(1e9)
+
+basechannel = 1
 VT_channel = 5
 VLP_channel = 8
 base_amplitude = 0.25  # some safe value for the sample
@@ -122,14 +125,19 @@ test_element2.add(pulse.cp(sin_pulse, frequency=1e6, amplitude=0.3, length=2e-6)
                  name='first pulse')
 test_element2.add(pulse.cp(sq_pulse1, amplitude=0.3, length=2e-6),
                  name='second', refpulse = 'first pulse', refpoint = 'start')
+test_element2.add(pulse.SquarePulse(name = 'marker1',amplitude=2, length = 2e-6, channel = 'ch3_marker2'),
+                  name = 'marker1', refpulse = 'first pulse', refpoint = 'start')
+test_element2.add(pulse.SquarePulse(name = 'marker2',amplitude=2,length = 2e-6, channel = 'ch6_marker1'),
+                  name = 'marker2', refpulse = 'first pulse', refpoint = 'start')
 
 
 test_element3 = Element('test3', pulsar = pulsar)
-test_element3.add(pulse.cp(sq_pulse1, amplitude=base_amplitude / np.sqrt(2), length=1e-6),
-                 name='first pulse')
-test_element3.add(pulse.cp(sq_pulse_marker, amplitude=base_amplitude / np.sqrt(2), length=1e-6),
-                 name='first pulse1')
-
+test_element3.add(pulse.cp(sq_pulse1, amplitude=0.1, length=1e-6),
+                 name='firstpulse')
+test_element3.add(pulse.cp(sq_pulse_marker, amplitude=0.8, length=1e-6),
+                  name='firstpulse1',refpulse = 'firstpulse', refpoint = 'start')
+test_element3.add(pulse.SquarePulse(name = 'sq',amplitude = 0.3,length = 1e-6, channel = 'ch2',),
+                  name = 'sq',refpulse = 'firstpulse',refpoint = 'start')
 trigger_element = Element('trigger', pulsar)
 
 trigger_element.add(pulse.SquarePulse(name = 'TRG2', channel = 'ch8_marker2', amplitude=2, length=70e-9),
@@ -147,15 +155,12 @@ print('c')
 myseq.append(name='trigger', wfname='trigger', trigger_wait=False,)
 
 myseq.append(name='test_element', wfname='test_element', trigger_wait=False,)
-myseq.append(name='test2', wfname='test2', trigger_wait=False,)
+myseq.append(name='test2_1', wfname='test2', trigger_wait=False,)
 myseq.append(name='test3_1', wfname='test3', trigger_wait=False, )
 
-myseq.append(name='test3_2', wfname='test3', trigger_wait=False,)
-myseq.append(name='test2_2', wfname='test2', trigger_wait=False, goto_target = 'test_element')
+myseq.append(name='test2_2', wfname='test2', trigger_wait=False,)
+myseq.append(name='test3_2', wfname='test3', trigger_wait=False, goto_target = 'test2_1')
 
-#myseq.append(name='my_element', wfname='my_element', trigger_wait=False,)
-#myseq.append(name='your_element', wfname='your_element', trigger_wait=False,)
-#myseq.append(name='test_element1', wfname='test_element', trigger_wait=False,)
 awg.delete_all_waveforms_from_list()
 awg2.delete_all_waveforms_from_list()
 
@@ -164,10 +169,14 @@ awg.stop()
 awg2.stop()
 print('f')
 #pulsar.program_awg(myseq, *elts)
-pulsar.program_awgs(myseq, *elts, AWGs = ['awg','awg2'], allow_first_nonzero = True)
+#awg.run_mode('CONT')
+pulsar.program_awgs(myseq, *elts, AWGs = ['awg','awg2'], allow_first_nonzero = False)
 awg2.set_sqel_trigger_wait(element_no = 1, state = 1)
-awg.set_sqel_goto_target_index(element_no = 6, goto_to_index_no = 4)
-awg2.set_sqel_goto_target_index(element_no = 6, goto_to_index_no = 4)
+awg.set_sqel_goto_target_index(element_no = 6, goto_to_index_no = 1)
+awg2.set_sqel_goto_target_index(element_no = 6, goto_to_index_no = 1)
+
+
+#awg2.run_mode('TRIG')
 awg2.trigger_level(0.5)
 #
 #channels = pulsar.channels.keys()

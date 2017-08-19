@@ -26,6 +26,8 @@ class Ramsey(Manipulation):
         
         self.waiting_time = kw.pop('waiting_time', 0)
         
+        
+        
         self.qubits = kw.pop('qubits', None)
         if self.qubits is not None:
             self.qubits_name = [qubit.name for qubit in self.qubits]
@@ -77,8 +79,8 @@ class new_ex(Manipulation):
         
 #        self.refphase = {}
         
-        self.waiting_time1 = kw.pop('waiting_time', 0)
-        self.waiting_time2 =0
+        self.parameter1 = kw.pop('parameter1', 0)
+        self.parameter2 = kw.pop('parameter2', 0)
 #        self.qubits = kw.pop('qubits', None)
 #        if self.qubits is not None:
 #            self.qubits_name = [qubit.name for qubit in self.qubits]
@@ -92,7 +94,8 @@ class new_ex(Manipulation):
 #            self.qubits_name = [qubit.name for qubit in self.qubits]
 #            self.refphase = {qubit.name: 0 for qubit in self.qubits}
 #        self.pulsar = kw.pop('pulsar', None)
-        self.waiting_time = kw.pop('waiting_time', self.waiting_time)
+        self.parameter1 = kw.pop('parameter1', 0)
+        self.parameter2 = kw.pop('parameter2', 0)
         
 #        if self.pulsar is not None:
 #            self.clock = self.pulsar.clock
@@ -110,9 +113,9 @@ class new_ex(Manipulation):
         
         self.add_X(name='X1_Q1', qubit = self.qubits[0],)
     
-        self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = self.waiting_time1,)
+        self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = self.parameter1,)
 
-        self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = self.waiting_time2,)
+        self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = self.parameter2,)
 
         self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = 1,)
 

@@ -21,7 +21,7 @@ NewIO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents')
 
 datalocation = 'data/2017-07-21/#003_T1_10-55-59'
 
-
+datalocation2 = 'data/test/T1'
 #formatter = HDF5Format()
 
 #data = load_data(location=datalocation, formatter=None, io=NewIO)
