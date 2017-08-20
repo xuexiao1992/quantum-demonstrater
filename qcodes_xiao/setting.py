@@ -10,10 +10,20 @@ from pycqed.measurement.waveform_control.element import Element
 #from experiment import Experiment
 from experiment_version3 import Experiment
 
-from manipulation import Manipulation
 import stationF006
+from manipulation import Manipulation
 from manipulation_library import Ramsey
-#from stationF006 import station
+
+import qcodes.instrument_drivers.Spectrum.M4i as M4i
+from qcodes.instrument_drivers.Spectrum import pyspcm
+from qcodes.instrument.parameter import ArrayParameter, StandardParameter
+from qcodes.instrument.sweep_values import SweepFixedValues
+from qcodes.loops import Loop, ActiveLoop
+from qcodes.data.hdf5_format import HDF5Format, HDF5FormatMetadata
+from qcodes.data.gnuplot_format import GNUPlotFormat
+from qcodes.data.io import DiskIO
+from qcodes.data.data_set import new_data, DataSet
+from qcodes.data.data_array import DataArray
 
 import sys
 sys.path.append('C:\\Users\\LocalAdmin\\Documents\\GitHub\\PycQED_py3\\pycqed\\measurement\\waveform_control')
@@ -183,7 +193,26 @@ def make_experiment_cfg():
     return experiment
 
 
+#%% sweep  outside a  sequence
 
+def function(x):
+    return True
+
+Count = StandardParameter(name = 'Count', set_cmd = function)
+Sweep_Count = Count[1:5:1]
+Sweep_VSGFreq = vsg.frequency[5e9:15e9:3e9]
+LP = Loop(sweep_values = Sweep_Count).each(dig)
+LP2 = Loop(sweep_values = Sweep_VSGFreq).loop(sweep_values = Sweep_Count).each(dig)
+
+formatter = HDF5FormatMetadata()
+data_IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents')
+data_location = '2017-08-18/20-40-19_T1_Vread_sweep'
+
+data_set = LP.get_data_set(location=None, loc_record = {'name':'T1', 'label':'Vread_sweep'}, io = data_IO,)
+
+print('loop.data_set: %s' % LP.data_set)
+
+data_set = LP.run()
 #%% set VSG
 
 def set_vector_signal_generator(VSG):
@@ -198,8 +227,37 @@ def set_vector_signal_generator(VSG):
 
 def set_digitizer(digitizer):
     
+    pretrigger=16
+    mV_range=1000
+    rate = int(np.floor(250000000/1))
+    #seg_size = int(np.floor((rate * (10e-6))/16)*16 + pretrigger )
+    seg_size = 1040
+    memsize = 5*seg_size
+    posttrigger_size = 1024
     
+    #digitizer.enable_channels(pyspcm.CHANNEL0 | pyspcm.CHANNEL3)
+    digitizer.clock_mode(pyspcm.SPC_CM_INTPLL)
+    #digitizer.clock_mode(pyspcm.SPC_CM_EXTREFCLOCK)
     
+    digitizer.enable_channels(pyspcm.CHANNEL1 | pyspcm.CHANNEL2)
+    
+    digitizer.data_memory_size(memsize)
+    
+    digitizer.segment_size(seg_size)
+    
+    digitizer.posttrigger_memory_size(posttrigger_size)
+    
+    digitizer.timeout(60000)
+    
+    digitizer.sample_rate(250000000)
+    
+    digitizer.set_channel_settings(1,1000, input_path = 0, termination = 0, coupling = 0, compensation = None)
+    
+    #trig_mode = pyspcm.SPC_TMASK_SOFTWARE
+    #trig_mode = pyspcm.SPC_TM_POS
+    trig_mode = pyspcm.SPC_TM_POS | pyspcm.SPC_TM_REARM
+    
+    digitizer.set_ext0_OR_trigger_settings(trig_mode = trig_mode, termination = 0, coupling = 0, level0 = 800, level1 = 900)
     return digitizer
 
 #%% make pulsar

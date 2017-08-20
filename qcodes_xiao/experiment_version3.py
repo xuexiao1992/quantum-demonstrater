@@ -28,6 +28,10 @@ class Experiment:
         self.awg2 = awg2
         self.qubits = qubits
         
+        self.vsg = kw.pop('vsg',None)
+        self.vsg2 = kw.pop('vsg2',None)
+        self.digitizer = ('digitizer', None)
+        
         self.awg_file = None
 
         self.channel_I = [qubit.microwave_gate['channel_I'] for qubit in qubits]
@@ -156,8 +160,6 @@ class Experiment:
 
     def _initialize_element(self, name, amplitudes = [],**kw):
 
-#        print(amplitudes[0])
-
         initialize = Element(name = name, pulsar = self.pulsar)
 
         for i in range(len(self.qubits)):
@@ -165,14 +167,12 @@ class Experiment:
             initialize.add(SquarePulse(name='init', channel=self.channel_VP[i], amplitude=amplitudes[i], length=1e-6),
                            name='init%d'%(i+1),refpulse = refpulse, refpoint = 'start')
             
-        initialize.add(SquarePulse(name='init_c1m2', channel='ch1_marker1', amplitude=2, length=1e-6),
-                           name='init%d_c1m2'%(i+1),refpulse = 'init1', refpoint = 'start')
+        initialize.add(SquarePulse(name='init_c1m2', channel='ch1_marker2', amplitude=2, length=1e-6),
+                                   name='init%d_c1m2'%(i+1),refpulse = 'init1', refpoint = 'start')
         initialize.add(SquarePulse(name='init_c5m2', channel='ch7_marker2', amplitude=2, length=1e-6),
-                           name='init%d_c7m2'%(i+1),refpulse = 'init1', refpoint = 'start')
+                                   name='init%d_c7m2'%(i+1),refpulse = 'init1', refpoint = 'start')
 
         return initialize
-
-
 
     def _readout_element(self, name, amplitudes = [],**kw):
 
@@ -182,6 +182,20 @@ class Experiment:
             refpulse = None if i ==0 else 'read1'
             readout.add(SquarePulse(name='read', channel=self.channel_VP[i], amplitude=amplitudes[i], length=1e-6),
                            name='read%d'%(i+1), refpulse = refpulse, refpoint = 'start')
+        
+        """
+        for trigger digitizer
+        """
+        readout.add(SquarePulse(name='read_c4m2', channel='ch4_marker2', amplitude=2, length=1e-6),
+                                name='read%d_c4m2'%(i+1),refpulse = 'read1', refpoint = 'start', start = 0)
+        
+        """
+        to make all elements equal length in different AWGs
+        """
+        readout.add(SquarePulse(name='read_c1m2', channel='ch1_marker2', amplitude=2, length=1e-6),
+                                name='read%d_c1m2'%(i+1),refpulse = 'read1', refpoint = 'start')
+        readout.add(SquarePulse(name='read_c5m2', channel='ch7_marker2', amplitude=2, length=1e-6),
+                                name='read%d_c7m2'%(i+1),refpulse = 'read1', refpoint = 'start')
 
         return readout
 
@@ -200,7 +214,7 @@ class Experiment:
         manipulation = manip(name = name, qubits = self.qubits, pulsar = self.pulsar, 
                              parameter1 = parameter1, parameter2 = parameter2,
                              waiting_time = waiting_time, duration_time = duration_time, 
-                             frequency = frequency)
+                             frequency = frequency, power = power)
 
         manipulation.make_circuit()
 

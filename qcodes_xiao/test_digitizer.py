@@ -253,8 +253,3 @@ data_set_3.read()
 #
 #data = LP.run()
 #
-
-
-#%%
-
-
