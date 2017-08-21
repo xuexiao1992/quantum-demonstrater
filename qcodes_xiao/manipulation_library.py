@@ -16,25 +16,20 @@ import stationF006
 
 #%% by objects
 
+
 class Ramsey(Manipulation):
     
     def __init__(self, name, pulsar, **kw):
         
         super().__init__(name, pulsar)
-        
         self.refphase = {}
-        
         self.waiting_time = kw.pop('waiting_time', 0)
-        
-        
-        
         self.qubits = kw.pop('qubits', None)
         if self.qubits is not None:
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
-            
-            
-#        self.pulsar = kw.pop('pulsar', None)
+        self.parameter1 = kw.pop('parameter1', 0)
+        self.parameter2 = kw.pop('parameter2', 0)
         
     def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
@@ -44,10 +39,8 @@ class Ramsey(Manipulation):
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = kw.pop('pulsar', None)
         self.waiting_time = kw.pop('waiting_time', self.waiting_time)
-        self.waiting_time_1 = kw.pop('waiting_time_1', self.waiting_time)
-        self.waiting_time_2 = kw.pop('waiting_time_2', self.waiting_time)
-        
-        
+        self.parameter1 = kw.pop('parameter1', 0)
+        self.parameter2 = kw.pop('parameter2', 0)
         return self
     
     def make_circuit(self, waiting_time = 0):
@@ -68,6 +61,75 @@ class Ramsey(Manipulation):
         
         return self
     
+
+class Rabi(Manipulation):
+    
+    def __init__(self, name, pulsar, **kw):
+        
+        super().__init__(name, pulsar)
+        self.waiting_time = kw.pop('waiting_time', 0)
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.parameter1 = kw.pop('parameter1', 0)
+        self.parameter2 = kw.pop('parameter2', 0)
+        
+    def __call__(self, **kw):
+        self.name = kw.pop('name', self.name)
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = kw.pop('pulsar', None)
+        
+        self.parameter1 = kw.pop('parameter1', 0)
+        self.parameter2 = kw.pop('parameter2', 0)
+        
+        return self
+    
+    def make_circuit(self, waiting_time = 0):
+        
+        self.add_single_qubit_gate(name='Rabi_Oscillation', qubit = self.qubits[0], amplitude = self.parameter1, length = self.parameter2)
+    
+        return self
+
+
+class Grover(Manipulation):
+    
+    def __init__(self, name, pulsar, **kw):
+        
+        super().__init__(name, pulsar)
+        self.waiting_time = kw.pop('waiting_time', 0)
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.parameter1 = kw.pop('parameter1', 0)
+        self.parameter2 = kw.pop('parameter2', 0)
+        
+    def __call__(self, **kw):
+        self.name = kw.pop('name', self.name)
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = kw.pop('pulsar', None)
+        
+        self.parameter1 = kw.pop('parameter1', 0)
+        self.parameter2 = kw.pop('parameter2', 0)
+        
+        return self
+    
+    def make_circuit(self, waiting_time = 0):
+        
+        self.add_Y(name='Y1_Q1', qubit = self.qubits[0],)
+        
+        self.add_Y(name='Y1_Q2', refgate = 'Y1_Q1', qubit = self.qubits[0],)
+    
+        return self
+
+
 
 
 

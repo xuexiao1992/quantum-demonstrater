@@ -13,6 +13,7 @@ from experiment_version3 import Experiment
 import stationF006
 from manipulation import Manipulation
 from manipulation_library import Ramsey
+#from digitizer_setting import digitizer_param
 
 import qcodes.instrument_drivers.Spectrum.M4i as M4i
 from qcodes.instrument_drivers.Spectrum import pyspcm
@@ -142,7 +143,7 @@ def make_experiment_cfg():
             }
 
     experiment.sweep_loop2 = {
-            'para1': [0,0.5,0.5,0,0.5],
+            'para1': [0.4,0.5,0.3,0.8,0.5],
             }
 
 #    loop1_para1 = [1,2,344,553,3]
@@ -154,7 +155,7 @@ def make_experiment_cfg():
     loop2_para1 = 'loop2_para1'
     
     init_cfg = {
-            'step1' : set_step(time = 2e-6, qubits = qubits, voltages = [0.2, 0.3]),
+            'step1' : set_step(time = 2e-6, qubits = qubits, voltages = [0.2, 0.8]),
             'step2' : set_step(time = 5e-6, qubits = qubits, voltages = [loop2_para1, 0.3]),
             'step3' : set_step(time = 1e-6, qubits = qubits, voltages = [0.4, 0.5]),
 #            'step4' : set_step(time = 1000e-6, qubits = qubits, voltages = [0.4, 0.5]),
@@ -167,7 +168,7 @@ def make_experiment_cfg():
             }
 
     manip_cfg = {
-            'step1' : set_manip(time = 2e-6, qubits = qubits, voltages = [loop1_para2,0.6], waiting_time = loop1_para1, parameter1 = 0)
+            'step1' : set_manip(time = 10e-6, qubits = qubits, voltages = [loop1_para2,0.6], waiting_time = loop1_para1, parameter1 = 0)
             }
 
     read_cfg = {
@@ -200,19 +201,34 @@ def function(x):
 
 Count = StandardParameter(name = 'Count', set_cmd = function)
 Sweep_Count = Count[1:5:1]
-Sweep_VSGFreq = vsg.frequency[5e9:15e9:3e9]
-LP = Loop(sweep_values = Sweep_Count).each(dig)
-LP2 = Loop(sweep_values = Sweep_VSGFreq).loop(sweep_values = Sweep_Count).each(dig)
+#Sweep_VSGFreq = vsg.frequency[5e9:15e9:3e9]
+#LP = Loop(sweep_values = Sweep_Count).each(dig)
+#LP2 = Loop(sweep_values = Sweep_VSGFreq).loop(sweep_values = Sweep_Count).each(dig)
 
 formatter = HDF5FormatMetadata()
 data_IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents')
 data_location = '2017-08-18/20-40-19_T1_Vread_sweep'
 
-data_set = LP.get_data_set(location=None, loc_record = {'name':'T1', 'label':'Vread_sweep'}, io = data_IO,)
+#data_set = LP.get_data_set(location=None, loc_record = {'name':'T1', 'label':'Vread_sweep'}, io = data_IO,)
 
-print('loop.data_set: %s' % LP.data_set)
+#print('loop.data_set: %s' % LP.data_set)
 
-data_set = LP.run()
+#data_set = LP.run()
+
+#dig = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size)
+def scan_outside_awg(name, set_parameter, measured_parameter, start, end, step):
+    
+    Sweep_Value = parameter[start:end:step]
+    
+    LOOP = Loop(sweep_values = Sweep_Value).each(measured_parameter)
+    
+    data_set = LOOP.get_data_set(location = None, loc_record = {'name': name, 'label': 'V_sweep'}, io = data_IO,)
+    
+    data_set = Loop.run()
+    
+    return data_set
+
+
 #%% set VSG
 
 def set_vector_signal_generator(VSG):
@@ -258,7 +274,10 @@ def set_digitizer(digitizer):
     trig_mode = pyspcm.SPC_TM_POS | pyspcm.SPC_TM_REARM
     
     digitizer.set_ext0_OR_trigger_settings(trig_mode = trig_mode, termination = 0, coupling = 0, level0 = 800, level1 = 900)
-    return digitizer
+    
+    dig = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size )
+
+    return digitizer, dig
 
 #%% make pulsar
 
@@ -273,7 +292,7 @@ def set_5014pulsar(awg, awg2):
     for i in range(8):
         pulsar.define_channel(id='ch{}'.format(i%4 + 1),
                               name='ch{}'.format(i + 1), type='analog',
-                              high=.7, low=-.7,
+                              high=1, low=-1,
                               offset=0.0, delay=0, active=True, AWG = awg if i<4 else awg2)
         pulsar.define_channel(id='ch{}_marker1'.format(i%4 + 1),
                               name='ch{}_marker1'.format(i + 1),
@@ -289,7 +308,6 @@ def set_5014pulsar(awg, awg2):
 
 
 #%% test
-
 experiment = make_experiment_cfg()
 
 experiment.generate_1D_sequence()

@@ -145,7 +145,9 @@ trigger_element.add(pulse.SquarePulse(name = 'TRG2', channel = 'ch8_marker2', am
 trigger_element.add(pulse.SquarePulse(name = 'TRG1', channel = 'ch4_marker2', amplitude=2, length=1570e-9),
                  name='trigger1',refpulse = 'trigger2', refpoint = 'start', start = 200e-9)
 
-
+test_element4 = Element('test4', pulsar)
+test_element4.add(pulse.SquarePulse(name = 'TRG1', channel = 'ch4_marker2', amplitude=0, length=1570e-9),
+                 name='tri',)
 
 elts = [trigger_element, test_element, test_element2, test_element3]
 

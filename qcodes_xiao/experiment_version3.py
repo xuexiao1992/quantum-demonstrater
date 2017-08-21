@@ -217,10 +217,13 @@ class Experiment:
                              frequency = frequency, power = power)
 
         manipulation.make_circuit()
+        
+        VP_start_point = -manip.VP_before
+        VP_end_point = manip.VP_after
 
         for i in range(len(self.qubits)):
             refpulse = None if i ==0 else 'manip1'
-            start = -500e-9 if i ==0 else 0
+            start = VP_start_point if i ==0 else 0
             manipulation.add(SquarePulse(name='manip%d'%(i+1), channel=self.channel_VP[i], amplitude=amplitudes[i], length=time),
                            name='manip%d'%(i+1), refpulse = refpulse, refpoint = 'start', start = start)
             
@@ -237,7 +240,10 @@ class Experiment:
             element = self._initialize_element(name, amplitudes = amplitudes,)
         elif segment == 'manip':
             waiting_time = kw.pop('waiting_time',0)
-            element = self._manipulation_element(name, time = time, amplitudes = amplitudes, waiting_time = waiting_time)
+            parameter1 = kw.pop('parameter1', 0)
+            parameter2 = kw.pop('parameter2', 0)
+            element = self._manipulation_element(name, time = time, amplitudes = amplitudes, waiting_time = waiting_time,
+                                                 parameter1 = parameter1, parameter2 = parameter2)
         elif segment == 'read':
             element = self._readout_element(name, amplitudes = amplitudes,)
         else:
@@ -280,7 +286,7 @@ class Experiment:
             is_in_loop.append(m)
             loop_num.append(n)
         
-        for parameter in ['time', 'waiting_time', 'duration_time', 'IQ_amplitude']:
+        for parameter in ['time', 'waiting_time', 'duration_time', 'IQ_amplitude', 'parameter1', 'parameter2']:
 #            if parameter not in:
 #                continue
             m, n = self._is_in_loop(segment_num, 'step%d'%s,parameter)
@@ -327,10 +333,11 @@ class Experiment:
                         
                     amplitudes = [step['voltage_%d'%(q+1)] for q in range(self.qubits_number)]
                     
-                    
-                    waiting_time = step.pop('waiting_time',None)
+                    waiting_time = step.pop('waiting_time', None)
+                    parameter1 = step.pop('parameter1', None)
+                    parameter2 = step.pop('parameter2', None)
                     element = self.make_element(name = name+'step%d_%d_%d'%(s,j,i), segment = seg, time = step['time'], amplitudes=amplitudes,
-                                                waiting_time = waiting_time)
+                                                waiting_time = waiting_time, parameter1 = parameter1, parameter2 = parameter2)
                     """
                     for trigger, not used
                     if segment_num == 0 and step_num == 1:
@@ -455,7 +462,7 @@ class Experiment:
                 repe = repetition[step][jj][ii]
                 if jj != 0:
                     wfname_to_delete = segment[step][jj-1][ii].name
-                    element_no = i*unit_seq_length + former_element + int(step[-1])
+                    element_no = i*unit_seq_length + former_element + int(step[-1])+1
                     print('element_no',element_no)
                     if i == 0:
                         self.add_new_element_to_awg_list(element = element)
@@ -625,13 +632,13 @@ class Experiment:
 
         trigger_element.add(SquarePulse(name = 'TRG2', channel = 'ch8_marker2', amplitude=2, length=300e-9),
                             name='trigger2',)
-        trigger_element.add(SquarePulse(name = 'TRG1', channel = 'ch4_marker2', amplitude=2, length=1570e-9),
+        trigger_element.add(SquarePulse(name = 'TRG1', channel = 'ch4_marker2', amplitude=2, length=2.8e-6),
                             name='trigger1',refpulse = 'trigger2', refpoint = 'start', start = 200e-9)
         
         extra_element = Element('extra', self.pulsar)
         extra_element.add(SquarePulse(name = 'EXT2', channel = 'ch8_marker2', amplitude=2, length=5e-9),
                             name='extra2',)
-        extra_element.add(SquarePulse(name = 'EXT1', channel = 'ch4_marker2', amplitude=2, length=1e-6),
+        extra_element.add(SquarePulse(name = 'EXT1', channel = 'ch4_marker2', amplitude=2, length=2e-6),
                             name='extra1',)
 
         self.elts.insert(0,trigger_element)
@@ -655,8 +662,8 @@ class Experiment:
         self.awg2.trigger_level(0.5)
         self.awg2.set_sqel_trigger_wait(element_no = 1, state = 1)
         last_element_num = self.awg2.sequence_length()
-        self.awg.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 2)
-        self.awg2.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 2)
+        self.awg.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 1)
+        self.awg2.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 1)
 
         return True
 

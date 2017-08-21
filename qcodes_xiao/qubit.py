@@ -22,8 +22,10 @@ class Qubit(Instrument):
         
         self.frequency = 0
         
-        self.Pi_pulse_length = 50e-9
-        self.halfPi_pulse_length = 25e-9
+        self.Pi_pulse_length = kw.pop('Pi_pulse_length', 50e-9)
+        
+        self.halfPi_pulse_length = kw.pop('halfPi_pulse_length', 25e-9)
+        
         self.refphase = 0
         
         self.microwave_power = 0.3
@@ -31,14 +33,15 @@ class Qubit(Instrument):
         if self.microwave_power >= 1:
             raise ValueError('should be set in a safe value less than ')
         
-        self.IQ_amplitude = 0.5
+        self.IQ_amplitude = 1
         
         if self.IQ_amplitude>1 or self.IQ_amplitude<-1:
             raise ValueError('should be set in a safe value within (-1,1)')
         
         self.IQ_frequency = 0
         
-        self.Rabi_frequency = 0
+        self.Rabi_frequency = kw.pop('Rabi_frequency', 0)
+        
         self.gates = {}      #{number:voltage}
         
         self.awg_channels = {}

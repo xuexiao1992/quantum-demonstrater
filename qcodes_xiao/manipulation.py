@@ -15,7 +15,7 @@ from gate import Single_Qubit_Gate, Two_Qubit_Gate, CPhase_Gate, CNot_Gate, CRot
 class Manipulation(Element):
     
     
-    def __init__(self, name, pulsar, qubits = [], qubits_name = [], operations = {}, **kw):            ## operation is a set of objects: basic one(two) qubit(s) gates
+    def __init__(self, name, pulsar, qubits = [], operations = {}, **kw):            ## operation is a set of objects: basic one(two) qubit(s) gates
     
         super().__init__(name, pulsar, **kw)
         self.operations = {}
@@ -24,16 +24,13 @@ class Manipulation(Element):
         
         self.total_time = 0     ## used for finally adding the gate voltage pulse
         
-        self.qubits = qubits
-        self.qubits_name = [qubit.name for qubit in qubits]
+        self.VP_before = 5e-6
+        self.VP_after = 500e-9
         
+        
+        self.qubits = qubits        
         self.refphase = {qubit.name: 0 for qubit in self.qubits}
         
-#        for qubitname in qubits_name:
-#             self.refphase[qubitname] = 0
-             
-#    def __call__
-
     
     def _add_all_pulses_of_qubit_gate(self, name = None, qubit_gate = None):
         
@@ -50,7 +47,6 @@ class Manipulation(Element):
             pulse_name = PULSE['pulse_name']
             start = PULSE['waiting']
             refpulse = PULSE['refpulse']
-   
             refpoint = PULSE['refpoint']
             self.add(pulse = pulse, name = pulse_name, start = start, refpulse = refpulse, refpoint = refpoint)
 ##      this part above is to add all the pulses in the Gate into the element  

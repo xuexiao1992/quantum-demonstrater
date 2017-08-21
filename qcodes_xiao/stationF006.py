@@ -9,7 +9,6 @@ import numpy as np
 #from qcodes.utils.loggingGUI import installZMQlogger
 #import qcodes.instrument_drivers.stanford_research.SR830 as SR830
 import qcodes.instrument_drivers.tektronix.AWG5014 as AWG5014
-import qcodes.instrument_drivers.tektronix.Keithley_2700 as Keithley_2700
 #import qcodes.instrument_drivers.QuTech.IVVI as IVVI
 import qcodes.instrument_drivers.Spectrum.M4i as M4i
 from qubit import Qubit 
@@ -124,7 +123,7 @@ def initialize(reinit=False, server_name=None):
 #
     qubit_1.define_gate(gate_name = 'Plunger1', gate_number = 3, gate_function = 'plunger', channel_VP = 'ch5')
 #
-    qubit_2.define_gate(gate_name = 'LP2', gate_number = 4, microwave = 1, channel_I = 'LP2I', channel_Q = 'LP2Q', channel_PM = 'ch1_marker1')
+    qubit_2.define_gate(gate_name = 'LP2', gate_number = 4, microwave = 1, channel_I = 'ch3', channel_Q = 'ch4', channel_PM = 'ch4_marker1')
 #
     qubit_2.define_gate(gate_name = 'Plunger2', gate_number = 5, gate_function = 'plunger', channel_VP = 'ch6')
 

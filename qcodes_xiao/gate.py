@@ -48,6 +48,8 @@ class Single_Qubit_Gate(Gate):
         self.Pi_pulse_length = qubit.Pi_pulse_length
         self.halfPi_pulse_length = qubit.halfPi_pulse_length
         
+        self.PM_before = 200e-9 
+        self.PM_after = 20e-9
         
         self.voltage_pulse_length = 0
         
@@ -56,10 +58,6 @@ class Single_Qubit_Gate(Gate):
         self.axis = np.array(rotating_axis)
         self.axis_angle = np.arctan(self.axis[1]/self.axis[0]) if self.axis[0]!=0 else C.pi/2
         
-#        self.pulses = {
-#                ##  'microwave': None,
-#                ##  'voltage': None
-#                }      ## this will be the returned value and used in the manipulation object
         
         self.pulses = [None, None, None, None]            ## [microwave1_I, microwave1_Q, voltage, microwave2_I, microwave2_Q]
         
@@ -79,25 +77,25 @@ class Single_Qubit_Gate(Gate):
                                     amplitude = 0, length = pulse_length + waiting_time)
         
         PM_pulse = SquarePulse(channel = self.channel_PM, name = '%s_PM_pulse'%self.name,
-                               amplitude = 2, length = pulse_length+200e-9)
+                               amplitude = 2, length = pulse_length+self.PM_after)
         
         if 1:
             microwave_pulse_I = SquarePulse(channel = self.channel_I, name = '%s_microwave_pulse_I'%self.name, 
-                                            amplitude = pulse_amp*np.cos(self.refphase + self.axis_angle), 
+                                            amplitude = pulse_amp*np.cos(-self.refphase + self.axis_angle), 
                                             length = pulse_length)
             
             microwave_pulse_Q = SquarePulse(channel = self.channel_Q, name = '%s_microwave_pulse_Q'%self.name, 
-                                            amplitude = pulse_amp*np.sin(self.refphase + self.axis_angle), 
+                                            amplitude = pulse_amp*np.sin(-self.refphase + self.axis_angle), 
                                             length = pulse_length)
             
             
         elif 0: ##here frequency and phase is not yet ready!!!!!!!!!!!
             microwave_pulse_I = CosPulse(channel = self.channel_I, name = '%s_microwave_pulse_I'%self.name, frequency = 1e6,
-                                         phase = 0, amplitude = 0.2*np.cos(self.refphase + self.axis_angle),
+                                         phase = 0, amplitude = 0.2*np.cos(-self.refphase + self.axis_angle),
                                          length = pulse_length)
             
             microwave_pulse_Q = CosPulse(channel = self.channel_Q, name = '%s_microwave_pulse_Q'%self.name, frequency = 1e6, 
-                                         phase = 0, amplitude = 0.2*np.sin(self.refphase + self.axis_angle),
+                                         phase = 0, amplitude = 0.2*np.sin(-self.refphase + self.axis_angle),
                                          length = pulse_length)
             
             
@@ -131,7 +129,7 @@ class Single_Qubit_Gate(Gate):
                 'pulse_name': PM_pulse.name,
                 'refpulse': '%s_microwave_pulse_I'%self.name,
                 'refpoint': 'start',
-                'waiting': -200e-9
+                'waiting': -self.PM_before
                 }
 
 
