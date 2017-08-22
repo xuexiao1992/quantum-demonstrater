@@ -21,8 +21,10 @@ class Gate:
     def __init__(self, name, **kw):
 
         self.name = name                                 ## name of a gate, e.g. 'X_Q1' 'CZ_Q12'
+        self.qubit = kw.pop('qubit', None)
+        self.control_qubit = kw.pop('control_qubit', None)
+        self.target_qubit = kw.pop('target_qubit', None)
         self.qubit_name = 'qubit'
-        self.qubits = []
         
 
 ##      Gates will be an object that consists all the pulse information in the operation,
@@ -48,7 +50,7 @@ class Single_Qubit_Gate(Gate):
         self.Pi_pulse_length = qubit.Pi_pulse_length
         self.halfPi_pulse_length = qubit.halfPi_pulse_length
         
-        self.PM_before = 200e-9 
+        self.PM_before = 200e-9
         self.PM_after = 20e-9
         
         self.voltage_pulse_length = 0
@@ -77,7 +79,7 @@ class Single_Qubit_Gate(Gate):
                                     amplitude = 0, length = pulse_length + waiting_time)
         
         PM_pulse = SquarePulse(channel = self.channel_PM, name = '%s_PM_pulse'%self.name,
-                               amplitude = 2, length = pulse_length+self.PM_after)
+                               amplitude = 2, length = pulse_length+self.PM_before+self.PM_after)
         
         if 1:
             microwave_pulse_I = SquarePulse(channel = self.channel_I, name = '%s_microwave_pulse_I'%self.name, 
@@ -213,27 +215,31 @@ class Two_Qubit_Gate(Gate):
         return True
    
 
-    def detuning(self, name = 'detuning_pulse', length = 0, waiting_time = 0, refpulse = None, refpoint = 'end'):
+    def detuning(self, name = 'detuning_pulse', length = 0,
+                 waiting_time = 0, refpulse = None, refpoint = 'end', **kw):
         
-        detuning_pulse_C = SquarePulse(channel = self.channel_VP1, name = '%s_detuning_pulse_C'%self.name, 
-                                       amplitude = self.detuning_amplitude_C, length = length, 
+        AMP_C = kw.pop('amplitude_control', self.detuning_amplitude_C)
+        AMP_T = kw.pop('amplitude_target', self.detuning_amplitude_T)
+        
+        voltage_pulse_C = SquarePulse(channel = self.channel_VP1, name = '%s_detuning_pulse_C'%self.name, 
+                                       amplitude = AMP_C, length = length, 
                                        refpulse = refpulse)
         
-        detuning_pulse_T = SquarePulse(channel = self.channel_VP2, name = '%s_detuning_pulse_T'%self.name, 
-                                       amplitude = self.detuning_amplitude_T, length = length, 
+        voltage_pulse_T = SquarePulse(channel = self.channel_VP2, name = '%s_detuning_pulse_T'%self.name, 
+                                       amplitude = AMP_T, length = length, 
                                        refpulse = refpulse)
         
         detuning_pulse_C = {
-                'pulse': detuning_pulse_C,
-                'pulse_name': detuning_pulse_C.name,
+                'pulse': voltage_pulse_C,
+                'pulse_name': voltage_pulse_C.name,
                 'refpulse': None if refpulse == None else refpulse,
                 'refpoint': refpoint,
                 'waiting': waiting_time
                 }
         
         detuning_pulse_T = {
-                'pulse': detuning_pulse_T,
-                'pulse_name': detuning_pulse_T.name,
+                'pulse': voltage_pulse_T,
+                'pulse_name': voltage_pulse_T.name,
                 'refpulse': '%s_detuning_pulse_C'%self.name,
                 'refpoint': 'start',
                 'waiting': 0
@@ -303,14 +309,16 @@ class Two_Qubit_Gate(Gate):
    
 class CPhase_Gate(Two_Qubit_Gate):
     
-    def __init__(self, name = 'CPhase_gate', control_qubit = None, target_qubit = None, 
+    def __init__(self, name = 'CPhase_gate', control_qubit = None, target_qubit = None,
+                 amplitude_control = 0, amplitude_target = 0, length = 0,
                  rotating_phase = 180, refgate = None, refpoint = 'end', waiting_time = 0):
         
         super().__init__(name, control_qubit, target_qubit)
         
-        length = rotating_phase*self.detuning_length_Pi/180
+        pulse_length = length if length != 0 else rotating_phase*self.detuning_length_Pi/180
         
-        self.detuning(name = name, length = length, waiting_time = waiting_time, refpoint = refpoint,
+        self.detuning(name = name, length = pulse_length, waiting_time = waiting_time, refpoint = refpoint,
+                      amplitude_control = amplitude_control, amplitude_target = amplitude_target,
                       refpulse = None if refgate == None else refgate[-2]['pulse_name'])
         
     def __call__(self, **kw):

@@ -53,13 +53,11 @@ def set_manip(time = 0, qubits = [], voltages = [], **kw):
     if len(qubits)!=len(voltages):
         raise ValueError('qubits should be same length with voltages')
 
-    microwave_frequencies = kw.pop('microwave_ferquencies', [qubit.frequency for qubit in qubits])
-    microwave_powers = kw.pop('amplitudes', [qubit.microwave_power for qubit in qubits])
-    Pi_pulse_lengths = kw.pop('Pi_pulse_lengths', [qubit.Pi_pulse_length for qubit in qubits])
-    IQ_amplitudes = kw.pop('IQ_amplitudes', [qubit.IQ_amplitude for qubit in qubits])
-    IQ_frequencies = kw.pop('IQ_frequencies', [qubit.IQ_frequency for qubit in qubits])
-    waiting_time = kw.pop('waiting_time', 0)
-    duration_time = kw.pop('duration_time', 0)
+#    microwave_frequencies = kw.pop('microwave_ferquencies', [qubit.frequency for qubit in qubits])
+#    microwave_powers = kw.pop('amplitudes', [qubit.microwave_power for qubit in qubits])
+#    Pi_pulse_lengths = kw.pop('Pi_pulse_lengths', [qubit.Pi_pulse_length for qubit in qubits])
+#    IQ_amplitudes = kw.pop('IQ_amplitudes', [qubit.IQ_amplitude for qubit in qubits])
+#    IQ_frequencies = kw.pop('IQ_frequencies', [qubit.IQ_frequency for qubit in qubits])
     parameter1 = kw.pop('parameter1', 0)
     parameter2 = kw.pop('parameter2', 0)
 
@@ -68,13 +66,12 @@ def set_manip(time = 0, qubits = [], voltages = [], **kw):
     for i in range(len(qubits)):
         qubit = qubits[i]
         step['voltage_%d'%(i+1)] = voltages[i]
-        step['microwave_frequency_%d'%(i+1)] = microwave_frequencies[i]
-        step['microwave_power_%d'%(i+1)] = microwave_powers[i]
-        step['Pi_pulse_length_%d'%(i+1)] = Pi_pulse_lengths[i]
-        step['IQ_amplitude_%d'%(i+1)] = IQ_amplitudes[i]
-        step['IQ_frequency_%d'%(i+1)] = IQ_frequencies[i]
-        step['waiting_time'] = waiting_time
-        step['duration_time'] = duration_time
+#        step['microwave_frequency_%d'%(i+1)] = microwave_frequencies[i]
+#        step['microwave_power_%d'%(i+1)] = microwave_powers[i]
+#        step['Pi_pulse_length_%d'%(i+1)] = Pi_pulse_lengths[i]
+#        step['IQ_amplitude_%d'%(i+1)] = IQ_amplitudes[i]
+#        step['IQ_frequency_%d'%(i+1)] = IQ_frequencies[i]
+
         step['parameter1'] = parameter1
         step['parameter2'] = parameter2
 
@@ -143,7 +140,7 @@ def make_experiment_cfg():
             }
 
     experiment.sweep_loop2 = {
-            'para1': [0.4,0.5,0.3,0.8,0.5],
+            'para1': [-0.4,-0.5,-0.3,-0.8,-0.5],
             }
 
 #    loop1_para1 = [1,2,344,553,3]
@@ -155,9 +152,9 @@ def make_experiment_cfg():
     loop2_para1 = 'loop2_para1'
     
     init_cfg = {
-            'step1' : set_step(time = 2e-6, qubits = qubits, voltages = [0.2, 0.8]),
+            'step1' : set_step(time = 200e-6, qubits = qubits, voltages = [0.5, 0.8]),
             'step2' : set_step(time = 5e-6, qubits = qubits, voltages = [loop2_para1, 0.3]),
-            'step3' : set_step(time = 1e-6, qubits = qubits, voltages = [0.4, 0.5]),
+            'step3' : set_step(time = 140e-6, qubits = qubits, voltages = [0.8, 0.5]),
 #            'step4' : set_step(time = 1000e-6, qubits = qubits, voltages = [0.4, 0.5]),
 #            'step5' : set_step(time = 500e-6, qubits = qubits, voltages = [0.4, 0.5]),
 #            'step6' : set_step(time = 2000e-6, qubits = qubits, voltages = [0.4, 0.5]),
@@ -168,7 +165,7 @@ def make_experiment_cfg():
             }
 
     manip_cfg = {
-            'step1' : set_manip(time = 10e-6, qubits = qubits, voltages = [loop1_para2,0.6], waiting_time = loop1_para1, parameter1 = 0)
+            'step1' : set_manip(time = 50e-6, qubits = qubits, voltages = [loop1_para2,0.6], parameter1 = loop1_para1)
             }
 
     read_cfg = {

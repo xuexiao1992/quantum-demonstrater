@@ -166,6 +166,10 @@ myseq.append(name='test3_2', wfname='test3', trigger_wait=False, goto_target = '
 awg.delete_all_waveforms_from_list()
 awg2.delete_all_waveforms_from_list()
 
+awg.write('SOUR1:ROSC:SOUR EXT')
+awg2.write('SOUR1:ROSC:SOUR INT')
+#awg.clock_source('EXT')
+
 print('e')
 awg.stop()
 awg2.stop()
@@ -174,8 +178,8 @@ print('f')
 #awg.run_mode('CONT')
 pulsar.program_awgs(myseq, *elts, AWGs = ['awg','awg2'], allow_first_nonzero = False)
 awg2.set_sqel_trigger_wait(element_no = 1, state = 1)
-awg.set_sqel_goto_target_index(element_no = 6, goto_to_index_no = 1)
-awg2.set_sqel_goto_target_index(element_no = 6, goto_to_index_no = 1)
+awg.set_sqel_goto_target_index(element_no = 6, goto_to_index_no = 2)
+awg2.set_sqel_goto_target_index(element_no = 6, goto_to_index_no = 2)
 
 
 #awg2.run_mode('TRIG')

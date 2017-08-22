@@ -36,7 +36,9 @@ mV_range=1000
 rate = int(np.floor(250000000/1))
 #seg_size = int(np.floor((rate * (10e-6))/16)*16 + pretrigger )
 seg_size = 1040
-memsize = 5*seg_size
+repetitions = 1000
+sequence_num = 50
+memsize = repetitions*sequence_num*seg_size
 
 posttrigger_size = 1024
 #digitizer.enable_channels(pyspcm.CHANNEL0 | pyspcm.CHANNEL3)

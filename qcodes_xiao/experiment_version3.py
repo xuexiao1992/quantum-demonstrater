@@ -169,8 +169,8 @@ class Experiment:
             
         initialize.add(SquarePulse(name='init_c1m2', channel='ch1_marker2', amplitude=2, length=1e-6),
                                    name='init%d_c1m2'%(i+1),refpulse = 'init1', refpoint = 'start')
-        initialize.add(SquarePulse(name='init_c5m2', channel='ch7_marker2', amplitude=2, length=1e-6),
-                                   name='init%d_c7m2'%(i+1),refpulse = 'init1', refpoint = 'start')
+        initialize.add(SquarePulse(name='init_c5m2', channel='ch5_marker2', amplitude=2, length=1e-6),
+                                   name='init%d_c5m2'%(i+1),refpulse = 'init1', refpoint = 'start')
 
         return initialize
 
@@ -194,8 +194,8 @@ class Experiment:
         """
         readout.add(SquarePulse(name='read_c1m2', channel='ch1_marker2', amplitude=2, length=1e-6),
                                 name='read%d_c1m2'%(i+1),refpulse = 'read1', refpoint = 'start')
-        readout.add(SquarePulse(name='read_c5m2', channel='ch7_marker2', amplitude=2, length=1e-6),
-                                name='read%d_c7m2'%(i+1),refpulse = 'read1', refpoint = 'start')
+        readout.add(SquarePulse(name='read_c5m2', channel='ch5_marker2', amplitude=2, length=1e-6),
+                                name='read%d_c5m2'%(i+1),refpulse = 'read1', refpoint = 'start')
 
         return readout
 
@@ -203,18 +203,18 @@ class Experiment:
 
         manip = deepcopy(self.manip_elem)
 
-        waiting_time = kw.pop('waiting_time', None)
-        duration_time = kw.pop('duration_time', None)
-        frequency = kw.pop('frequency', None)
-        power = kw.pop('power', None)
+#        waiting_time = kw.pop('waiting_time', None)
+#        duration_time = kw.pop('duration_time', None)
+#        frequency = kw.pop('frequency', None)
+#        power = kw.pop('power', None)
         parameter1 = kw.pop('parameter1', None)
         parameter2 = kw.pop('parameter2', None)
         print(name)
 #        manip = Ramsey()
         manipulation = manip(name = name, qubits = self.qubits, pulsar = self.pulsar, 
-                             parameter1 = parameter1, parameter2 = parameter2,
-                             waiting_time = waiting_time, duration_time = duration_time, 
-                             frequency = frequency, power = power)
+                             parameter1 = parameter1, parameter2 = parameter2,)
+#                             waiting_time = waiting_time, duration_time = duration_time,
+#                             frequency = frequency, power = power)
 
         manipulation.make_circuit()
         
@@ -239,10 +239,10 @@ class Experiment:
         if segment == 'init':
             element = self._initialize_element(name, amplitudes = amplitudes,)
         elif segment == 'manip':
-            waiting_time = kw.pop('waiting_time',0)
+#            waiting_time = kw.pop('waiting_time',0)
             parameter1 = kw.pop('parameter1', 0)
             parameter2 = kw.pop('parameter2', 0)
-            element = self._manipulation_element(name, time = time, amplitudes = amplitudes, waiting_time = waiting_time,
+            element = self._manipulation_element(name, time = time, amplitudes = amplitudes,
                                                  parameter1 = parameter1, parameter2 = parameter2)
         elif segment == 'read':
             element = self._readout_element(name, amplitudes = amplitudes,)
@@ -632,7 +632,7 @@ class Experiment:
 
         trigger_element.add(SquarePulse(name = 'TRG2', channel = 'ch8_marker2', amplitude=2, length=300e-9),
                             name='trigger2',)
-        trigger_element.add(SquarePulse(name = 'TRG1', channel = 'ch4_marker2', amplitude=2, length=2.8e-6),
+        trigger_element.add(SquarePulse(name = 'TRG1', channel = 'ch4_marker2', amplitude=2, length=1.43e-6),
                             name='trigger1',refpulse = 'trigger2', refpoint = 'start', start = 200e-9)
         
         extra_element = Element('extra', self.pulsar)
@@ -642,9 +642,9 @@ class Experiment:
                             name='extra1',)
 
         self.elts.insert(0,trigger_element)
-        self.elts.append(extra_element)
+#        self.elts.append(extra_element)
         self.sequence.insert_element(name = 'trigger', wfname = 'trigger', pos = 0)
-        self.sequence.append(name ='extra', wfname = 'extra', trigger_wait = False)
+#        self.sequence.append(name ='extra', wfname = 'extra', trigger_wait = False)
         return True
 
     def load_sequence(self,):
@@ -662,8 +662,8 @@ class Experiment:
         self.awg2.trigger_level(0.5)
         self.awg2.set_sqel_trigger_wait(element_no = 1, state = 1)
         last_element_num = self.awg2.sequence_length()
-        self.awg.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 1)
-        self.awg2.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 1)
+        self.awg.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 2)
+        self.awg2.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 2)
 
         return True
 
@@ -674,8 +674,9 @@ class Experiment:
         
         print('run experiment')
 
-        self.awg.write('SOUR1:ROSC:SOUR INT')
+        self.awg.write('SOUR1:ROSC:SOUR EXT')
         self.awg2.write('SOUR1:ROSC:SOUR INT')
+#        self.awg.clock_source('EXT')
 #        self.awg.ch3_state.set(1)
         self.awg.all_channels_on()
         self.awg.force_trigger()

@@ -88,14 +88,16 @@ class Manipulation(Element):
     
     
     
-    def add_CPhase(self, name = None, control_qubit = None, target_qubit = None, 
-                   refgate = None, refpoint = 'end',
+    def add_CPhase(self, name = None, control_qubit = None, target_qubit = None, length = 0,
+                   amplitude_control = 0, amplitude_target = 0, refgate = None, refpoint = 'end',
                    waiting_time = 0, refpoint_new = 'start'):
         
         if name in self.operations.keys():
             raise NameError('Name already used')            ## need to stop the program or maybe randomly give a name
         
         cphase_gate = CPhase_Gate(name = name, control_qubit = control_qubit, target_qubit = target_qubit,
+                                  amplitude_control = amplitude_control, amplitude_target = amplitude_target,
+                                  length = length,
                                   refgate = None if refgate == None else self.operations[refgate],
                                   refpoint = refpoint, waiting_time = waiting_time,)
         
