@@ -14,31 +14,85 @@ from Gates import Single_Qubit_Gate#, Two_Qubit_Gate
 from manipulation import Manipulation
 from experiment import Experiment
 
+import qcodes.instrument_drivers.Spectrum.M4i as M4i
+from qcodes.instrument_drivers.Spectrum import pyspcm
+from qcodes.instrument.parameter import ArrayParameter, StandardParameter
+from qcodes.instrument.sweep_values import SweepFixedValues
+from qcodes.loops import Loop, ActiveLoop
+from qcodes.data.hdf5_format import HDF5Format, HDF5FormatMetadata
+from qcodes.data.gnuplot_format import GNUPlotFormat
+from qcodes.data.io import DiskIO
+from qcodes.data.data_set import new_data, DataSet
+from qcodes.data.data_array import DataArray
+
+
+
 class Calibration(Experiment):
     
-    def __init__(self, name, qubit, qubits_name, awg, pulsar, **kw):                ## name = 'calibration_20170615_Xiao'...
+    def __init__(self, name, qubits, awg, awg2, pulsar, **kw):                ## name = 'calibration_20170615_Xiao'...
         
-        super().__init__(name, qubits_name, awg, pulsar, **kw)
+        super().__init__(name, qubits, awg, awg2, pulsar, **kw)
         
-        self.qubit = qubit
-        self.Pi_length = qubit.Pi_pulse_length
+        self.Pi_length = [qubit.Pi_pulse_length for qubit in qubits]
         self.X_length = 0
         self.Rabi_power = 0
         
 #        self.qubits_name = qubits_name
         
 #        self.calibration_sequence = Sequence()
+        self.sweep_inside_sequence = False
         
+        self.formatter = HDF5FormatMetadata()
+        self.data_IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents')
+        self.data_location = '2017-08-18/20-40-19_T1_Vread_sweep'
+
     
+    
+    def calibrate_qubit_fequency_by_continuous_wave(self, qubit, ):
+        
+        qubit_frequency = 0
+        
+        qubit.frequency = qubit_frequency
+        
+        return qubit_frequency
+    
+    
+    def calibrate_qubit_frequency_by_single_pulse(self, qubit, frequency = [0,0,0], burst_time = [0,0,0]):      ## [start:end:steps]
+        
+        qubit_frequency = qubit.frequency
+        
+        if self.sweep_inside_sequence is False:
+            
+            Sweep_Frequency = parameter[frequency[0]:frequency[1]:frequency[2]]
+            
+            Sweep_BurstTime = parameter[burst_time[0]:burst_time[1]:burst_time[2]]
+    
+            LOOP = Loop(sweep_values = Sweep_Frequency).loop(sweep_values = Sweep_BurstTime).each(measured_parameter)
+    
+            data_set = LOOP.get_data_set(location = None, loc_record = {'name': 'Chevron Pattern', 'label': 'frequency-burst_time'}, io = self.data_IO,)
+    
+            data_set = Loop.run()
+        
+        elif self.sweep_inside_sequence is True:
+            
+            
+        
+        return qubit_frequency
 
 
-    def run_Rabi(self, name = 'Rabi',):
+
+
+    def calibrate_Rabi_frequency(self, qubit,):
+        
+        Rabi_frequency = 0
         
         self.Rabi_element()
         
         self.run_all()
         
-        return True
+        qubit.Rabi_frequency = Rabi_frequency
+        
+        return Rabi_frequency
     
     
     

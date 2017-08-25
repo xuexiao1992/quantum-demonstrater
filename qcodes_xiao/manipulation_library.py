@@ -54,7 +54,7 @@ class Ramsey(Manipulation):
         self.add_Y(name='Y1_Q1', refgate = 'X2_Q1', qubit = self.qubits[0], waiting_time = 500e-9,)
         
         self.add_CPhase(name = 'CP_Q12', refgate = 'X2_Q1', control_qubit = self.qubits[0], target_qubit = self.qubits[1],
-                        amplitude_control = 0.2, amplitude_target = -0.6, length = 3e-6, waiting_time = 400e-9)
+                        amplitude_control = 0.2, amplitude_target = -0.6, length = 10e-8, waiting_time = 400e-9)
         
         self.add_X(name = 'X1_Q2', refgate = 'CP_Q12', qubit = self.qubits[1], waiting_time = 100e-9)
         

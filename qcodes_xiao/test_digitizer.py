@@ -248,6 +248,10 @@ test_location = '2017-08-18/20-40-19_T1_Vread_sweep'
 
 data_set_3 = DataSet(location = test_location, io = NewIO,)
 data_set_3.read()
+AWGpara_array = data_set_3.arrays['AWGpara_set'].ndarray
+index0_array = data_set_3.arrays['index0_set'].ndarray
+digitizer_array = data_set_3.arrays['digitizer_digitizer'].ndarray
+
 #
 #print('loop.data_set: %s' % LP.data_set)
 #
