@@ -523,7 +523,7 @@ class Experiment:
         if idx_j == 0:
             self.load_sequence()
         
-        return True
+        return self.sequence
     
 
     def run_1D_sweep(self, idx_j = 0):

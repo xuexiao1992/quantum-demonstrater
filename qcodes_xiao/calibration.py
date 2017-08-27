@@ -6,13 +6,6 @@ Created on Wed Jun 14 13:42:13 2017
 """
 
 import numpy as np
-from pycqed.measurement.waveform_control.pulsar import Pulsar
-
-from pycqed.measurement.waveform_control.sequence import Sequence
-from pycqed.measurement.waveform_control.element import Element
-from Gates import Single_Qubit_Gate#, Two_Qubit_Gate
-from manipulation import Manipulation
-from experiment import Experiment
 
 import qcodes.instrument_drivers.Spectrum.M4i as M4i
 from qcodes.instrument_drivers.Spectrum import pyspcm
@@ -24,6 +17,16 @@ from qcodes.data.gnuplot_format import GNUPlotFormat
 from qcodes.data.io import DiskIO
 from qcodes.data.data_set import new_data, DataSet
 from qcodes.data.data_array import DataArray
+
+from pycqed.measurement.waveform_control.pulsar import Pulsar
+
+from pycqed.measurement.waveform_control.sequence import Sequence
+from pycqed.measurement.waveform_control.element import Element
+from Gates import Single_Qubit_Gate#, Two_Qubit_Gate
+from manipulation import Manipulation
+from experiment import Experiment
+from digitizer_setting import digitizer_param
+
 
 
 
@@ -45,7 +48,24 @@ class Calibration(Experiment):
         self.formatter = HDF5FormatMetadata()
         self.data_IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents')
         self.data_location = '2017-08-18/20-40-19_T1_Vread_sweep'
-
+        
+        self.data_set = None
+        
+        self.dig = digitizer_param(name='digitizer', mV_range = 1000, memsize=4e9, seg_size=seg_size, posttrigger_size=posttrigger_size)
+        
+    def _QCoDeS_Loop(self, measured_parameter, sweeped_parameter, sweep_value = [0,0,0], **kw):
+        
+        Sweep_Values = sweeped_parameter[sweep_value[0]:sweep_value[1]:sweep_value[2]]
+        
+#        Sweep_Values2 = sweeped_parameter2[sweep_value2[0]:sweep_value2[1]:sweep_value2[2]]
+        
+        LOOP = Loop(sweep_values = Sweep_Values).each(measured_parameter)
+        
+        data_set = LOOP.get_data_set(location = None, loc_record = {'name': 'Chevron Pattern', 'label': 'frequency-burst_time'}, io = self.data_IO,)
+        
+        data_set = LOOP.run()
+        
+        return data_set
     
     
     def calibrate_qubit_fequency_by_continuous_wave(self, qubit, ):
@@ -61,28 +81,35 @@ class Calibration(Experiment):
         
         qubit_frequency = qubit.frequency
         
+        self.sequence = self.generate_1D_sequence()
+        
         if self.sweep_inside_sequence is False:
             
-            Sweep_Frequency = parameter[frequency[0]:frequency[1]:frequency[2]]
-            
-            Sweep_BurstTime = parameter[burst_time[0]:burst_time[1]:burst_time[2]]
-    
-            LOOP = Loop(sweep_values = Sweep_Frequency).loop(sweep_values = Sweep_BurstTime).each(measured_parameter)
-    
-            data_set = LOOP.get_data_set(location = None, loc_record = {'name': 'Chevron Pattern', 'label': 'frequency-burst_time'}, io = self.data_IO,)
-    
-            data_set = Loop.run()
+            self.data_set = self._QCoDeS_Loop(self.dig, self.vsg.frequency, sweep_value = frequency)
         
         elif self.sweep_inside_sequence is True:
             
-            
+            qubit_frequency = 0
         
         return qubit_frequency
 
+    def calibrate_qubit_frequency_by_Ramsey(self, qubit, frequency = [0,0,0], waiting_time = [0,0,0]):      ## [start:end:steps]
+        
+        qubit_frequency = qubit.frequency
+        
+        if self.sweep_inside_sequence is False:
+            
+            self.data_set = self._QCoDeS_Loop(self.dig, self.vsg.frequency, sweep_value = frequency)
+        
+        elif self.sweep_inside_sequence is True:
+            
+            qubit_frequency = 0
+        
+        return qubit_frequency
+    
+    
 
-
-
-    def calibrate_Rabi_frequency(self, qubit,):
+    def calibrate_Rabi_frequency(self, qubit, ):
         
         Rabi_frequency = 0
         
