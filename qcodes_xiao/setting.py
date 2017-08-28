@@ -9,6 +9,7 @@ from pycqed.measurement.waveform_control.pulsar import Pulsar
 from pycqed.measurement.waveform_control.element import Element
 #from experiment import Experiment
 from experiment_version3 import Experiment
+from calibration import Calibration
 
 import stationF006
 from manipulation import Manipulation
@@ -107,7 +108,7 @@ def make_manipulation_cfg():
             'gate1': ['X','Y'],
             'gate2': ['Y','X'],
             'gate3': ['CPhase'],
-            'gate4': ['Z','X']
+            'gate4': ['Z', 'X']
             }
 
     return manipulation_cfg
@@ -121,7 +122,9 @@ def make_experiment_cfg():
     awg2 = station.awg2
     awg.clock_freq(1e9)
     awg2.clock_freq(1e9)
-
+    
+    vsg = station.vsg
+    vsg2 = station.vsg2
     digitizer = station.digitizer
 #    awg.ch3_amp
     pulsar = set_5014pulsar(awg = awg, awg2= awg2)
@@ -131,7 +134,8 @@ def make_experiment_cfg():
 
     qubits = [qubit_1, qubit_2]
 
-    experiment = Experiment(name = 'experiment_test', qubits = [qubit_1, qubit_2], awg = awg, awg2 = awg2, pulsar = pulsar)
+    experiment = Calibration(name = 'experiment_test', qubits = [qubit_1, qubit_2], awg = awg, awg2 = awg2, pulsar = pulsar, 
+                             vsg = vsg, vsg2 = vsg2, digitizer = digitizer)
 
     experiment.sweep_loop1 = {
 #            'para1': [0.8,0.2,0.53,0.14,0.3],
@@ -170,15 +174,15 @@ def make_experiment_cfg():
 
     read_cfg = {
             'step1' : set_step(time = 1e-6, qubits = qubits, voltages = [0.3, 0.2]),
-            'step2' : set_step(time = 1e-6, qubits = qubits, voltages = [0.4, 0.2]),
-            'step3' : set_step(time = 1e-6, qubits = qubits, voltages = [0.5, 0.2]),
+#            'step2' : set_step(time = 1e-6, qubits = qubits, voltages = [0.4, 0.2]),
+#            'step3' : set_step(time = 1e-6, qubits = qubits, voltages = [0.5, 0.2]),
             }
 
-#    experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg]
-#    experiment.sequence_cfg_type = ['init', 'manip','read',]
+    experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg]
+    experiment.sequence_cfg_type = ['init', 'manip','read',]
 
-    experiment.sequence_cfg = [init_cfg, manip_cfg,]
-    experiment.sequence_cfg_type = ['init','manip',]
+#    experiment.sequence_cfg = [init_cfg, manip_cfg,]
+#    experiment.sequence_cfg_type = ['init','manip',]
 
     experiment.manip_elem = Ramsey(name = 'Ramsey', pulsar = pulsar)
     
@@ -215,13 +219,13 @@ data_location = '2017-08-18/20-40-19_T1_Vread_sweep'
 #dig = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size)
 def scan_outside_awg(name, set_parameter, measured_parameter, start, end, step):
     
-    Sweep_Value = parameter[start:end:step]
+    Sweep_Value = set_parameter[start:end:step]
     
     LOOP = Loop(sweep_values = Sweep_Value).each(measured_parameter)
     
-    data_set = LOOP.get_data_set(location = None, loc_record = {'name': name, 'label': 'V_sweep'}, io = data_IO,)
+    data_set = LOOP.get_data_set(location = None, loc_record = {'name': name, 'label': 'Freq_sweep'}, io = data_IO,)
     
-    data_set = Loop.run()
+    data_set = LOOP.run()
     
     return data_set
 
@@ -238,22 +242,57 @@ def set_vector_signal_generator(VSG):
     return VSG
 #%% set digitizer
 
+class digitizer_param(ArrayParameter):
+    
+    def __init__(self, name, mV_range, memsize, seg_size, 
+                posttrigger_size, label=None, unit=None, instrument=None,
+                **kwargs):
+       
+        super().__init__(name=name, shape=(memsize,), instrument=instrument, **kwargs)
+        
+        self.mV_range = mV_range
+        self.memsize = memsize
+        self.seg_size =seg_size
+        self.posttrigger_size = posttrigger_size
+        global digitizer
+        
+        
+    def get(self):
+#        res = digitizer.single_trigger_acquisition(self.mV_range,self.memsize,self.posttrigger_size)
+        res = digitizer.multiple_trigger_acquisition(self.mV_range,self.memsize,self.seg_size,self.posttrigger_size)
+#        res = digitizer.single_software_trigger_acquisition(self.mV_range,self.memsize,self.posttrigger_size)
+        print(res.shape)
+        return res
+        
+    def __getitem__(self, keys):
+        """
+        Slice a Parameter to get a SweepValues object
+        to iterate over during a sweep
+        """
+        return SweepFixedValues(self, keys)
+
 def set_digitizer(digitizer):
     
     pretrigger=16
     mV_range=1000
-    rate = int(np.floor(250000000/1))
-    #seg_size = int(np.floor((rate * (10e-6))/16)*16 + pretrigger )
-    seg_size = 1040
-    memsize = 5*seg_size
-    posttrigger_size = 1024
+    sample_rate = int(np.floor(40000/1))
+    
+    readout_time = 1e-3
+    
+    seg_size = readout_time*sample_rate+8+pretrigger
+    
+    repetitions = 10
+    
+    memsize = int(repetitions*5*seg_size)
+    posttrigger_size = seg_size-pretrigger
     
     #digitizer.enable_channels(pyspcm.CHANNEL0 | pyspcm.CHANNEL3)
     digitizer.clock_mode(pyspcm.SPC_CM_INTPLL)
     #digitizer.clock_mode(pyspcm.SPC_CM_EXTREFCLOCK)
     
-    digitizer.enable_channels(pyspcm.CHANNEL1 | pyspcm.CHANNEL2)
+#    digitizer.enable_channels(pyspcm.CHANNEL1 | pyspcm.CHANNEL2)
     
+    digitizer.enable_channels(pyspcm.CHANNEL1)
     digitizer.data_memory_size(memsize)
     
     digitizer.segment_size(seg_size)
@@ -262,7 +301,7 @@ def set_digitizer(digitizer):
     
     digitizer.timeout(60000)
     
-    digitizer.sample_rate(250000000)
+    digitizer.sample_rate(sample_rate)
     
     digitizer.set_channel_settings(1,1000, input_path = 0, termination = 0, coupling = 0, compensation = None)
     
@@ -272,7 +311,7 @@ def set_digitizer(digitizer):
     
     digitizer.set_ext0_OR_trigger_settings(trig_mode = trig_mode, termination = 0, coupling = 0, level0 = 800, level1 = 900)
     
-    dig = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size )
+    dig = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size)
 
     return digitizer, dig
 
@@ -305,10 +344,23 @@ def set_5014pulsar(awg, awg2):
 
 
 #%% test
+
 experiment = make_experiment_cfg()
+
+pulsar = experiment.pulsar
+awg = experiment.awg
+awg2 = experiment.awg2
+vsg = experiment.vsg
+vsg2 = experiment.vsg2
+digitizer, dig = set_digitizer(experiment.digitizer)
 
 experiment.generate_1D_sequence()
 
 #experiment.load_sequence()
 
 experiment.run_experiment()
+
+pulsar.start()
+
+#scan_outside_awg(name = 'finding_resonance', set_parameter = vsg2.frequency, measured_parameter = dig, start=12.8e9, end=12.9e9, step=10e6)
+

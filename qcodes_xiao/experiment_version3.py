@@ -30,7 +30,7 @@ class Experiment:
         
         self.vsg = kw.pop('vsg',None)
         self.vsg2 = kw.pop('vsg2',None)
-        self.digitizer = ('digitizer', None)
+        self.digitizer = kw.pop('digitizer', None)
         
         self.awg_file = None
 
@@ -75,8 +75,8 @@ class Experiment:
 
         self.readout_segment = {
                 'step1': None,
-                'step2': None,
-                'step3': None,
+#                'step2': None,
+#                'step3': None,
                 }
 
         self.manipulation_segment = {
@@ -167,7 +167,7 @@ class Experiment:
             initialize.add(SquarePulse(name='init', channel=self.channel_VP[i], amplitude=amplitudes[i], length=1e-6),
                            name='init%d'%(i+1),refpulse = refpulse, refpoint = 'start')
             
-        initialize.add(SquarePulse(name='init_c1m2', channel='ch1_marker2', amplitude=2, length=1e-6),
+        initialize.add(SquarePulse(name='init_c1m2', channel='ch2_marker2', amplitude=2, length=1e-6),
                                    name='init%d_c1m2'%(i+1),refpulse = 'init1', refpoint = 'start')
         initialize.add(SquarePulse(name='init_c5m2', channel='ch5_marker2', amplitude=2, length=1e-6),
                                    name='init%d_c5m2'%(i+1),refpulse = 'init1', refpoint = 'start')
@@ -186,13 +186,15 @@ class Experiment:
         """
         for trigger digitizer
         """
-        readout.add(SquarePulse(name='read_c4m2', channel='ch4_marker2', amplitude=2, length=1e-6),
-                                name='read%d_c4m2'%(i+1),refpulse = 'read1', refpoint = 'start', start = 0)
+        readout.add(SquarePulse(name='read_trigger1', channel='ch2_marker1', amplitude=2, length=1e-6),
+                                name='read%d_trigger1'%(i+1),refpulse = 'read1', refpoint = 'start', start = 0)
+        readout.add(SquarePulse(name='read_trigger2', channel='ch6_marker1', amplitude=2, length=1e-6),
+                                name='read%d_trigger2'%(i+1),refpulse = 'read1', refpoint = 'start', start = 0)
         
         """
         to make all elements equal length in different AWGs
         """
-        readout.add(SquarePulse(name='read_c1m2', channel='ch1_marker2', amplitude=2, length=1e-6),
+        readout.add(SquarePulse(name='read_c1m2', channel='ch2_marker2', amplitude=2, length=1e-6),
                                 name='read%d_c1m2'%(i+1),refpulse = 'read1', refpoint = 'start')
         readout.add(SquarePulse(name='read_c5m2', channel='ch5_marker2', amplitude=2, length=1e-6),
                                 name='read%d_c5m2'%(i+1),refpulse = 'read1', refpoint = 'start')
@@ -227,7 +229,7 @@ class Experiment:
             manipulation.add(SquarePulse(name='manip%d'%(i+1), channel=self.channel_VP[i], amplitude=amplitudes[i], length=time),
                            name='manip%d'%(i+1), refpulse = refpulse, refpoint = 'start', start = start)
             
-        manipulation.add(SquarePulse(name='manip_c1m2', channel='ch1_marker1', amplitude=0.1, length=time),
+        manipulation.add(SquarePulse(name='manip_c1m2', channel='ch2_marker2', amplitude=0.1, length=time),
                            name='manip%d_c1m2'%(i+1),refpulse = 'manip1', refpoint = 'start')
         manipulation.add(SquarePulse(name='manip_c5m2', channel='ch5_marker2', amplitude=2, length=time),
                            name='manip%d_c5m2'%(i+1),refpulse = 'manip1', refpoint = 'start')
@@ -393,7 +395,7 @@ class Experiment:
                 self.make_manipulation_segment_list(segment_num = i,)
 
             elif segment_type == 'read':
-                self.make_readout_segment_list(segment_num = i,)
+                self.make_readout_segment_list(segment_num = i, name = 'readout')
 
             i+=1
 
@@ -674,8 +676,8 @@ class Experiment:
         
         print('run experiment')
 
-        self.awg.write('SOUR1:ROSC:SOUR EXT')
-        self.awg2.write('SOUR1:ROSC:SOUR INT')
+        self.awg2.write('SOUR1:ROSC:SOUR EXT')
+        self.awg.write('SOUR1:ROSC:SOUR INT')
 #        self.awg.clock_source('EXT')
 #        self.awg.ch3_state.set(1)
         self.awg.all_channels_on()

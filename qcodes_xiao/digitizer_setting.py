@@ -28,7 +28,7 @@ from pycqed.measurement.waveform_control.element import Element
 
 
 #%%     digitizer parameter
-
+"""
 digitizer = stationF006.digitizer
 
 pretrigger=16
@@ -67,12 +67,12 @@ digitizer.set_channel_settings(1,1000, input_path = 0, termination = 0, coupling
 trig_mode = pyspcm.SPC_TM_POS | pyspcm.SPC_TM_REARM
 
 digitizer.set_ext0_OR_trigger_settings(trig_mode = trig_mode, termination = 0, coupling = 0, level0 = 800, level1 = 900)
-
+"""
 #%% digitizer parameter
 class digitizer_param(ArrayParameter):
     
     def __init__(self, name, mV_range, memsize, seg_size, 
-                posttrigger_size, label=None, unit=None, instrument=digitizer,
+                posttrigger_size, label=None, unit=None, instrument=None,
                 **kwargs):
        
         super().__init__(name=name, shape=(2*memsize,), instrument=instrument, **kwargs)
@@ -99,4 +99,4 @@ class digitizer_param(ArrayParameter):
         return SweepFixedValues(self, keys)
 
 
-dig = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size )
+#dig = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size )

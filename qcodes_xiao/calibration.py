@@ -22,9 +22,9 @@ from pycqed.measurement.waveform_control.pulsar import Pulsar
 
 from pycqed.measurement.waveform_control.sequence import Sequence
 from pycqed.measurement.waveform_control.element import Element
-from Gates import Single_Qubit_Gate#, Two_Qubit_Gate
+from gate import Single_Qubit_Gate, Two_Qubit_Gate
 from manipulation import Manipulation
-from experiment import Experiment
+from experiment_version3 import Experiment
 from digitizer_setting import digitizer_param
 
 
@@ -51,7 +51,7 @@ class Calibration(Experiment):
         
         self.data_set = None
         
-        self.dig = digitizer_param(name='digitizer', mV_range = 1000, memsize=4e9, seg_size=seg_size, posttrigger_size=posttrigger_size)
+#        self.dig = digitizer_param(name='digitizer', mV_range = 1000, memsize=4e9, seg_size=seg_size, posttrigger_size=posttrigger_size)
         
     def _QCoDeS_Loop(self, measured_parameter, sweeped_parameter, sweep_value = [0,0,0], **kw):
         
@@ -75,7 +75,6 @@ class Calibration(Experiment):
         qubit.frequency = qubit_frequency
         
         return qubit_frequency
-    
     
     def calibrate_qubit_frequency_by_single_pulse(self, qubit, frequency = [0,0,0], burst_time = [0,0,0]):      ## [start:end:steps]
         

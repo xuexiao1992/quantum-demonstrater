@@ -15,7 +15,39 @@ import stationF006
 
 
 #%% by objects
-
+class Finding_Resonance(Manipulation):
+    
+    def __init__(self, name, pulsar, **kw):
+        
+        super().__init__(name, pulsar, **kw)
+        self.refphase = {}
+        self.waiting_time = kw.pop('waiting_time', 0)
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.parameter1 = kw.pop('parameter1', 0)
+        self.parameter2 = kw.pop('parameter2', 0)
+        
+    def __call__(self, **kw):
+        self.name = kw.pop('name', self.name)
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = kw.pop('pulsar', None)
+        self.waiting_time = kw.pop('waiting_time', self.waiting_time)
+        self.parameter1 = kw.pop('parameter1', 0)
+        self.parameter2 = kw.pop('parameter2', 0)
+        return self
+    
+    def make_circuit(self, qubit = 'Qubit_1'):
+        
+        qn = qubit[-1]-1
+        
+        self.add_single_qubit_gate(name = 'T1_Q1', refgate = 'X3_Q1', qubit = self.qubits[qn], amplitude = 1, length = self.parameter1)
+    
+        return self
 
 class Ramsey(Manipulation):
     
