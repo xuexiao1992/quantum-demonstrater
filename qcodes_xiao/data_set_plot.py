@@ -85,7 +85,7 @@ arrays4 = [data_array1, data_array2, data_array3]
 
 data_set = new_data(arrays=arrays3, location=try_location, loc_record = {'name':'T1', 'label':'Vread_sweep'}, io = NewIO,)
 
-data_set.save_metadata()
+#data_set.save_metadata()
 
 
 #%% load data
@@ -144,7 +144,6 @@ def convert_to_01_state(data_set, threshold):
 #                        data_k.append(0)
                         data[k][j] = 0
 #                data.append(np.array(data_k))
-#                print(data_k)
 #                setpara.append(setpara_k)
             
             

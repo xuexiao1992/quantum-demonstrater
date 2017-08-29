@@ -83,10 +83,27 @@ class Experiment:
                 'step1': None,
                 }
         
+        self.initialize2_segment = {
+                'step1': None
+                }
+        
+        self.readout2_segment = {
+                'step1': None,
+#                'step2': None,
+#                'step3': None,
+                }
+
+        self.manipulation2_segment = {
+                'step1': None,
+                }
+        
         self.segment = {
                 'init': self.initialize_segment,
                 'manip': self.manipulation_segment,
                 'read': self.readout_segment,
+                'init2': self.initialize2_segment,
+                'manip2': self.manipulation2_segment,
+                'read2': self.readout2_segment,
                 }
         
         self.initialize_repetition = {
@@ -102,11 +119,27 @@ class Experiment:
                 'step2': 1,
                 'step3': 1,
                 }
+        self.initialize2_repetition = {
+                'step1': 1,
+                'step2': 1,
+                'step3': 1,
+                }
+        self.manipulation2_repetition = {
+                'step1': 1,
+                }
+        self.readout2_repetition = {
+                'step1': 1,
+                'step2': 1,
+                'step3': 1,
+                }
 
         self.repetition = {
                 'init': self.initialize_repetition,
                 'manip': None,
                 'read': self.readout_repetition,
+                'init2': self.initialize2_repetition,
+                'manip2': None,
+                'read2': self.readout2_repetition,
                 }
         
         self.element = {}           ##  will be used in    pulsar.program_awg(myseq, self.elements)
@@ -238,15 +271,16 @@ class Experiment:
 
     def make_element(self, name, segment, time = 0, amplitudes = [], **kw):
         
-        if segment == 'init':
+        if segment[:4] == 'init':
             element = self._initialize_element(name, amplitudes = amplitudes,)
-        elif segment == 'manip':
+        elif segment[:5] == 'manip':
 #            waiting_time = kw.pop('waiting_time',0)
             parameter1 = kw.pop('parameter1', 0)
             parameter2 = kw.pop('parameter2', 0)
+            print('parameter1', parameter1)
             element = self._manipulation_element(name, time = time, amplitudes = amplitudes,
                                                  parameter1 = parameter1, parameter2 = parameter2)
-        elif segment == 'read':
+        elif segment[:4] == 'read':
             element = self._readout_element(name, amplitudes = amplitudes,)
         else:
             element = None
@@ -278,7 +312,7 @@ class Experiment:
     def make_segment_step(self, segment_num, step_num, name):           ## each step consist 1 element is no sweep, 1D/2D list if is 1D/2D sweep
         
         s = step_num
-        seg = self.sequence_cfg_type[segment_num]                       ## seg is string like 'init', 'manip', 'read'
+        seg = self.sequence_cfg_type[segment_num]                       ## seg is string like 'init1', 'manip1', 'read2'
         
         step = self.sequence_cfg[segment_num]['step%d'%s]           ## s is step number in one segment
         is_in_loop = []
@@ -303,8 +337,11 @@ class Experiment:
         if True not in is_in_loop:
                 
                 amplitudes = [step['voltage_%d'%(q+1)] for q in range(self.qubits_number)]
+                parameter1 = step.pop('parameter1', None)
+                parameter2 = step.pop('parameter2', None)
 
-                element = self.make_element(name = name+'step%d'%s, segment = seg, amplitudes=amplitudes,)
+                element = self.make_element(name = name+'step%d'%s, segment = seg, amplitudes=amplitudes,
+                                            parameter1 = parameter1, parameter2 = parameter2)
                 """
                 for trigger, not used
                 if segment_num == 0 and step_num == 1:
@@ -347,40 +384,44 @@ class Experiment:
                                     name = 'trigger',)
                     """
                     segment[j].append(element)
-                    rep = 1 if seg is 'manip' else int(step['time']/(1e-6))
+                    rep = 1 if seg[:5] is 'manip' else int(step['time']/(1e-6))
                     repetition[j].append(rep)
         
-        if seg is 'manip':
-            print('dimension2', dimension_2)
-            print('dimension1', dimension_1)
-            print('loop_num',loop_num)
-            print('repetition', repetition)
         return segment, repetition
 
 
     def make_initialize_segment_list(self, segment_num, name = 'initialize', qubits_name = None,):
+        
+        segment = {}
+        repetition = {}
 
         for s in range(len(self.sequence_cfg[segment_num])):
 
-           self.initialize_segment['step%d'%(s+1)], self.initialize_repetition['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)
+           segment['step%d'%(s+1)], repetition['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)
             
-        return True
+        return segment, repetition
 
     def make_readout_segment_list(self, segment_num, name = 'readout', qubits_name = None,):
+        
+        segment = {}
+        repetition = {}
 
         for s in range(len(self.sequence_cfg[segment_num])):
 
-           self.readout_segment['step%d'%(s+1)], self.readout_repetition['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)
+           segment['step%d'%(s+1)], repetition['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)
             
-        return True
+        return segment, repetition
     
     def make_manipulation_segment_list(self, segment_num, name = 'manipulation', qubits_name = None,):
+        
+        segment = {}
+        repetition = {}
 
         for s in range(len(self.sequence_cfg[segment_num])):
 
-           self.manipulation_segment['step%d'%(s+1)], self.manipulation_repetition['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)
-#           self.readout_repetition['step%d'%(s+1)] = 1
-        return True
+           segment['step%d'%(s+1)], repetition['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)
+
+        return segment, repetition
     
     def make_all_segment_list(self,):
         
@@ -388,14 +429,15 @@ class Experiment:
 
         for segment_type in self.sequence_cfg_type:
 
-            if segment_type == 'init':
-                self.make_initialize_segment_list(segment_num = i,)
+            if segment_type[:4] == 'init':
+                self.segment[segment_type], self.repetition[segment_type] = self.make_initialize_segment_list(segment_num = i, name = segment_type)
 
-            elif segment_type == 'manip':
-                self.make_manipulation_segment_list(segment_num = i,)
+            elif segment_type[:5] == 'manip':
+                self.segment[segment_type], self.repetition[segment_type] = self.make_manipulation_segment_list(segment_num = i, name = segment_type)
 
-            elif segment_type == 'read':
-                self.make_readout_segment_list(segment_num = i, name = 'readout')
+            elif segment_type[:4] == 'read':
+                self.segment[segment_type], self.repetition[segment_type] = self.make_readout_segment_list(segment_num = i, name = segment_type)
+#            elif segment_type == 'compensate':
 
             i+=1
 
@@ -436,6 +478,10 @@ class Experiment:
             self.sequence.append(name = name, wfname = wfname, trigger_wait = False, repetitions = repe)
         
         return True
+    
+    """
+    problems below
+    """
     
     def update_segment_into_sequence_and_elts(self, segment, repetition, rep_idx = 0,idx_j = 0, idx_i = 0):         ## segment = self.initialize_segment
         
@@ -485,6 +531,40 @@ class Experiment:
         
         return True
     
+    def add_compensation(self, idx_j = 0, idx_i = 0):
+        unit_length = 0
+        for segment in self.sequence_cfg:
+            unit_length += len(segment) 
+        amplitude = [0,0]
+        
+        for i in range(unit_length):
+            wfname = self.sequence.elements[-(i+1)]['wfname']
+            for elt in self.elts:
+                if elt.name == wfname:
+                    element = elt
+                    break
+            tvals, wfs = element.ideal_waveforms()
+            repe = self.sequence.elements[-(i+1)]['repetitions']
+            amplitude[0] += np.sum(wfs[self.channel_VP[0]])*repe
+            amplitude[1] += np.sum(wfs[self.channel_VP[1]])*repe
+            
+        comp_amp = [-amplitude[k]/3000000 for k in range(2)]
+        
+        compensation_element = Element('compensation_%d'%idx_i, self.pulsar)
+
+        compensation_element.add(SquarePulse(name = 'COMPEN1', channel = self.channel_VP[0], amplitude=comp_amp[0], length=1e-6),
+                            name='compensation1',)
+        compensation_element.add(SquarePulse(name = 'COMPEN2', channel = self.channel_VP[1], amplitude=comp_amp[1], length=1e-6),
+                            name='compensation2',refpulse = 'compensation1', refpoint = 'start', start = 0)
+        
+        compensation_element.add(SquarePulse(name='comp_c1m2', channel='ch2_marker2', amplitude=2, length=1e-6),
+                                           name='comp%d_c1m2'%(i+1),refpulse = 'compensation1', refpoint = 'start')
+        compensation_element.add(SquarePulse(name='comp_c5m2', channel='ch5_marker2', amplitude=2, length=1e-6),
+                                           name='comp%d_c5m2'%(i+1),refpulse = 'compensation1', refpoint = 'start')
+        
+        self.elts.append(compensation_element)
+        self.sequence.append(name = 'compensation_%d'%idx_i, wfname = 'compensation_%d'%idx_i, trigger_wait = False, repetitions = 3000)
+        return True
     
     def generate_unit_sequence(self, rep_idx = 0, idx_i = 0, idx_j = 0):          # rep_idx = 10*i+j
         
@@ -492,26 +572,28 @@ class Experiment:
         
         for segment_type in self.sequence_cfg_type:
 
-            if segment_type == 'init':
+            if segment_type[:4] == 'init':
                 
-                segment = self.initialize_segment
+                segment = self.segment[segment_type]
                 
-                repetition = self.initialize_repetition
+                repetition = self.repetition[segment_type]
                 
-            elif segment_type == 'manip':
+            elif segment_type[:5] == 'manip':
                 
-                segment = self.manipulation_segment
+                segment = self.segment[segment_type]
                 
-                repetition = self.manipulation_repetition
+                repetition = self.repetition[segment_type]
                 
-            elif segment_type == 'read':
+            elif segment_type[:4] == 'read':
                 
-                segment = self.readout_segment
+                segment = self.segment[segment_type]
                 
-                repetition = self.readout_repetition
+                repetition = self.repetition[segment_type]
                 
             self.add_segment(segment = segment, repetition = repetition, idx_j = idx_j, idx_i = idx_i)
             i+=1
+            
+        self.add_compensation(idx_j = idx_j, idx_i = idx_i)
 
         return True
  
@@ -626,7 +708,7 @@ class Experiment:
 
         return True
 
-
+    
 
     def set_trigger(self,):
         
@@ -634,7 +716,7 @@ class Experiment:
 
         trigger_element.add(SquarePulse(name = 'TRG2', channel = 'ch8_marker2', amplitude=2, length=300e-9),
                             name='trigger2',)
-        trigger_element.add(SquarePulse(name = 'TRG1', channel = 'ch4_marker2', amplitude=2, length=1.43e-6),
+        trigger_element.add(SquarePulse(name = 'TRG1', channel = 'ch4_marker2', amplitude=2, length=1400e-9),
                             name='trigger1',refpulse = 'trigger2', refpoint = 'start', start = 200e-9)
         
         extra_element = Element('extra', self.pulsar)
@@ -670,7 +752,7 @@ class Experiment:
         return True
 
 
-
+    
 
     def run_experiment(self,):
         

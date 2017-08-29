@@ -13,7 +13,7 @@ from calibration import Calibration
 
 import stationF006
 from manipulation import Manipulation
-from manipulation_library import Ramsey
+from manipulation_library import Ramsey, Finding_Resonance
 #from digitizer_setting import digitizer_param
 
 import qcodes.instrument_drivers.Spectrum.M4i as M4i
@@ -116,8 +116,9 @@ def make_manipulation_cfg():
 #%%
 
 def make_experiment_cfg():
+    global station
 
-    station = stationF006.initialize()
+#    station = stationF006.initialize()
     awg = station.awg
     awg2 = station.awg2
     awg.clock_freq(1e9)
@@ -127,7 +128,7 @@ def make_experiment_cfg():
     vsg2 = station.vsg2
     digitizer = station.digitizer
 #    awg.ch3_amp
-    pulsar = set_5014pulsar(awg = awg, awg2= awg2)
+#    pulsar = set_5014pulsar(awg = awg, awg2= awg2)
 
     qubit_1 = station.qubit_1
     qubit_2 = station.qubit_2
@@ -139,12 +140,12 @@ def make_experiment_cfg():
 
     experiment.sweep_loop1 = {
 #            'para1': [0.8,0.2,0.53,0.14,0.3],
-            'para1': sweep_array(start = 50e-9, stop = 250e-9, points = 5),
-            'para2': sweep_array(start = 0.1, stop = 0.5, points = 5),
+            'para1': sweep_array(start = 0, stop = 1e-6, points = 11),
+#            'para2': sweep_array(start = 0.1, stop = 0.5, points = 5),
             }
 
     experiment.sweep_loop2 = {
-            'para1': [-0.4,-0.5,-0.3,-0.8,-0.5],
+#            'para1': [-0.4,-0.5,-0.3,-0.8,-0.5],
             }
 
 #    loop1_para1 = [1,2,344,553,3]
@@ -156,10 +157,10 @@ def make_experiment_cfg():
     loop2_para1 = 'loop2_para1'
     
     init_cfg = {
-            'step1' : set_step(time = 200e-6, qubits = qubits, voltages = [0.5, 0.8]),
-            'step2' : set_step(time = 5e-6, qubits = qubits, voltages = [loop2_para1, 0.3]),
-            'step3' : set_step(time = 140e-6, qubits = qubits, voltages = [0.8, 0.5]),
-#            'step4' : set_step(time = 1000e-6, qubits = qubits, voltages = [0.4, 0.5]),
+            'step1' : set_step(time = 1.5e-3, qubits = qubits, voltages = [30*0.5*0.004, 30*0.5*-0.001]),
+            'step2' : set_step(time = 1.5e-3, qubits = qubits, voltages = [30*0.5*-0.004, 30*0.5*0]),
+            'step3' : set_step(time = 0.1e-3, qubits = qubits, voltages = [30*0.5*-0.008, 30*0.5*0]),
+            'step4' : set_step(time = 4e-3, qubits = qubits, voltages = [30*0.5*0, 30*0.5*0]),
 #            'step5' : set_step(time = 500e-6, qubits = qubits, voltages = [0.4, 0.5]),
 #            'step6' : set_step(time = 2000e-6, qubits = qubits, voltages = [0.4, 0.5]),
 #            'step7' : set_step(time = 1e-6, qubits = qubits, voltages = [0.4, 0.5]),
@@ -169,23 +170,39 @@ def make_experiment_cfg():
             }
 
     manip_cfg = {
-            'step1' : set_manip(time = 50e-6, qubits = qubits, voltages = [loop1_para2,0.6], parameter1 = loop1_para1)
+            'step1' : set_manip(time = 2e-6, qubits = qubits, voltages = [30*0.5*-0.004,30*0.5*0.016], parameter1 = loop1_para1)
             }
 
     read_cfg = {
-            'step1' : set_step(time = 1e-6, qubits = qubits, voltages = [0.3, 0.2]),
-#            'step2' : set_step(time = 1e-6, qubits = qubits, voltages = [0.4, 0.2]),
+            'step1' : set_step(time = 1e-3, qubits = qubits, voltages = [30*0.5*0, 30*0.5*0]),
+#            'step2' : set_step(time = 3e-3, qubits = qubits, voltages = [0.4, 0.2]),
+#            'step3' : set_step(time = 1e-6, qubits = qubits, voltages = [0.5, 0.2]),
+            }
+    
+    init2_cfg = {
+            'step1' : set_step(time = 1.5e-6, qubits = qubits, voltages = [30*0.5*1, 30*0.5*1]),
+            'step2' : set_step(time = 1.5e-6, qubits = qubits, voltages = [30*0.5*1, 30*0.5*1]),
+            }
+    
+    manip2_cfg = {
+            'step1' : set_manip(time = 1e-6, qubits = qubits, voltages = [30*0.5*-0.004,30*0.5*0.016], parameter1 = 250e-9)
+            }
+    
+    read2_cfg = {
+            'step1' : set_step(time = 1e-3, qubits = qubits, voltages = [30*0.5*0, 30*0.5*0]),
+            'step2' : set_step(time = 3e-3, qubits = qubits, voltages = [0.4, 0.2]),
 #            'step3' : set_step(time = 1e-6, qubits = qubits, voltages = [0.5, 0.2]),
             }
 
+#    experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg, init2_cfg, manip2_cfg, read2_cfg]
+#    experiment.sequence_cfg_type = ['init', 'manip','read','init2', 'manip2', 'read2']
+
     experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg]
-    experiment.sequence_cfg_type = ['init', 'manip','read',]
+    experiment.sequence_cfg_type = ['init','manip', 'read']
 
-#    experiment.sequence_cfg = [init_cfg, manip_cfg,]
-#    experiment.sequence_cfg_type = ['init','manip',]
-
-    experiment.manip_elem = Ramsey(name = 'Ramsey', pulsar = pulsar)
-    
+#    experiment.manip_elem = Ramsey(name = 'Ramsey', pulsar = pulsar)
+    experiment.manip_elem = Finding_Resonance(name = 'Finding_resonance', pulsar = pulsar)
+#    experiment.manip_elem = Rabi(name = 'Rabi', pulsar = pulsar)
     experiment.manip_elem.pulsar = None
 
     experiment.set_sweep()
@@ -324,11 +341,11 @@ def set_5014pulsar(awg, awg2):
     awg2 = awg2.name
     pulsar = Pulsar(name = 'PuLsAr', default_AWG = awg, master_AWG = awg)
 
-    marker1highs = [2, 2, 2.7, 2, 2, 2, 2.7, 2]
+    marker1highs = [2, 2, 2, 2, 2, 2, 2, 2]
     for i in range(8):
         pulsar.define_channel(id='ch{}'.format(i%4 + 1),
                               name='ch{}'.format(i + 1), type='analog',
-                              high=1, low=-1,
+                              high=2, low=-2,
                               offset=0.0, delay=0, active=True, AWG = awg if i<4 else awg2)
         pulsar.define_channel(id='ch{}_marker1'.format(i%4 + 1),
                               name='ch{}_marker1'.format(i + 1),
@@ -341,7 +358,18 @@ def set_5014pulsar(awg, awg2):
                               high=2, low=0, offset=0.,
                               delay=0, active=True, AWG = awg if i<4 else awg2)
     return pulsar
+#%%
 
+def close():
+    awg.stop()
+    awg2.stop()
+    awg.delete_all_waveforms_from_list()
+    awg2.delete_all_waveforms_from_list()
+
+#    awg.close()
+#    awg2.close()
+#    station.close()
+    return True
 
 #%% test
 

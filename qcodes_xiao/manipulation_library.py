@@ -43,9 +43,12 @@ class Finding_Resonance(Manipulation):
     
     def make_circuit(self, qubit = 'Qubit_1'):
         
-        qn = qubit[-1]-1
+#        N = qubit[-1]-1
         
-        self.add_single_qubit_gate(name = 'T1_Q1', refgate = 'X3_Q1', qubit = self.qubits[qn], amplitude = 1, length = self.parameter1)
+        self.add_single_qubit_gate(name = 'T1_Q1', qubit = self.qubits[1], amplitude = 1, length = self.parameter1, )
+        
+#        self.add_X(name='X2_Q1', refgate = 'T1_Q1', refpoint = 'start', qubit = self.qubits[1], waiting_time = 0)
+#        self.add_Y(name='Y1_Q1', qubit = self.qubits[0],)
     
         return self
 
@@ -79,32 +82,64 @@ class Ramsey(Manipulation):
         
         self.add_X(name='X1_Q1', qubit = self.qubits[0],)
     
-        self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = self.parameter1,)
+#        self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = self.parameter1,)
         
-        self.add_Y(name = 'Y1_Q2', refgate = 'X2_Q1', qubit = self.qubits[1],)
-
-        self.add_Y(name='Y1_Q1', refgate = 'X2_Q1', qubit = self.qubits[0], waiting_time = 500e-9,)
-        
-        self.add_CPhase(name = 'CP_Q12', refgate = 'X2_Q1', control_qubit = self.qubits[0], target_qubit = self.qubits[1],
-                        amplitude_control = 0.2, amplitude_target = -0.6, length = 10e-8, waiting_time = 400e-9)
-        
-        self.add_X(name = 'X1_Q2', refgate = 'CP_Q12', qubit = self.qubits[1], waiting_time = 100e-9)
-        
-        self.add_Z(name='Z1_Q1', qubit = self.qubits[0], degree = 45)
-        self.add_Z(name = 'Z1_Q2', qubit = self.qubits[1], degree = 45)
-        
-        self.add_X(name = 'X2_Q2', refgate = 'X1_Q2', qubit = self.qubits[1], waiting_time = 800e-9)
+#        self.add_Y(name = 'Y1_Q2', refgate = 'X2_Q1', qubit = self.qubits[1],)
 #
-        self.add_X(name='X3_Q1', refgate = 'Y1_Q1', qubit = self.qubits[0], waiting_time = 250e-9,)
-         
+#        self.add_Y(name='Y1_Q1', refgate = 'X2_Q1', qubit = self.qubits[0], waiting_time = 500e-9,)
+#        
+#        self.add_CPhase(name = 'CP_Q12', refgate = 'X2_Q1', control_qubit = self.qubits[0], target_qubit = self.qubits[1],
+#                        amplitude_control = 0.2, amplitude_target = -0.6, length = 10e-8, waiting_time = 400e-9)
+#        
+#        self.add_X(name = 'X1_Q2', refgate = 'CP_Q12', qubit = self.qubits[1], waiting_time = 100e-9)
+#        
+#        self.add_Z(name='Z1_Q1', qubit = self.qubits[0], degree = 45)
+#        self.add_Z(name = 'Z1_Q2', qubit = self.qubits[1], degree = 45)
+#        
+#        self.add_X(name = 'X2_Q2', refgate = 'X1_Q2', qubit = self.qubits[1], waiting_time = 800e-9)
+##
+#        self.add_X(name='X3_Q1', refgate = 'Y1_Q1', qubit = self.qubits[0], waiting_time = 250e-9,)
+#         
 #        self.add_single_qubit_gate(name = 'T1_Q1', refgate = 'X3_Q1', qubit = self.qubits[0], amplitude = 0.1, waiting_time = self.waiting_time)
         
 #        self.add_Z(name='Z1_Q1', qubit = self.qubits[0],)
         
         return self
 #%%    
-
+"""
 class Rabi(Manipulation):
+    
+     def __init__(self, name, pulsar, **kw):
+        
+        super().__init__(name, pulsar, **kw)
+        self.refphase = {}
+        self.waiting_time = kw.pop('waiting_time', 0)
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.parameter1 = kw.pop('parameter1', 0)
+        self.parameter2 = kw.pop('parameter2', 0)
+        
+    def __call__(self, **kw):
+        self.name = kw.pop('name', self.name)
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = kw.pop('pulsar', None)
+        self.waiting_time = kw.pop('waiting_time', self.waiting_time)
+        self.parameter1 = kw.pop('parameter1', 0)
+        self.parameter2 = kw.pop('parameter2', 0)
+        return self
+    
+    def make_circuit(self, ):
+        
+        self.add_single_qubit_gate(name='Rabi_Oscillation', qubit = self.qubits[0], amplitude = 1, length = self.parameter1)
+    
+        return self
+"""
+class CRot_Readout(Manipulation):
     
     def __init__(self, name, pulsar, **kw):
         

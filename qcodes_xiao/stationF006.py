@@ -121,11 +121,11 @@ def initialize(reinit=False, server_name=None):
 
 #   Qubit_1.define_gate(gate_name = 'RP1', gate_number = 2, microwave = 1, channel_I = 'RP1I', channel_Q = 'RP1Q')
 #
-    qubit_1.define_gate(gate_name = 'LP', gate_number = 3, gate_function = 'plunger', channel_VP = 'ch6')
+    qubit_1.define_gate(gate_name = 'T', gate_number = 3, gate_function = 'plunger', channel_VP = 'ch7')
 #
     qubit_2.define_gate(gate_name = 'Microwave2', gate_number = 4, microwave = 1, channel_I = 'ch3', channel_Q = 'ch4', channel_PM = 'ch1_marker2')
 #
-    qubit_2.define_gate(gate_name = 'T', gate_number = 5, gate_function = 'plunger', channel_VP = 'ch7')
+    qubit_2.define_gate(gate_name = 'LP', gate_number = 5, gate_function = 'plunger', channel_VP = 'ch6')
 
 
     
@@ -141,7 +141,7 @@ def initialize(reinit=False, server_name=None):
 
 
     logging.info('LD400: load AWG driver')
-    awg2 = AWG5014.Tektronix_AWG5014(name='awg2', address='TCPIP0::192.168.0.5::inst0::INSTR', server_name=server_name)
+    awg2 = AWG5014.Tektronix_AWG5014(name='awg2', address='TCPIP0::192.168.0.4::inst0::INSTR', server_name=server_name)
     print('awg2 loaded')
     
     logging.info('LD400: load AWG driver')

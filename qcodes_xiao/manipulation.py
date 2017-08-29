@@ -24,8 +24,8 @@ class Manipulation(Element):
         
         self.total_time = 0     ## used for finally adding the gate voltage pulse
         
-        self.VP_before = 5e-6
-        self.VP_after = 500e-9
+        self.VP_before = 250e-9
+        self.VP_after = 250e-9
         
         
         self.qubits = qubits        
@@ -56,7 +56,7 @@ class Manipulation(Element):
 
     
     def add_single_qubit_gate(self, name = None, qubit = None, axis = [1,0,0], degree = 90,
-                              amplitude = None, length = 50e-9, frequency = None, refphase = 0,
+                              amplitude = None, length = 50e-9, frequency_shift = None, refphase = 0,
                               refgate = None, refpoint = 'end', waiting_time = 0, refpoint_new = 'start'):
         # no idea yet  perhaps call the element.add() function but just to add the first pulse
         # and record the information of the last pulse
@@ -64,14 +64,14 @@ class Manipulation(Element):
             raise NameError('Name already used')            ## need to stop the program or maybe randomly give a name
         
         single_qubit_gate = Single_Qubit_Gate(name = name, qubit = qubit, rotating_axis = axis, 
-                                              frequency = frequency, amplitude = amplitude, refphase = refphase)
+                                              frequency_shift = frequency_shift, amplitude = amplitude, refphase = refphase)
         
         if axis[0]!=0 or axis[1]!=0:
             if axis[2]!=0:
                 raise ValueError('should be either in X-Y plane or Z axis')
             else:
                 single_qubit_gate.XY_rotation(degree = degree, length = length, waiting_time = waiting_time,
-                                              refgate = None if refgate == None else self.operations[refgate])
+                                              refgate = None if refgate == None else self.operations[refgate], refpoint = refpoint)
         
         else:
             if axis[2] == 0:

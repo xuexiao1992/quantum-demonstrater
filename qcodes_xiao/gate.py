@@ -35,12 +35,13 @@ class Gate:
 
 class Single_Qubit_Gate(Gate):
     
-    def __init__(self, name, qubit, rotating_axis = [1, 0, 0], amplitude = None, frequency = None, refphase = 0):
+    def __init__(self, name, qubit, rotating_axis = [1, 0, 0], amplitude = None, frequency_shift = 0, refphase = 0):
         super().__init__(name,)
         
         self.qubit = qubit.name
         self.amplitude = qubit.IQ_amplitude if amplitude == None else amplitude
-        self.frequency = qubit.frequency if frequency == None else frequency
+#        self.frequency_shift = qubit.frequency if frequency == None else frequency
+        self.frequency_shift = frequency_shift
         self.channel_I = qubit.microwave_gate['channel_I']
         self.channel_Q = qubit.microwave_gate['channel_Q']
         self.channel_PM = qubit.microwave_gate['channel_PM']
@@ -50,7 +51,7 @@ class Single_Qubit_Gate(Gate):
         self.Pi_pulse_length = qubit.Pi_pulse_length
         self.halfPi_pulse_length = qubit.halfPi_pulse_length
         
-        self.PM_before = 200e-9
+        self.PM_before = 20e-9
         self.PM_after = 20e-9
         
         self.voltage_pulse_length = 0
@@ -91,13 +92,13 @@ class Single_Qubit_Gate(Gate):
                                             length = pulse_length)
             
             
-        elif 0: ##here frequency and phase is not yet ready!!!!!!!!!!!
+        elif self.frequency_shift != 0: ##here frequency and phase is not yet ready!!!!!!!!!!!
             microwave_pulse_I = CosPulse(channel = self.channel_I, name = '%s_microwave_pulse_I'%self.name, frequency = 1e6,
-                                         phase = 0, amplitude = 0.2*np.cos(-self.refphase + self.axis_angle),
+                                         phase = 0, amplitude = pulse_amp*np.cos(-self.refphase + self.axis_angle),
                                          length = pulse_length)
             
             microwave_pulse_Q = CosPulse(channel = self.channel_Q, name = '%s_microwave_pulse_Q'%self.name, frequency = 1e6, 
-                                         phase = 0, amplitude = 0.2*np.sin(-self.refphase + self.axis_angle),
+                                         phase = 0, amplitude = pulse_amp*np.sin(-self.refphase + self.axis_angle),
                                          length = pulse_length)
             
             
