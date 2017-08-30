@@ -63,7 +63,9 @@ class Manipulation(Element):
         if name in self.operations.keys():
             raise NameError('Name already used')            ## need to stop the program or maybe randomly give a name
         tvals, wfs = self.waveforms()   ## 960?
-        IQ_phase = frequency_shift*tvals['ch1']
+        channel_id = qubit.microwave_gate['channel_I']
+        time = len(tvals[channel_id])*10e-9
+        IQ_phase = 2*np.pi*time/frequency_shift if frequency_shift != 0 else 0
         single_qubit_gate = Single_Qubit_Gate(name = name, qubit = qubit, rotating_axis = axis,
                                               frequency_shift = frequency_shift, amplitude = amplitude, refphase = refphase,
                                               IQ_phase = IQ_phase)

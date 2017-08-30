@@ -148,7 +148,12 @@ def initialize(reinit=False, server_name=None):
     awg = AWG5014.Tektronix_AWG5014(name='awg', address='TCPIP0::192.168.0.9::inst0::INSTR', server_name=server_name)
     print('awg loaded')
 
-    
+    awg2.write('SOUR1:ROSC:SOUR EXT')
+    awg.write('SOUR1:ROSC:SOUR INT')
+    awg.force_trigger()
+    awg.clock_freq(1e9)
+    awg2.clock_freq(1e9)
+    awg2.trigger_level(0.5)
     #Loading Microwave source
     logging.info('Keysight signal generator driver')
     vsg = E8267D.E8267D(name='vsg',address='TCPIP::192.168.0.11::INSTR',server_name=server_name)

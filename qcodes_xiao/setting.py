@@ -31,7 +31,7 @@ import sys
 sys.path.append('C:\\Users\\LocalAdmin\\Documents\\GitHub\\PycQED_py3\\pycqed\\measurement\\waveform_control')
 import pulsar as ps
 import element as ele
-
+import time
 
 #%% make experiment
 
@@ -119,10 +119,11 @@ def make_experiment_cfg():
     global station
 
 #    station = stationF006.initialize()
+    time.sleep(1)
     awg = station.awg
     awg2 = station.awg2
-    awg.clock_freq(1e9)
-    awg2.clock_freq(1e9)
+#    awg.clock_freq(1e9)
+#    awg2.clock_freq(1e9)
     
     vsg = station.vsg
     vsg2 = station.vsg2
@@ -140,7 +141,7 @@ def make_experiment_cfg():
 
     experiment.sweep_loop1 = {
 #            'para1': [0.8,0.2,0.53,0.14,0.3],
-            'para1': sweep_array(start = 0, stop = 1e-6, points = 11),
+#            'para1': sweep_array(start = 0, stop = 1e-6, points = 11),
 #            'para2': sweep_array(start = 0.1, stop = 0.5, points = 5),
             }
 
@@ -170,7 +171,7 @@ def make_experiment_cfg():
             }
 
     manip_cfg = {
-            'step1' : set_manip(time = 2e-6, qubits = qubits, voltages = [30*0.5*-0.004,30*0.5*0.016], parameter1 = loop1_para1)
+            'step1' : set_manip(time = 3e-6, qubits = qubits, voltages = [30*0.5*-0.004,30*0.5*0.016],)
             }
 
     read_cfg = {
@@ -385,9 +386,9 @@ digitizer, dig = set_digitizer(experiment.digitizer)
 experiment.generate_1D_sequence()
 
 #experiment.load_sequence()
-
+time.sleep(1)
 experiment.run_experiment()
-
+time.sleep(1)
 pulsar.start()
 
 #scan_outside_awg(name = 'finding_resonance', set_parameter = vsg2.frequency, measured_parameter = dig, start=12.8e9, end=12.9e9, step=10e6)

@@ -18,7 +18,7 @@ import stationF006
 #from stationF006 import station
 from copy import deepcopy
 from manipulation_library import Ramsey
-
+import time
 #%%
 class Experiment:
 
@@ -234,7 +234,7 @@ class Experiment:
 
         return readout
 
-    def _manipulation_element(self, name, time = 0, amplitudes = [], **kw):
+    def _manipulation_element(self, name, time, amplitudes = [], **kw):
 
         manip = deepcopy(self.manip_elem)
 
@@ -242,6 +242,7 @@ class Experiment:
 #        duration_time = kw.pop('duration_time', None)
 #        frequency = kw.pop('frequency', None)
 #        power = kw.pop('power', None)
+        print('manip time:', time)
         parameter1 = kw.pop('parameter1', None)
         parameter2 = kw.pop('parameter2', None)
         print(name)
@@ -269,7 +270,7 @@ class Experiment:
 
         return manipulation
 
-    def make_element(self, name, segment, time = 0, amplitudes = [], **kw):
+    def make_element(self, name, segment, time=0, amplitudes = [], **kw):
         
         if segment[:4] == 'init':
             element = self._initialize_element(name, amplitudes = amplitudes,)
@@ -340,7 +341,7 @@ class Experiment:
                 parameter1 = step.pop('parameter1', None)
                 parameter2 = step.pop('parameter2', None)
 
-                element = self.make_element(name = name+'step%d'%s, segment = seg, amplitudes=amplitudes,
+                element = self.make_element(name = name+'step%d'%s, segment = seg, time = step['time'], amplitudes=amplitudes,
                                             parameter1 = parameter1, parameter2 = parameter2)
                 """
                 for trigger, not used
@@ -384,7 +385,7 @@ class Experiment:
                                     name = 'trigger',)
                     """
                     segment[j].append(element)
-                    rep = 1 if seg[:5] is 'manip' else int(step['time']/(1e-6))
+                    rep = 1 if seg[:5] == 'manip' else int(step['time']/(1e-6))
                     repetition[j].append(rep)
         
         return segment, repetition
@@ -420,7 +421,9 @@ class Experiment:
         for s in range(len(self.sequence_cfg[segment_num])):
 
            segment['step%d'%(s+1)], repetition['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)
-
+           
+           repetition['step%d'%(s+1)] = 1
+          
         return segment, repetition
     
     def make_all_segment_list(self,):
@@ -716,7 +719,7 @@ class Experiment:
 
         trigger_element.add(SquarePulse(name = 'TRG2', channel = 'ch8_marker2', amplitude=2, length=300e-9),
                             name='trigger2',)
-        trigger_element.add(SquarePulse(name = 'TRG1', channel = 'ch4_marker2', amplitude=2, length=1400e-9),
+        trigger_element.add(SquarePulse(name = 'TRG1', channel = 'ch4_marker2', amplitude=2, length=1376e-9),
                             name='trigger1',refpulse = 'trigger2', refpoint = 'start', start = 200e-9)
         
         extra_element = Element('extra', self.pulsar)
@@ -736,17 +739,22 @@ class Experiment:
         print('load sequence')
 #        elts = list(self.element.values())
         self.awg.delete_all_waveforms_from_list()
+        time.sleep(0.2)
         self.awg2.delete_all_waveforms_from_list()
+        time.sleep(1)
         self.set_trigger()
+        time.sleep(1)
         elts = self.elts
         sequence = self.sequence
         self.pulsar.program_awgs(sequence, *elts, AWGs = ['awg','awg2'],)       ## elts should be list(self.element.values)
         
-        
-        self.awg2.trigger_level(0.5)
+        time.sleep(1)
+#        self.awg2.trigger_level(0.5)
         self.awg2.set_sqel_trigger_wait(element_no = 1, state = 1)
+        time.sleep(1)
         last_element_num = self.awg2.sequence_length()
         self.awg.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 2)
+        time.sleep(0.2)
         self.awg2.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 2)
 
         return True
@@ -758,12 +766,12 @@ class Experiment:
         
         print('run experiment')
 
-        self.awg2.write('SOUR1:ROSC:SOUR EXT')
-        self.awg.write('SOUR1:ROSC:SOUR INT')
+#        self.awg2.write('SOUR1:ROSC:SOUR EXT')
+#        self.awg.write('SOUR1:ROSC:SOUR INT')
 #        self.awg.clock_source('EXT')
 #        self.awg.ch3_state.set(1)
         self.awg.all_channels_on()
-        self.awg.force_trigger()
+#        self.awg.force_trigger()
         self.awg2.all_channels_on()
 #        self.awg2.force_trigger()
 #        self.awg.run()

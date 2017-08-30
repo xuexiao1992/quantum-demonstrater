@@ -51,8 +51,8 @@ class Single_Qubit_Gate(Gate):
         self.Pi_pulse_length = qubit.Pi_pulse_length
         self.halfPi_pulse_length = qubit.halfPi_pulse_length
 
-        self.PM_before = 20e-9
-        self.PM_after = 20e-9
+        self.PM_before = 50e-9
+        self.PM_after = 50e-9
 
         self.voltage_pulse_length = 0
 
@@ -82,7 +82,7 @@ class Single_Qubit_Gate(Gate):
         PM_pulse = SquarePulse(channel = self.channel_PM, name = '%s_PM_pulse'%self.name,
                                amplitude = 2, length = pulse_length+self.PM_before+self.PM_after)
 
-        if 1:
+        if self.frequency_shift == 0:
             microwave_pulse_I = SquarePulse(channel = self.channel_I, name = '%s_microwave_pulse_I'%self.name,
                                             amplitude = pulse_amp*np.cos(-self.refphase + self.axis_angle),
                                             length = pulse_length)
@@ -96,11 +96,11 @@ class Single_Qubit_Gate(Gate):
             phase = self.IQ_phase
             freq = self.frequency_shift
             microwave_pulse_I = CosPulse(channel = self.channel_I, name = '%s_microwave_pulse_I'%self.name, frequency = freq,
-                                         phase = 0, amplitude = pulse_amp*np.cos(-self.refphase + self.axis_angle),
+                                         amplitude = pulse_amp*np.cos(-self.refphase + self.axis_angle),
                                          length = pulse_length, phase = phase)
 
             microwave_pulse_Q = CosPulse(channel = self.channel_Q, name = '%s_microwave_pulse_Q'%self.name, frequency = freq,
-                                         phase = 0, amplitude = pulse_amp*np.sin(-self.refphase + self.axis_angle),
+                                         amplitude = pulse_amp*np.sin(-self.refphase + self.axis_angle),
                                          length = pulse_length, phase = phase-90)
 
 

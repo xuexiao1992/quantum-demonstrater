@@ -45,7 +45,13 @@ class Finding_Resonance(Manipulation):
 
 #        N = qubit[-1]-1
 
-        self.add_single_qubit_gate(name = 'T1_Q1', qubit = self.qubits[1], amplitude = 1, length = self.parameter1, )
+        self.add_single_qubit_gate(name = 'T1_Q1', qubit = self.qubits[0], amplitude = 1, length = 200e-9, frequency_shift = 0)
+        self.add_single_qubit_gate(name = 'T2_Q1', refpoint = 'start', waiting_time = 0,
+                                   qubit = self.qubits[1], amplitude = 1, length = 200e-9, frequency_shift = 0)
+        self.add_CPhase(name = 'CP_Q12', refgate = 'T1_Q1', refpoint = 'start', control_qubit = self.qubits[0], target_qubit = self.qubits[0],
+                        amplitude_control = 0.5, amplitude_target = -0.6, length = 200e-9, waiting_time = 0)
+#        self.add_single_qubit_gate(name = 'T2_Q1', refgate = 'T1_Q1', qubit = self.qubits[1], amplitude = 1, 
+#                                   length = 500e-9, frequency_shift = 2e6, waiting_time = 50e-9)
 
 #        self.add_X(name='X2_Q1', refgate = 'T1_Q1', refpoint = 'start', qubit = self.qubits[1], waiting_time = 0)
 #        self.add_Y(name='Y1_Q1', qubit = self.qubits[0],)
