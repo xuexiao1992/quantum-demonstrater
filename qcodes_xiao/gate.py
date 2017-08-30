@@ -8,7 +8,7 @@ Created on Thu Jun  1 09:35:17 2017
 
 import numpy as np
 from scipy import constants as C
-
+from qcodes.instrument.base import Instrument
 from pycqed.measurement.waveform_control.element import Element
 from pycqed.measurement.waveform_control.pulse import CosPulse, SquarePulse, LinearPulse
 import math
@@ -74,6 +74,8 @@ class Single_Qubit_Gate(Gate):
             pulse_length = self.halfPi_pulse_length if degree == 90 else degree*self.Pi_pulse_length/180
 
         pulse_amp = self.amplitude
+        
+        pulse_delay = Instrument.find_instrument(self.qubit).pulse_delay
 
         ## voltage pulse is not used here
         voltage_pulse = SquarePulse(channel = self.channel_VP, name = '%s_voltage_pulse'%self.name,
@@ -118,7 +120,7 @@ class Single_Qubit_Gate(Gate):
                 'pulse_name': microwave_pulse_I.name,
                 'refpulse': None if refgate == None else refgate[-2]['pulse_name'],                   ## name of the refpulse
                 'refpoint': refpoint,
-                'waiting': waiting_time
+                'waiting': waiting_time + pulse_delay
                 }
 
         self.pulses[2] = {

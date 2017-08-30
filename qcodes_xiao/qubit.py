@@ -46,6 +46,8 @@ class Qubit(Instrument):
         
         self.awg_channels = {}
         
+        self.pulse_delay = 0
+        
         self.neighbor = {}               ##        neighbor quantum dots
         
 #        self.refphase = 0               ##          used for Z rotation
@@ -115,16 +117,13 @@ class Qubit(Instrument):
             self.microwave_gate['channel_FM'] = channel_FM
         return True
             
-#    def define_neighbor(self, neighbor_qubit, CPhase_time, CPhase_detuning, CRotation_freq_up, CRotation_freq_down):
-#        self.neighbor[neighbor_name] = {
-#                'position': neighbor_position,
-#                'shared_gates': {},
-#                'CPhase_time': CPhase_time,
-#                'CPhase_detuning': CPhase_detuning,
-#                'CRotation_freq_up': CRotation_freq_up,
-#                'CRotation_freq_down': CRotation_freq_down
-#                }
-#        return True
+    def define_neighbor(self, neighbor_qubit, pulse_delay = 0, CPhase_detuning = 0, ):
+        self.neighbor[neighbor_qubit] = {
+                'pulse_delay': pulse_delay,
+                'shared_gates': {},
+                }
+        self.pulse_delay = pulse_delay
+        return True
     
     
     

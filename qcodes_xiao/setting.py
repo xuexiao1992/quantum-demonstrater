@@ -118,7 +118,7 @@ def make_manipulation_cfg():
 def make_experiment_cfg():
     global station
 
-#    station = stationF006.initialize()
+    station = stationF006.initialize()
     time.sleep(1)
     awg = station.awg
     awg2 = station.awg2
@@ -129,7 +129,7 @@ def make_experiment_cfg():
     vsg2 = station.vsg2
     digitizer = station.digitizer
 #    awg.ch3_amp
-#    pulsar = set_5014pulsar(awg = awg, awg2= awg2)
+    pulsar = set_5014pulsar(awg = awg, awg2= awg2)
 
     qubit_1 = station.qubit_1
     qubit_2 = station.qubit_2

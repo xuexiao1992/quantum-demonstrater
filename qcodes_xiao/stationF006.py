@@ -126,9 +126,10 @@ def initialize(reinit=False, server_name=None):
     qubit_2.define_gate(gate_name = 'Microwave2', gate_number = 4, microwave = 1, channel_I = 'ch3', channel_Q = 'ch4', channel_PM = 'ch1_marker2')
 #
     qubit_2.define_gate(gate_name = 'LP', gate_number = 5, gate_function = 'plunger', channel_VP = 'ch6')
-
-
     
+    qubit_1.define_neighbor(neighbor_qubit = 'qubit_2', pulse_delay = 10e-9)
+
+    qubit_2.define_neighbor(neighbor_qubit = 'qubit_2', pulse_delay = 0)
     
     # Loading AWG
 #    logging.info('LD400: load AWG driver')
