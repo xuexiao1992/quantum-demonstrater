@@ -351,7 +351,8 @@ class Experiment:
                 """
                 segment = element
                 
-                repetition = int(step['time']/(1e-6))
+#                repetition = int(step['time']/(1e-6))
+                repetition = 1 if seg[:5] == 'manip' else int(step['time']/(1e-6))
                 
         elif True in is_in_loop:
                 
@@ -422,7 +423,7 @@ class Experiment:
 
            segment['step%d'%(s+1)], repetition['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)
            
-           repetition['step%d'%(s+1)] = 1
+#           repetition['step%d'%(s+1)] = 1
           
         return segment, repetition
     
@@ -458,7 +459,7 @@ class Experiment:
         i = idx_i
 #        print('rep_idx',rep_idx)
         for step in segment:
-            print('step',step)
+            print('step',step, 'idx_i', idx_i)
             
             if type(segment[step]) is not list:             ## smarter way for this
                 element = segment[step]
@@ -552,6 +553,9 @@ class Experiment:
             amplitude[1] += np.sum(wfs[self.channel_VP[1]])*repe
             
         comp_amp = [-amplitude[k]/3000000 for k in range(2)]
+        
+        if comp_amp[0] >= 0.5 or comp_amp[1] >= 0.5:
+            raise ValueError('amp too large')
         
         compensation_element = Element('compensation_%d'%idx_i, self.pulsar)
 
@@ -741,14 +745,14 @@ class Experiment:
         self.awg.delete_all_waveforms_from_list()
         time.sleep(0.2)
         self.awg2.delete_all_waveforms_from_list()
-        time.sleep(1)
+        time.sleep(5)
         self.set_trigger()
         time.sleep(1)
         elts = self.elts
         sequence = self.sequence
         self.pulsar.program_awgs(sequence, *elts, AWGs = ['awg','awg2'],)       ## elts should be list(self.element.values)
         
-        time.sleep(1)
+        time.sleep(5)
 #        self.awg2.trigger_level(0.5)
         self.awg2.set_sqel_trigger_wait(element_no = 1, state = 1)
         time.sleep(1)

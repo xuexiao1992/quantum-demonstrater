@@ -45,9 +45,9 @@ class Finding_Resonance(Manipulation):
 
 #        N = qubit[-1]-1
 
-        self.add_single_qubit_gate(name = 'T1_Q1', qubit = self.qubits[0], amplitude = 1, length = 200e-9, frequency_shift = 0)
+        self.add_single_qubit_gate(name = 'T1_Q1', qubit = self.qubits[0], amplitude = 1, length = 200e-9, frequency_shift = -10e6)
         self.add_single_qubit_gate(name = 'T2_Q1', refpoint = 'start', waiting_time = 0,
-                                   qubit = self.qubits[1], amplitude = 1, length = 200e-9, frequency_shift = 0)
+                                   qubit = self.qubits[1], amplitude = 1, length = 200e-9, frequency_shift = -10e6)
         self.add_CPhase(name = 'CP_Q12', refgate = 'T1_Q1', refpoint = 'start', control_qubit = self.qubits[0], target_qubit = self.qubits[0],
                         amplitude_control = 0.5, amplitude_target = -0.6, length = 200e-9, waiting_time = 0)
 #        self.add_single_qubit_gate(name = 'T2_Q1', refgate = 'T1_Q1', qubit = self.qubits[1], amplitude = 1, 
@@ -112,10 +112,10 @@ class Ramsey(Manipulation):
 
         return self
 #%%
-"""
+
 class Rabi(Manipulation):
 
-     def __init__(self, name, pulsar, **kw):
+    def __init__(self, name, pulsar, **kw):
 
         super().__init__(name, pulsar, **kw)
         self.refphase = {}
@@ -127,7 +127,7 @@ class Rabi(Manipulation):
         self.parameter1 = kw.pop('parameter1', 0)
         self.parameter2 = kw.pop('parameter2', 0)
 
-     def __call__(self, **kw):
+    def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
         self.qubits = kw.pop('qubits', None)
         if self.qubits is not None:
@@ -144,7 +144,7 @@ class Rabi(Manipulation):
         self.add_single_qubit_gate(name='Rabi_Oscillation', qubit = self.qubits[0], amplitude = 1, length = self.parameter1)
 
         return self
-"""
+
 class CRot_Readout(Manipulation):
 
     def __init__(self, name, pulsar, **kw):

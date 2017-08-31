@@ -13,7 +13,7 @@ from calibration import Calibration
 
 import stationF006
 from manipulation import Manipulation
-from manipulation_library import Ramsey, Finding_Resonance
+from manipulation_library import Ramsey, Finding_Resonance, Rabi
 #from digitizer_setting import digitizer_param
 
 import qcodes.instrument_drivers.Spectrum.M4i as M4i
@@ -118,7 +118,7 @@ def make_manipulation_cfg():
 def make_experiment_cfg():
     global station
 
-    station = stationF006.initialize()
+#    station = stationF006.initialize()
     time.sleep(1)
     awg = station.awg
     awg2 = station.awg2
@@ -129,7 +129,7 @@ def make_experiment_cfg():
     vsg2 = station.vsg2
     digitizer = station.digitizer
 #    awg.ch3_amp
-    pulsar = set_5014pulsar(awg = awg, awg2= awg2)
+#    pulsar = set_5014pulsar(awg = awg, awg2= awg2)
 
     qubit_1 = station.qubit_1
     qubit_2 = station.qubit_2
@@ -141,7 +141,7 @@ def make_experiment_cfg():
 
     experiment.sweep_loop1 = {
 #            'para1': [0.8,0.2,0.53,0.14,0.3],
-#            'para1': sweep_array(start = 0, stop = 1e-6, points = 11),
+            'para1': sweep_array(start = 0, stop = 10e-6, points = 101),
 #            'para2': sweep_array(start = 0.1, stop = 0.5, points = 5),
             }
 
@@ -171,7 +171,7 @@ def make_experiment_cfg():
             }
 
     manip_cfg = {
-            'step1' : set_manip(time = 3e-6, qubits = qubits, voltages = [30*0.5*-0.004,30*0.5*0.016],)
+            'step1' : set_manip(time = 15e-6, qubits = qubits, voltages = [30*0.5*-0.004,30*0.5*0.016], parameter1 = loop1_para1)
             }
 
     read_cfg = {
@@ -198,12 +198,12 @@ def make_experiment_cfg():
 #    experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg, init2_cfg, manip2_cfg, read2_cfg]
 #    experiment.sequence_cfg_type = ['init', 'manip','read','init2', 'manip2', 'read2']
 
-    experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg]
-    experiment.sequence_cfg_type = ['init','manip', 'read']
+    experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg, ]
+    experiment.sequence_cfg_type = ['init', 'manip','read',]
 
 #    experiment.manip_elem = Ramsey(name = 'Ramsey', pulsar = pulsar)
-    experiment.manip_elem = Finding_Resonance(name = 'Finding_resonance', pulsar = pulsar)
-#    experiment.manip_elem = Rabi(name = 'Rabi', pulsar = pulsar)
+#    experiment.manip_elem = Finding_Resonance(name = 'Finding_resonance', pulsar = pulsar)
+    experiment.manip_elem = Rabi(name = 'Rabi', pulsar = pulsar)
     experiment.manip_elem.pulsar = None
 
     experiment.set_sweep()
@@ -385,6 +385,8 @@ digitizer, dig = set_digitizer(experiment.digitizer)
 
 experiment.generate_1D_sequence()
 
+vsg.frequency(18.4e9)
+vsg2.frequency(19.67e9)
 #experiment.load_sequence()
 time.sleep(1)
 experiment.run_experiment()
