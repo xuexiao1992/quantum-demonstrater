@@ -153,7 +153,11 @@ class Experiment:
         self.experiment = {}        ## {'Ramsey': , 'Rabi': ,}  it is a list of manipulation element for different experiment
 
         self.sweep_matrix = np.array([])
-
+        
+        self.digitizer_trigger_channel = 'ch5_marker1'
+        self.digitier_readout_marker = 'ch6_marker1'
+        self.occupied_channel1 = 'ch2_marker2'
+        self.occupied_channel2 = 'ch5_marker2'
 
 
     def set_sweep(self,):
@@ -200,9 +204,9 @@ class Experiment:
             initialize.add(SquarePulse(name='init', channel=self.channel_VP[i], amplitude=amplitudes[i], length=1e-6),
                            name='init%d'%(i+1),refpulse = refpulse, refpoint = 'start')
             
-        initialize.add(SquarePulse(name='init_c1m2', channel='ch2_marker2', amplitude=2, length=1e-6),
+        initialize.add(SquarePulse(name='init_c1m2', channel=self.occupied_channel1, amplitude=2, length=1e-6),
                                    name='init%d_c1m2'%(i+1),refpulse = 'init1', refpoint = 'start')
-        initialize.add(SquarePulse(name='init_c5m2', channel='ch5_marker2', amplitude=2, length=1e-6),
+        initialize.add(SquarePulse(name='init_c5m2', channel=self.occupied_channel2, amplitude=2, length=1e-6),
                                    name='init%d_c5m2'%(i+1),refpulse = 'init1', refpoint = 'start')
 
         return initialize
@@ -221,17 +225,18 @@ class Experiment:
         """
         readout.add(SquarePulse(name='read_trigger1', channel='ch2_marker1', amplitude=2, length=1e-6),
                                 name='read%d_trigger1'%(i+1),refpulse = 'read1', refpoint = 'start', start = 0)
-        readout.add(SquarePulse(name='read_trigger2', channel='ch6_marker1', amplitude=2, length=1e-6),
+        readout.add(SquarePulse(name='read_trigger2', channel=self.digitizer_trigger_channel, amplitude=2, length=1e-6),
                                 name='read%d_trigger2'%(i+1),refpulse = 'read1', refpoint = 'start', start = 0)
         
         """
         to make all elements equal length in different AWGs
         """
-        readout.add(SquarePulse(name='read_c1m2', channel='ch2_marker2', amplitude=2, length=1e-6),
+        readout.add(SquarePulse(name='read_c1m2', channel=self.occupied_channel1, amplitude=2, length=1e-6),
                                 name='read%d_c1m2'%(i+1),refpulse = 'read1', refpoint = 'start')
-        readout.add(SquarePulse(name='read_c5m2', channel='ch5_marker2', amplitude=2, length=1e-6),
+        readout.add(SquarePulse(name='read_c5m2', channel=self.occupied_channel2, amplitude=2, length=1e-6),
                                 name='read%d_c5m2'%(i+1),refpulse = 'read1', refpoint = 'start')
-
+        readout.add(SquarePulse(name='read_trigtest', channel='ch8', amplitude=0.3, length=1e-6),
+                                name='read_trigtest',refpulse = 'read1', refpoint = 'start')
         return readout
 
     def _manipulation_element(self, name, time, amplitudes = [], **kw):
@@ -263,9 +268,9 @@ class Experiment:
             manipulation.add(SquarePulse(name='manip%d'%(i+1), channel=self.channel_VP[i], amplitude=amplitudes[i], length=time),
                            name='manip%d'%(i+1), refpulse = refpulse, refpoint = 'start', start = start)
             
-        manipulation.add(SquarePulse(name='manip_c1m2', channel='ch2_marker2', amplitude=0.1, length=time),
+        manipulation.add(SquarePulse(name='manip_c1m2', channel=self.occupied_channel1, amplitude=0.1, length=time),
                            name='manip%d_c1m2'%(i+1),refpulse = 'manip1', refpoint = 'start')
-        manipulation.add(SquarePulse(name='manip_c5m2', channel='ch5_marker2', amplitude=2, length=time),
+        manipulation.add(SquarePulse(name='manip_c5m2', channel=self.occupied_channel2, amplitude=2, length=time),
                            name='manip%d_c5m2'%(i+1),refpulse = 'manip1', refpoint = 'start')
 
         return manipulation
@@ -554,7 +559,7 @@ class Experiment:
             
         comp_amp = [-amplitude[k]/3000000 for k in range(2)]
         
-        if comp_amp[0] >= 0.5 or comp_amp[1] >= 0.5:
+        if np.max(np.abs(comp_amp)) >= 0.5:
             raise ValueError('amp too large')
         
         compensation_element = Element('compensation_%d'%idx_i, self.pulsar)
@@ -564,9 +569,9 @@ class Experiment:
         compensation_element.add(SquarePulse(name = 'COMPEN2', channel = self.channel_VP[1], amplitude=comp_amp[1], length=1e-6),
                             name='compensation2',refpulse = 'compensation1', refpoint = 'start', start = 0)
         
-        compensation_element.add(SquarePulse(name='comp_c1m2', channel='ch2_marker2', amplitude=2, length=1e-6),
+        compensation_element.add(SquarePulse(name='comp_c1m2', channel=self.occupied_channel1, amplitude=2, length=1e-6),
                                            name='comp%d_c1m2'%(i+1),refpulse = 'compensation1', refpoint = 'start')
-        compensation_element.add(SquarePulse(name='comp_c5m2', channel='ch5_marker2', amplitude=2, length=1e-6),
+        compensation_element.add(SquarePulse(name='comp_c5m2', channel=self.occupied_channel2, amplitude=2, length=1e-6),
                                            name='comp%d_c5m2'%(i+1),refpulse = 'compensation1', refpoint = 'start')
         
         self.elts.append(compensation_element)
@@ -633,17 +638,53 @@ class Experiment:
         return True
     
     
-    
+    def add_marker_into_first_readout(self, awg, element = None):
+        
+        first_read_step = self.segment['read']['step1']
 
-    def add_new_element_to_awg_list(self, element):
+        if type(first_read_step) is list:
+            if type(first_read_step[0]) is list:
+                first_read = first_read_step[0][0]
+            else:
+                first_read = first_read_step[0]
+        else:
+            first_read = first_read_step
+        
+        tvals, wfs = first_read.normalized_waveforms()
+        name = '1st' + first_read.name
+        print('readoutname:', name)
+#        first_read.add(SquarePulse(name = 'read_marker', channel = self.digitier_readout_marker, amplitude=2, length=1e-6),
+#                       name='read_marker', refpulse = 'read1', refpoint = 'start')
+#        self.elts.append(first_read)
+        
+        channel = self.digitier_readout_marker
+        wfs[channel] += 1
+        i = (int(channel[2])-1)%4+1
+        for ch in ['ch%d'%i, 'ch%d_marker1'%i, 'ch%d_marker2'%i]:
+            if len(wfs[ch]) != 1000:
+                wfs[ch] = np.full((1000,),1)
+        wfs[channel] = np.full((1000,),1)
+        
+        awg.send_waveform_to_list(w = wfs['ch%d'%i], m1 = wfs['ch%d_marker1'%i],
+                                  m2 = wfs['ch%d_marker2'%i], wfmname = name+'_ch%d'%i)
+        element_no = len(self.segment['init']) + len(self.segment['manip']) + 1 + 1
+        element_no = 7
+        awg.set_sqel_waveform(waveform_name = name+'_ch%d'%i, channel = i,
+                              element_no = element_no)
+        return first_read
+
+    def add_marker_into_first_readout_v2(self, awg, element = None):
+        
+        return True
+    def add_new_element_to_awg_list(self, awg, element):
 
         name = element.name
 
         tvals, wfs = element.normalized_waveforms()
 
         for i in range(1,5):
-            self.awg.send_waveform_to_list(w = wfs['ch%d'%i], m1 = wfs['ch%d_marker1'%i],
-                                            m2 = wfs['ch%d_marker2'%i], wfmname = name+'_ch%d'%i)
+            awg.send_waveform_to_list(w = wfs['ch%d'%i], m1 = wfs['ch%d_marker1'%i],
+                                      m2 = wfs['ch%d_marker2'%i], wfmname = name+'_ch%d'%i)
 
         return True
 
@@ -670,17 +711,19 @@ class Experiment:
         
         return True
     
-    def restore_previous_sequence(self, filename = 'setup_0_.AWG'):
+    def restore_previous_sequence(self, awg, filename = 'setup_0_.AWG'):
         
-        self.awg.load_awg_file(filename = filename)
+        awg = awg
+        
+        awg.load_awg_file(filename = filename)
         
 #        self.awg.write('AWGCONTROL:SRESTORE "{}"'.format(filename))
         
         return True
     
-    def save_sequence(self,filename,disk):
+    def save_sequence(self, awg, filename,disk):
         
-        self.awg.write('AWGCONTROL:SSAVE "{}","{}"'.format(filename,'C:'))
+        awg.write('AWGCONTROL:SSAVE "{}","{}"'.format(filename,'C:'))
         
         return True
 #
@@ -726,6 +769,12 @@ class Experiment:
         trigger_element.add(SquarePulse(name = 'TRG1', channel = 'ch4_marker2', amplitude=2, length=1376e-9),
                             name='trigger1',refpulse = 'trigger2', refpoint = 'start', start = 200e-9)
         
+        trigger_element.add(SquarePulse(name = 'TRG_digi', channel = 'ch2_marker1', amplitude=2, length=800e-9),
+                            name='TRG_digi',refpulse = 'trigger2', refpoint = 'start', start = 200e-9)
+        trigger_element.add(SquarePulse(name = 'SIG_digi', channel = 'ch8', amplitude=0.5, length=800e-9),
+                            name='SIG_digi',refpulse = 'TRG_digi', refpoint = 'start', start = 0)
+        
+        
         extra_element = Element('extra', self.pulsar)
         extra_element.add(SquarePulse(name = 'EXT2', channel = 'ch8_marker2', amplitude=2, length=5e-9),
                             name='extra2',)
@@ -753,6 +802,8 @@ class Experiment:
         self.pulsar.program_awgs(sequence, *elts, AWGs = ['awg','awg2'],)       ## elts should be list(self.element.values)
         
         time.sleep(5)
+        
+        self.add_marker_into_first_readout(self.awg2)
 #        self.awg2.trigger_level(0.5)
         self.awg2.set_sqel_trigger_wait(element_no = 1, state = 1)
         time.sleep(1)
@@ -777,10 +828,14 @@ class Experiment:
         self.awg.all_channels_on()
 #        self.awg.force_trigger()
         self.awg2.all_channels_on()
+        
+        self.vsg.status('On')
+        self.vsg2.status('On')
+        time.sleep(0.5)
 #        self.awg2.force_trigger()
 #        self.awg.run()
 #        self.awg2.run()
-#        self.pulsar.start()
+        self.pulsar.start()
 
         return True
 

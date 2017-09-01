@@ -141,7 +141,7 @@ def make_experiment_cfg():
 
     experiment.sweep_loop1 = {
 #            'para1': [0.8,0.2,0.53,0.14,0.3],
-            'para1': sweep_array(start = 0, stop = 10e-6, points = 101),
+            'para1': sweep_array(start = 0, stop = 10e-6, points = 6),
 #            'para2': sweep_array(start = 0.1, stop = 0.5, points = 5),
             }
 
@@ -245,6 +245,11 @@ def scan_outside_awg(name, set_parameter, measured_parameter, start, end, step):
     
     data_set = LOOP.run()
     
+    awg.stop()
+    awg2.stop()
+    
+    vsg.status('Off')
+    vsg2.status('Off')
     return data_set
 
 
@@ -259,6 +264,55 @@ def set_vector_signal_generator(VSG):
     
     return VSG
 #%% set digitizer
+import ctypes as ct
+
+def set_trigger(digitizer, mV_range, memsize, seg_size, posttrigger_size):
+        digitizer.card_mode(pyspcm.SPC_REC_STD_MULTI)  # multi
+
+        digitizer.data_memory_size(memsize)
+        digitizer.segment_size(seg_size)
+        digitizer.posttrigger_memory_size(posttrigger_size)
+
+        digitizer.general_command(pyspcm.M2CMD_CARD_START |
+                             pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
+
+        numch = bin(digitizer.enable_channels()).count("1")
+        buffer_size = ct.c_int16 * memsize * numch
+        data_buffer = (buffer_size)()
+        data_pointer = ct.cast(data_buffer, ct.c_void_p)
+        
+        digitizer._def_transfer64bit(
+            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
+        digitizer.general_command(pyspcm.M2CMD_DATA_STARTDMA)
+#                             pyspcm.M2CMD_DATA_WAITDMA)
+        
+        return True
+
+def multiple_trigger_acquisition(digitizer, mV_range, memsize, seg_size, posttrigger_size):
+
+        # setup software buffer
+        numch = bin(digitizer.enable_channels()).count("1")
+        buffer_size = ct.c_int16 * memsize * numch
+        data_buffer = (buffer_size)()
+        data_pointer = ct.cast(data_buffer, ct.c_void_p)
+
+        # data acquisition
+#        digitizer._def_transfer64bit(
+#            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
+#        digitizer.general_command(pyspcm.M2CMD_DATA_STARTDMA |
+#                             pyspcm.M2CMD_DATA_WAITDMA)
+        digitizer.general_command(pyspcm.M2CMD_DATA_WAITDMA)
+        # convert buffer to numpy array
+        data = ct.cast(data_pointer, ct.POINTER(buffer_size))
+        output = np.frombuffer(data.contents, dtype=ct.c_int16)
+
+        digitizer._stop_acquisition()
+
+        voltages = digitizer.convert_to_voltage(output, mV_range / 1000)
+
+        return voltages
+
+#%%
 
 class digitizer_param(ArrayParameter):
     
@@ -266,7 +320,7 @@ class digitizer_param(ArrayParameter):
                 posttrigger_size, label=None, unit=None, instrument=None,
                 **kwargs):
        
-        super().__init__(name=name, shape=(memsize,), instrument=instrument, **kwargs)
+        super().__init__(name=name, shape=(2*memsize,), instrument=instrument, **kwargs)
         
         self.mV_range = mV_range
         self.memsize = memsize
@@ -274,10 +328,16 @@ class digitizer_param(ArrayParameter):
         self.posttrigger_size = posttrigger_size
         global digitizer
         
-        
+    
+    def set_trigger(self):
+        set_trigger(digitizer, self.mV_range,self.memsize,self.seg_size,self.posttrigger_size)
+        return True
+    
     def get(self):
 #        res = digitizer.single_trigger_acquisition(self.mV_range,self.memsize,self.posttrigger_size)
         res = digitizer.multiple_trigger_acquisition(self.mV_range,self.memsize,self.seg_size,self.posttrigger_size)
+        
+#        res = multiple_trigger_acquisition(digitizer, self.mV_range,self.memsize,self.seg_size,self.posttrigger_size)
 #        res = digitizer.single_software_trigger_acquisition(self.mV_range,self.memsize,self.posttrigger_size)
         print(res.shape)
         return res
@@ -288,7 +348,7 @@ class digitizer_param(ArrayParameter):
         to iterate over during a sweep
         """
         return SweepFixedValues(self, keys)
-
+#%%
 def set_digitizer(digitizer):
     
     pretrigger=16
@@ -298,19 +358,19 @@ def set_digitizer(digitizer):
     readout_time = 1e-3
     
     seg_size = readout_time*sample_rate+8+pretrigger
-    
+    sweep_num = 6
     repetitions = 10
     
-    memsize = int(repetitions*5*seg_size)
+    memsize = int(repetitions*sweep_num*seg_size)
     posttrigger_size = seg_size-pretrigger
     
     #digitizer.enable_channels(pyspcm.CHANNEL0 | pyspcm.CHANNEL3)
     digitizer.clock_mode(pyspcm.SPC_CM_INTPLL)
     #digitizer.clock_mode(pyspcm.SPC_CM_EXTREFCLOCK)
     
-#    digitizer.enable_channels(pyspcm.CHANNEL1 | pyspcm.CHANNEL2)
+    digitizer.enable_channels(pyspcm.CHANNEL1 | pyspcm.CHANNEL2)
     
-    digitizer.enable_channels(pyspcm.CHANNEL1)
+#    digitizer.enable_channels(pyspcm.CHANNEL1)
     digitizer.data_memory_size(memsize)
     
     digitizer.segment_size(seg_size)
@@ -364,12 +424,11 @@ def set_5014pulsar(awg, awg2):
 def close():
     awg.stop()
     awg2.stop()
+    time.sleep(0.5)
     awg.delete_all_waveforms_from_list()
     awg2.delete_all_waveforms_from_list()
 
-#    awg.close()
-#    awg2.close()
-#    station.close()
+
     return True
 
 #%% test
@@ -390,8 +449,8 @@ vsg2.frequency(19.67e9)
 #experiment.load_sequence()
 time.sleep(1)
 experiment.run_experiment()
-time.sleep(1)
-pulsar.start()
+#time.sleep(1)
+#pulsar.start()
 
-#scan_outside_awg(name = 'finding_resonance', set_parameter = vsg2.frequency, measured_parameter = dig, start=12.8e9, end=12.9e9, step=10e6)
+#data_set = scan_outside_awg(name = 'finding_resonance', set_parameter = vsg2.frequency, measured_parameter = dig, start=12.8e9, end=12.9e9, step=10e6)
 
