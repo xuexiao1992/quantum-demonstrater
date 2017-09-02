@@ -357,7 +357,7 @@ class Experiment:
                 segment = element
                 
 #                repetition = int(step['time']/(1e-6))
-                repetition = 1 if seg[:5] == 'manip' else int(step['time']/(1e-6))
+                repetition = 1 if seg.startswith('manip') else int(step['time']/(1e-6))
                 
         elif True in is_in_loop:
                 
@@ -391,7 +391,7 @@ class Experiment:
                                     name = 'trigger',)
                     """
                     segment[j].append(element)
-                    rep = 1 if seg[:5] == 'manip' else int(step['time']/(1e-6))
+                    rep = 1 if seg.startswith('manip') else int(step['time']/(1e-6))
                     repetition[j].append(rep)
         
         return segment, repetition
@@ -438,13 +438,13 @@ class Experiment:
 
         for segment_type in self.sequence_cfg_type:
 
-            if segment_type[:4] == 'init':
+            if segment_type.startswith('init'):
                 self.segment[segment_type], self.repetition[segment_type] = self.make_initialize_segment_list(segment_num = i, name = segment_type)
 
-            elif segment_type[:5] == 'manip':
+            elif segment_type.startswith('manip'):
                 self.segment[segment_type], self.repetition[segment_type] = self.make_manipulation_segment_list(segment_num = i, name = segment_type)
 
-            elif segment_type[:4] == 'read':
+            elif segment_type.startswith('read'):
                 self.segment[segment_type], self.repetition[segment_type] = self.make_readout_segment_list(segment_num = i, name = segment_type)
 #            elif segment_type == 'compensate':
 
@@ -584,19 +584,19 @@ class Experiment:
         
         for segment_type in self.sequence_cfg_type:
 
-            if segment_type[:4] == 'init':
+            if segment_type.startswith('init'):   #[:4] == 'init':
                 
                 segment = self.segment[segment_type]
                 
                 repetition = self.repetition[segment_type]
                 
-            elif segment_type[:5] == 'manip':
+            elif segment_type.startswith('manip'):
                 
                 segment = self.segment[segment_type]
                 
                 repetition = self.repetition[segment_type]
                 
-            elif segment_type[:4] == 'read':
+            elif segment_type.startswith('read'):
                 
                 segment = self.segment[segment_type]
                 

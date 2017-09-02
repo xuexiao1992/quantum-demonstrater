@@ -253,65 +253,6 @@ def scan_outside_awg(name, set_parameter, measured_parameter, start, end, step):
     return data_set
 
 
-#%% set VSG
-
-def set_vector_signal_generator(VSG):
-    
-    VSG.frequency.set(0)
-    VSG.phase.set(0)
-    VSG.power.set(0)
-    VSG.frequency.set(0)
-    
-    return VSG
-#%% set digitizer
-import ctypes as ct
-
-def set_trigger(digitizer, mV_range, memsize, seg_size, posttrigger_size):
-        digitizer.card_mode(pyspcm.SPC_REC_STD_MULTI)  # multi
-
-        digitizer.data_memory_size(memsize)
-        digitizer.segment_size(seg_size)
-        digitizer.posttrigger_memory_size(posttrigger_size)
-
-        digitizer.general_command(pyspcm.M2CMD_CARD_START |
-                             pyspcm.M2CMD_CARD_ENABLETRIGGER | pyspcm.M2CMD_CARD_WAITREADY)
-
-        numch = bin(digitizer.enable_channels()).count("1")
-        buffer_size = ct.c_int16 * memsize * numch
-        data_buffer = (buffer_size)()
-        data_pointer = ct.cast(data_buffer, ct.c_void_p)
-        
-        digitizer._def_transfer64bit(
-            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
-        digitizer.general_command(pyspcm.M2CMD_DATA_STARTDMA)
-#                             pyspcm.M2CMD_DATA_WAITDMA)
-        
-        return True
-
-def multiple_trigger_acquisition(digitizer, mV_range, memsize, seg_size, posttrigger_size):
-
-        # setup software buffer
-        numch = bin(digitizer.enable_channels()).count("1")
-        buffer_size = ct.c_int16 * memsize * numch
-        data_buffer = (buffer_size)()
-        data_pointer = ct.cast(data_buffer, ct.c_void_p)
-
-        # data acquisition
-#        digitizer._def_transfer64bit(
-#            pyspcm.SPCM_BUF_DATA, pyspcm.SPCM_DIR_CARDTOPC, 0, data_pointer, 0, 2 * memsize * numch)
-#        digitizer.general_command(pyspcm.M2CMD_DATA_STARTDMA |
-#                             pyspcm.M2CMD_DATA_WAITDMA)
-        digitizer.general_command(pyspcm.M2CMD_DATA_WAITDMA)
-        # convert buffer to numpy array
-        data = ct.cast(data_pointer, ct.POINTER(buffer_size))
-        output = np.frombuffer(data.contents, dtype=ct.c_int16)
-
-        digitizer._stop_acquisition()
-
-        voltages = digitizer.convert_to_voltage(output, mV_range / 1000)
-
-        return voltages
-
 #%%
 
 class digitizer_param(ArrayParameter):
@@ -319,22 +260,20 @@ class digitizer_param(ArrayParameter):
     def __init__(self, name, mV_range, memsize, seg_size, 
                 posttrigger_size, label=None, unit=None, instrument=None,
                 **kwargs):
+        
+        global digitizer
+        channel_amount = bin(digitizer.enable_channels()).count('1')
        
-        super().__init__(name=name, shape=(2*memsize,), instrument=instrument, **kwargs)
+        super().__init__(name=name, shape=(channel_amount*memsize,), instrument=instrument, **kwargs)
         
         self.mV_range = mV_range
         self.memsize = memsize
         self.seg_size =seg_size
         self.posttrigger_size = posttrigger_size
-        global digitizer
         
-    
-    def set_trigger(self):
-        set_trigger(digitizer, self.mV_range,self.memsize,self.seg_size,self.posttrigger_size)
-        return True
-    
     def get(self):
 #        res = digitizer.single_trigger_acquisition(self.mV_range,self.memsize,self.posttrigger_size)
+        time.sleep(0.2)
         res = digitizer.multiple_trigger_acquisition(self.mV_range,self.memsize,self.seg_size,self.posttrigger_size)
         
 #        res = multiple_trigger_acquisition(digitizer, self.mV_range,self.memsize,self.seg_size,self.posttrigger_size)
@@ -353,15 +292,22 @@ def set_digitizer(digitizer):
     
     pretrigger=16
     mV_range=1000
-    sample_rate = int(np.floor(40000/1))
+    
+    sample_rate = int(np.floor(61035/1))
+    
+    digitizer.sample_rate(sample_rate)
+    
+    sample_rate = digitizer.sample_rate()
     
     readout_time = 1e-3
     
-    seg_size = readout_time*sample_rate+8+pretrigger
-    sweep_num = 6
-    repetitions = 10
+    seg_size = ((readout_time*sample_rate+pretrigger) // 16 + 1) * 16
     
-    memsize = int(repetitions*sweep_num*seg_size)
+    sweep_num = 6
+    
+    repetition = 10
+    
+    memsize = int((repetition+1)*sweep_num*seg_size)
     posttrigger_size = seg_size-pretrigger
     
     #digitizer.enable_channels(pyspcm.CHANNEL0 | pyspcm.CHANNEL3)
@@ -379,7 +325,7 @@ def set_digitizer(digitizer):
     
     digitizer.timeout(60000)
     
-    digitizer.sample_rate(sample_rate)
+    
     
     digitizer.set_channel_settings(1,1000, input_path = 0, termination = 0, coupling = 0, compensation = None)
     
@@ -427,8 +373,6 @@ def close():
     time.sleep(0.5)
     awg.delete_all_waveforms_from_list()
     awg2.delete_all_waveforms_from_list()
-
-
     return True
 
 #%% test
