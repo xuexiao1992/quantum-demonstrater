@@ -70,11 +70,11 @@ pretrigger = 16
 readout_time = 1e-3
 
 loop_num = 6
-
+qubit_num = 1
 repetition = 10
 
 seg_size = int(((readout_time*sample_rate+pretrigger) // 16 + 1) * 16)
-
+#%%
 def convert_to_ordered_data(data_set,):
     
     for parameter in data_set.arrays:
@@ -96,19 +96,21 @@ def convert_to_ordered_data(data_set,):
                 raw_data = data_array[k][::2]
                 raw_marker = data_array[k][1::2]
                 for seg in range(seg_size*loop_num):
-                    if raw_marker[seg] > 0.1:
+                    if raw_marker[seg] > 0.1:           ##  a better threshold ???
                         break                
                 data[k] = raw_data[seg:data_num+seg]
                 marker[k] = raw_marker[seg:data_num+seg]
                 setpara[k] = np.linspace(0, data_num-1, data_num)
                 
-                data_array2 = DataArray(preset_data = setpara, name = 'frequency', array_id = 'frequency_set', is_setpoint = True)
-                data_array3 = DataArray(preset_data = data, name = parameter, array_id = arrayid, is_setpoint = False)
+            data_array2 = DataArray(preset_data = setpara, name = 'frequency', array_id = 'frequency_set', is_setpoint = True)
+            data_array3 = DataArray(preset_data = data, name = parameter, array_id = arrayid, is_setpoint = False)
+#            data_array4 = DataArray(preset_data = data, name = parameter, array_id = arrayid, is_setpoint = False)
     
     data_set_new = DataSet(location = new_location, io = NewIO, formatter = formatter)
     data_set_new.add_array(data_array1)
     data_set_new.add_array(data_array2)
     data_set_new.add_array(data_array3)
+#    data_set_new.add_array(data_array4)
     return data_set_new
 
 #%%

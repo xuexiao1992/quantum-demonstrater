@@ -164,10 +164,6 @@ def make_experiment_cfg():
             'step4' : set_step(time = 4e-3, qubits = qubits, voltages = [30*0.5*0, 30*0.5*0]),
 #            'step5' : set_step(time = 500e-6, qubits = qubits, voltages = [0.4, 0.5]),
 #            'step6' : set_step(time = 2000e-6, qubits = qubits, voltages = [0.4, 0.5]),
-#            'step7' : set_step(time = 1e-6, qubits = qubits, voltages = [0.4, 0.5]),
-#            'step8' : set_step(time = 1000e-6, qubits = qubits, voltages = [0.4, 0.5]),
-#            'step9' : set_step(time = 500e-6, qubits = qubits, voltages = [0.4, 0.5]),
-#            'step10' : set_step(time = 2000e-6, qubits = qubits, voltages = [0.4, 0.5]),
             }
 
     manip_cfg = {
@@ -200,11 +196,20 @@ def make_experiment_cfg():
 
     experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg, ]
     experiment.sequence_cfg_type = ['init', 'manip','read',]
+    
+#    experiment.sequence_cfg2 = []
+#    experiment.sequence_cfg_type2 = []
 
 #    experiment.manip_elem = Ramsey(name = 'Ramsey', pulsar = pulsar)
 #    experiment.manip_elem = Finding_Resonance(name = 'Finding_resonance', pulsar = pulsar)
     experiment.manip_elem = Rabi(name = 'Rabi', pulsar = pulsar)
     experiment.manip_elem.pulsar = None
+    
+    experiment.manip_elem2 = Ramsey(name = 'Ramsey', pulsar = pulsar)
+    experiment.manip_elem2.pulsar = None
+    
+#    experiment.manipulation_elements = {
+#            }
 
     experiment.set_sweep()
     
@@ -301,13 +306,15 @@ def set_digitizer(digitizer):
     
     readout_time = 1e-3
     
+    qubit_num = 1
+    
     seg_size = ((readout_time*sample_rate+pretrigger) // 16 + 1) * 16
     
     sweep_num = 6
     
     repetition = 10
     
-    memsize = int((repetition+1)*sweep_num*seg_size)
+    memsize = int((repetition+1)*sweep_num*qubit_num*seg_size)
     posttrigger_size = seg_size-pretrigger
     
     #digitizer.enable_channels(pyspcm.CHANNEL0 | pyspcm.CHANNEL3)

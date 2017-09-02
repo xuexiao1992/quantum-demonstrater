@@ -60,6 +60,12 @@ class Experiment:
         self.sweep_type = 'NoSweep'
 
         self.manip_elem = None
+        self.manip_elem2 = None
+        self.manipulation_elements = {
+#                'Rabi': None,
+#                'Ramsey': None
+                }
+        
         self.sequence_cfg = []      ## [segment1, segment2, segment3]
         self.sequence_cfg_type = {}
         
