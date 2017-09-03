@@ -8,7 +8,7 @@ import numpy as np
 from pycqed.measurement.waveform_control.pulsar import Pulsar
 from pycqed.measurement.waveform_control.element import Element
 #from experiment import Experiment
-from experiment_version3 import Experiment
+from experiment_version2 import Experiment
 from calibration import Calibration
 
 import stationF006

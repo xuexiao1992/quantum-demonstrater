@@ -20,7 +20,7 @@ from copy import deepcopy
 from manipulation_library import Ramsey
 import time
 #%%
-class Experiment:
+class Sequencer:
 
     def __init__(self, name, qubits, awg, awg2, pulsar, **kw):
 
@@ -60,7 +60,7 @@ class Experiment:
         self.sweep_type = 'NoSweep'
 
         self.manip_elem = None
-        self.manip2_elem = None
+
         self.manipulation_elements = {
 #                'Rabi': None,
 #                'Ramsey': None
@@ -69,87 +69,26 @@ class Experiment:
         self.sequence_cfg = []      ## [segment1, segment2, segment3]
         self.sequence_cfg_type = {}
         
-        self.sequence2_cfg = []
-        self.sequence2_cfg_type = {}
-        
-        self.seq_cfg = []
-        self.seq_cfg_type = []
-        
         self.dimension_1 = 1
         self.dimension_2 = 1
 
 
-        self.initialize_segment = {
-#                'step1': None,
-                }
-
-        self.readout_segment = {
-#                'step1': None,
-#                'step2': None,
-#                'step3': None,
-                }
-
-        self.manipulation_segment = {
-#                'step1': None,
-                }
-        
-        self.initialize2_segment = {
-#                'step1': None
-                }
-        
-        self.readout2_segment = {
-#                'step1': None,
-#                'step2': None,
-#                'step3': None,
-                }
-
-        self.manipulation2_segment = {
-#                'step1': None,
-                }
-        
         self.segment = {
-                'init': self.initialize_segment,
-                'manip': self.manipulation_segment,
-                'read': self.readout_segment,
-                'init2': self.initialize2_segment,
-                'manip2': self.manipulation2_segment,
-                'read2': self.readout2_segment,
-                }
-        
-        self.initialize_repetition = {
-                'step1': 1,
-                'step2': 1,
-                'step3': 1,
-                }
-        self.manipulation_repetition = {
-                'step1': 1,
-                }
-        self.readout_repetition = {
-                'step1': 1,
-                'step2': 1,
-                'step3': 1,
-                }
-        self.initialize2_repetition = {
-                'step1': 1,
-                'step2': 1,
-                'step3': 1,
-                }
-        self.manipulation2_repetition = {
-                'step1': 1,
-                }
-        self.readout2_repetition = {
-                'step1': 1,
-                'step2': 1,
-                'step3': 1,
+                'init': {},
+                'manip': {},
+                'read': {},
+                'init2': {},
+                'manip2': {},
+                'read2': {},
                 }
 
         self.repetition = {
-                'init': self.initialize_repetition,
+                'init': {},
                 'manip': None,
-                'read': self.readout_repetition,
-                'init2': self.initialize2_repetition,
+                'read': {},
+                'init2': {},
                 'manip2': None,
-                'read2': self.readout2_repetition,
+                'read2': {},
                 }
         
         self.element = {}           ##  will be used in    pulsar.program_awg(myseq, self.elements)
@@ -168,20 +107,12 @@ class Experiment:
         self.digitier_readout_marker = 'ch6_marker1'
         self.occupied_channel1 = 'ch2_marker2'
         self.occupied_channel2 = 'ch5_marker2'
-
-    def add_manip_elem(self, name, manip_elem):
-        
-        self.manipulation_elements[name] = manip_elem
-        
-        return True
-    
-    def set_sweep(self, seq_num = 0):
-        
-        sequence_cfg = self.seq_cfg[seq_num]
+ 
+    def set_sweep(self,):
         
         sweep_dimension = 0
         segment_number = 0
-        for segment in sequence_cfg:
+        for segment in self.sequence_cfg:
             for step in segment.keys():
                 for parameter in segment[step].keys():
                     if type(segment[step][parameter]) == str and segment[step][parameter].startswith('loop'):
@@ -639,10 +570,10 @@ class Experiment:
  
     
     def generate_1D_sequence(self, idx_j = 0):
-        seq_num = 0
+
         for idx_i in range(self.dimension_1):
             rep_idx = 10*idx_j+idx_i
-            self.generate_unit_sequence(seq_num, idx_j = idx_j, idx_i = idx_i)
+            self.generate_unit_sequence(idx_j = idx_j, idx_i = idx_i)
             
 
         if idx_j == 0:
@@ -650,112 +581,6 @@ class Experiment:
         
         return self.sequence
     
-
-    def run_1D_sweep(self, idx_j = 0):
-        
-        self.generate_1D_sweep_sequence( idx_j = idx_j)
-        
-        self.run_experiment()
-        
-        return True
-    
-    def run_2D_sweep(self, ):
-        
-        for j in range(self.dimension_2):
-            self.run_1D_sweep(idx_j = j)
-        
-        return True
-    
-    
-    def add_marker_into_first_readout(self, awg, element = None):
-        
-        first_read_step = self.segment['read']['step1']
-
-        if type(first_read_step) is list:
-            if type(first_read_step[0]) is list:
-                first_read = first_read_step[0][0]
-            else:
-                first_read = first_read_step[0]
-        else:
-            first_read = first_read_step
-        
-        tvals, wfs = first_read.normalized_waveforms()
-        name = '1st' + first_read.name
-        print('readoutname:', name)
-#        first_read.add(SquarePulse(name = 'read_marker', channel = self.digitier_readout_marker, amplitude=2, length=1e-6),
-#                       name='read_marker', refpulse = 'read1', refpoint = 'start')
-#        self.elts.append(first_read)
-        
-        channel = self.digitier_readout_marker
-        wfs[channel] += 1
-        i = (int(channel[2])-1)%4+1
-        for ch in ['ch%d'%i, 'ch%d_marker1'%i, 'ch%d_marker2'%i]:
-            if len(wfs[ch]) != 1000:
-                wfs[ch] = np.full((1000,),1)
-        wfs[channel] = np.full((1000,),1)
-        
-        awg.send_waveform_to_list(w = wfs['ch%d'%i], m1 = wfs['ch%d_marker1'%i],
-                                  m2 = wfs['ch%d_marker2'%i], wfmname = name+'_ch%d'%i)
-        element_no = len(self.segment['init']) + len(self.segment['manip']) + 1 + 1
-        element_no = 7
-        awg.set_sqel_waveform(waveform_name = name+'_ch%d'%i, channel = i,
-                              element_no = element_no)
-        return first_read
-
-    def add_marker_into_first_readout_v2(self, awg, element = None):
-        
-        return True
-    def add_new_element_to_awg_list(self, awg, element):
-
-        name = element.name
-
-        tvals, wfs = element.normalized_waveforms()
-
-        for i in range(1,5):
-            awg.send_waveform_to_list(w = wfs['ch%d'%i], m1 = wfs['ch%d_marker1'%i],
-                                      m2 = wfs['ch%d_marker2'%i], wfmname = name+'_ch%d'%i)
-
-        return True
-
-    def add_new_waveform_to_sequence(self, wfname, element_no, repetitions):
-
-        for i in range(1,5):
-            self.awg.set_sqel_waveform(waveform_name = wfname+'_ch%d'%i, channel = i,
-                                        element_no = element_no)
-        
-        self.awg.set_sqel_loopcnt(loopcount = repetitions, element_no = element_no)
-        
-        return True
-    
-    def delete_element_from_awg_list(self, wfname):
-        
-        for i in range(1,5):
-            self.awg.write('WLISt:WAVeform:DELete "{}"'.format(wfname+'_ch%d'%i))
-        
-        return True
-    
-    def store_sequence(self, filename,):
-        
-        self.awg.send_awg_file(filename = filename, awg_file = self.awg_file)
-        
-        return True
-    
-    def restore_previous_sequence(self, awg, filename = 'setup_0_.AWG'):
-        
-        awg = awg
-        
-        awg.load_awg_file(filename = filename)
-        
-#        self.awg.write('AWGCONTROL:SRESTORE "{}"'.format(filename))
-        
-        return True
-    
-    def save_sequence(self, awg, filename,disk):
-        
-        awg.write('AWGCONTROL:SSAVE "{}","{}"'.format(filename,'C:'))
-        
-        return True
-#
 
     """
     this function is to be used......
@@ -789,32 +614,6 @@ class Experiment:
 
     
 
-    def set_trigger(self,):
-        
-        trigger_element = Element('trigger', self.pulsar)
-
-        trigger_element.add(SquarePulse(name = 'TRG2', channel = 'ch8_marker2', amplitude=2, length=300e-9),
-                            name='trigger2',)
-        trigger_element.add(SquarePulse(name = 'TRG1', channel = 'ch4_marker2', amplitude=2, length=1376e-9),
-                            name='trigger1',refpulse = 'trigger2', refpoint = 'start', start = 200e-9)
-        
-        trigger_element.add(SquarePulse(name = 'TRG_digi', channel = 'ch2_marker1', amplitude=2, length=800e-9),
-                            name='TRG_digi',refpulse = 'trigger2', refpoint = 'start', start = 200e-9)
-        trigger_element.add(SquarePulse(name = 'SIG_digi', channel = 'ch8', amplitude=0.5, length=800e-9),
-                            name='SIG_digi',refpulse = 'TRG_digi', refpoint = 'start', start = 0)
-        
-        
-        extra_element = Element('extra', self.pulsar)
-        extra_element.add(SquarePulse(name = 'EXT2', channel = 'ch8_marker2', amplitude=2, length=5e-9),
-                            name='extra2',)
-        extra_element.add(SquarePulse(name = 'EXT1', channel = 'ch4_marker2', amplitude=2, length=2e-6),
-                            name='extra1',)
-
-        self.elts.insert(0,trigger_element)
-#        self.elts.append(extra_element)
-        self.sequence.insert_element(name = 'trigger', wfname = 'trigger', pos = 0)
-#        self.sequence.append(name ='extra', wfname = 'extra', trigger_wait = False)
-        return True
 
     def load_sequence(self,):
         
@@ -844,53 +643,3 @@ class Experiment:
         return True
 
 
-    
-
-    def run_experiment(self,):
-        
-        print('run experiment')
-
-#        self.awg2.write('SOUR1:ROSC:SOUR EXT')
-#        self.awg.write('SOUR1:ROSC:SOUR INT')
-#        self.awg.clock_source('EXT')
-#        self.awg.ch3_state.set(1)
-        self.awg.all_channels_on()
-#        self.awg.force_trigger()
-        self.awg2.all_channels_on()
-        
-        self.vsg.status('On')
-        self.vsg2.status('On')
-        time.sleep(0.5)
-#        self.awg2.force_trigger()
-#        self.awg.run()
-#        self.awg2.run()
-        self.pulsar.start()
-
-        return True
-
-
-
-    def run_all(self, name):                    ## the idea is to make a shortcut to run all the experiment one time
-
-        self.initialize()
-
-#        self.readout()
-
-#        self.manipulation(name = manipulate)
-
-        self._generate_sequence(name)
-
-        self.awg.delete_all_waveforms_from_list()
-
-        self.awg.stop()
-
-        self.load_sequence(name)
-
-        self.run_experiment(name)
-
-        return True
-
-
-
-
-        return self.sweep_matrix

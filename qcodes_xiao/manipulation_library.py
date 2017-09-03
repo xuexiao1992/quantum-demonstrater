@@ -26,6 +26,7 @@ class Finding_Resonance(Manipulation):
         if self.qubits is not None:
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = None
         self.parameter1 = kw.pop('parameter1', 0)
         self.parameter2 = kw.pop('parameter2', 0)
 
@@ -69,6 +70,7 @@ class Ramsey(Manipulation):
         if self.qubits is not None:
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = None
         self.parameter1 = kw.pop('parameter1', 0)
         self.parameter2 = kw.pop('parameter2', 0)
 
@@ -124,6 +126,7 @@ class Rabi(Manipulation):
         if self.qubits is not None:
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = None
         self.parameter1 = kw.pop('parameter1', 0)
         self.parameter2 = kw.pop('parameter2', 0)
 

@@ -10,6 +10,7 @@ from pycqed.measurement.waveform_control.element import Element
 from pycqed.measurement.waveform_control.sequence import Sequence
 from gate import Single_Qubit_Gate#, Two_Qubit_Gate
 from manipulation import Manipulation
+from sequencer import Sequencer
 #from initialize import Initialize
 #from readout import Readout
 from qubit import Qubit
@@ -18,7 +19,7 @@ import stationF006
 #from stationF006 import station
 from copy import deepcopy
 from manipulation_library import Ramsey
-
+import time
 #%%
 class Experiment:
 
@@ -60,41 +61,53 @@ class Experiment:
         self.sweep_type = 'NoSweep'
 
         self.manip_elem = None
+        self.manip2_elem = None
+        self.manipulation_elements = {
+#                'Rabi': None,
+#                'Ramsey': None
+                }
+        
         self.sequence_cfg = []      ## [segment1, segment2, segment3]
         self.sequence_cfg_type = {}
+        
+        self.sequence2_cfg = []
+        self.sequence2_cfg_type = {}
+        
+        self.seq_cfg = []
+        self.seq_cfg_type = []
+        
+        self.sequencer = []
         
         self.dimension_1 = 1
         self.dimension_2 = 1
 
 
         self.initialize_segment = {
-                'step1': None,
-                'step2': None,
-                'step3': None,
+#                'step1': None,
                 }
 
         self.readout_segment = {
-                'step1': None,
+#                'step1': None,
 #                'step2': None,
 #                'step3': None,
                 }
 
         self.manipulation_segment = {
-                'step1': None,
+#                'step1': None,
                 }
         
         self.initialize2_segment = {
-                'step1': None
+#                'step1': None
                 }
         
         self.readout2_segment = {
-                'step1': None,
+#                'step1': None,
 #                'step2': None,
 #                'step3': None,
                 }
 
         self.manipulation2_segment = {
-                'step1': None,
+#                'step1': None,
                 }
         
         self.segment = {
@@ -153,268 +166,33 @@ class Experiment:
         self.experiment = {}        ## {'Ramsey': , 'Rabi': ,}  it is a list of manipulation element for different experiment
 
         self.sweep_matrix = np.array([])
-
-
-
-    def set_sweep(self,):
         
-        sweep_dimension = 0
-        segment_number = 0
+        self.digitizer_trigger_channel = 'ch5_marker1'
+        self.digitier_readout_marker = 'ch6_marker1'
+        self.occupied_channel1 = 'ch2_marker2'
+        self.occupied_channel2 = 'ch5_marker2'
 
-        for segment in self.sequence_cfg:
-            for step in segment.keys():
-                for parameter in segment[step].keys():
-                    if type(segment[step][parameter]) == str:
-                        ss = {}
-                        sweep_parameter = segment[step][parameter]
-                        ss['segment_number'] = segment_number
-                        ss['step'] = step
-                        ss['parameter'] = parameter
-                        self.sweep_set[sweep_parameter] = ss       ## sweep_set: {'loop1_para1':   'loop1_para2'}
-                        sweep_dimension+=1
-            segment_number+=1
-
-        if len(self.sweep_loop1) != 0:
-            self.dimension_1 = len(self.sweep_loop1['para1'])
-            if len(self.sweep_loop2) != 0:
-                self.dimension_2 = len(self.sweep_loop2['para1'])
-                self.sweep_type = '2D'
-            else:
-                self.sweep_type = '1D'
-                
-        self.sweep_loop = {
-            'loop1': self.sweep_loop1,
-            'loop2': self.sweep_loop2,
-            }
+    def add_manip_elem(self, name, manip_elem):
         
-        self.make_all_segment_list()
-
+        self.manipulation_elements[name] = manip_elem
+        
         return True
-
-    def _initialize_element(self, name, amplitudes = [],**kw):
-
-        initialize = Element(name = name, pulsar = self.pulsar)
-
-        for i in range(len(self.qubits)):
-            refpulse = None if i ==0 else 'init1'
-            initialize.add(SquarePulse(name='init', channel=self.channel_VP[i], amplitude=amplitudes[i], length=1e-6),
-                           name='init%d'%(i+1),refpulse = refpulse, refpoint = 'start')
-            
-        initialize.add(SquarePulse(name='init_c1m2', channel='ch2_marker2', amplitude=2, length=1e-6),
-                                   name='init%d_c1m2'%(i+1),refpulse = 'init1', refpoint = 'start')
-        initialize.add(SquarePulse(name='init_c5m2', channel='ch5_marker2', amplitude=2, length=1e-6),
-                                   name='init%d_c5m2'%(i+1),refpulse = 'init1', refpoint = 'start')
-
-        return initialize
-
-    def _readout_element(self, name, amplitudes = [],**kw):
-
-        readout = Element(name = name, pulsar = self.pulsar)
-
-        for i in range(len(self.qubits)):
-            refpulse = None if i ==0 else 'read1'
-            readout.add(SquarePulse(name='read', channel=self.channel_VP[i], amplitude=amplitudes[i], length=1e-6),
-                           name='read%d'%(i+1), refpulse = refpulse, refpoint = 'start')
-        
-        """
-        for trigger digitizer
-        """
-        readout.add(SquarePulse(name='read_trigger1', channel='ch2_marker1', amplitude=2, length=1e-6),
-                                name='read%d_trigger1'%(i+1),refpulse = 'read1', refpoint = 'start', start = 0)
-        readout.add(SquarePulse(name='read_trigger2', channel='ch6_marker1', amplitude=2, length=1e-6),
-                                name='read%d_trigger2'%(i+1),refpulse = 'read1', refpoint = 'start', start = 0)
-        
-        """
-        to make all elements equal length in different AWGs
-        """
-        readout.add(SquarePulse(name='read_c1m2', channel='ch2_marker2', amplitude=2, length=1e-6),
-                                name='read%d_c1m2'%(i+1),refpulse = 'read1', refpoint = 'start')
-        readout.add(SquarePulse(name='read_c5m2', channel='ch5_marker2', amplitude=2, length=1e-6),
-                                name='read%d_c5m2'%(i+1),refpulse = 'read1', refpoint = 'start')
-
-        return readout
-
-    def _manipulation_element(self, name, time = 0, amplitudes = [], **kw):
-
-        manip = deepcopy(self.manip_elem)
-
-#        waiting_time = kw.pop('waiting_time', None)
-#        duration_time = kw.pop('duration_time', None)
-#        frequency = kw.pop('frequency', None)
-#        power = kw.pop('power', None)
-        parameter1 = kw.pop('parameter1', None)
-        parameter2 = kw.pop('parameter2', None)
-        print(name)
-#        manip = Ramsey()
-        manipulation = manip(name = name, qubits = self.qubits, pulsar = self.pulsar, 
-                             parameter1 = parameter1, parameter2 = parameter2,)
-#                             waiting_time = waiting_time, duration_time = duration_time,
-#                             frequency = frequency, power = power)
-
-        manipulation.make_circuit()
-        
-        VP_start_point = -manip.VP_before
-        VP_end_point = manip.VP_after
-
-        for i in range(len(self.qubits)):
-            refpulse = None if i ==0 else 'manip1'
-            start = VP_start_point if i ==0 else 0
-            manipulation.add(SquarePulse(name='manip%d'%(i+1), channel=self.channel_VP[i], amplitude=amplitudes[i], length=time),
-                           name='manip%d'%(i+1), refpulse = refpulse, refpoint = 'start', start = start)
-            
-        manipulation.add(SquarePulse(name='manip_c1m2', channel='ch2_marker2', amplitude=0.1, length=time),
-                           name='manip%d_c1m2'%(i+1),refpulse = 'manip1', refpoint = 'start')
-        manipulation.add(SquarePulse(name='manip_c5m2', channel='ch5_marker2', amplitude=2, length=time),
-                           name='manip%d_c5m2'%(i+1),refpulse = 'manip1', refpoint = 'start')
-
-        return manipulation
-
-    def make_element(self, name, segment, time = 0, amplitudes = [], **kw):
-        
-        if segment[:4] == 'init':
-            element = self._initialize_element(name, amplitudes = amplitudes,)
-        elif segment[:5] == 'manip':
-#            waiting_time = kw.pop('waiting_time',0)
-            parameter1 = kw.pop('parameter1', 0)
-            parameter2 = kw.pop('parameter2', 0)
-            element = self._manipulation_element(name, time = time, amplitudes = amplitudes,
-                                                 parameter1 = parameter1, parameter2 = parameter2)
-        elif segment[:4] == 'read':
-            element = self._readout_element(name, amplitudes = amplitudes,)
-        else:
-            element = None
-        
-        return element
-
-
-    def _is_in_loop(self,segment_num,step,parameter = ''):
-
-        is_in_loop = False
-        loop_num = 0
-
-        for para in self.sweep_set:
-            if segment_num == self.sweep_set[para]['segment_number'] and step == self.sweep_set[para]['step']:
-                if self.sequence_cfg_type[segment_num] == 'manip':
-                    P = parameter
-                    if P == self.sweep_set[para]['parameter']:
-                        is_in_loop = True
-                        loop_num = para[4]
-                else:
-                    for i in range(self.qubits_number):
-                        P = parameter
-                        if P == self.sweep_set[para]['parameter']:
-                            is_in_loop = True
-                            loop_num = para[4]
-
-        return is_in_loop, loop_num
     
-    def make_segment_step(self, segment_num, step_num, name):           ## each step consist 1 element is no sweep, 1D/2D list if is 1D/2D sweep
+    def make_sequencers(self,):
         
-        s = step_num
-        seg = self.sequence_cfg_type[segment_num]                       ## seg is string like 'init1', 'manip1', 'read2'
+        sequencer_amount = len(self.seq_cfg)
         
-        step = self.sequence_cfg[segment_num]['step%d'%s]           ## s is step number in one segment
-        is_in_loop = []
-        loop_num = []
-        for k in range(self.qubits_number):
-            m, n = self._is_in_loop(segment_num, 'step%d'%s,'voltage_%d'%(k+1))
-            is_in_loop.append(m)
-            loop_num.append(n)
-        
-        for parameter in ['time', 'waiting_time', 'duration_time', 'IQ_amplitude', 'parameter1', 'parameter2']:
-#            if parameter not in:
-#                continue
-            m, n = self._is_in_loop(segment_num, 'step%d'%s,parameter)
-            is_in_loop.append(m)
-            loop_num.append(n)
-        
-        dimension_1 = self.dimension_1 if '1' in loop_num else 1
-        dimension_2 = self.dimension_2 if '2' in loop_num else 1
-        
-        
-        
-        if True not in is_in_loop:
-                
-                amplitudes = [step['voltage_%d'%(q+1)] for q in range(self.qubits_number)]
-
-                element = self.make_element(name = name+'step%d'%s, segment = seg, amplitudes=amplitudes,)
-                """
-                for trigger, not used
-                if segment_num == 0 and step_num == 1:
-                    element.add(SquarePulse(name = 'trigger', channel = 'ch4_marker2', amplitude = 2, length = 100e-9),
-                                name = 'trigger',)
-                """
-                segment = element
-                
-                repetition = int(step['time']/(1e-6))
-                
-        elif True in is_in_loop:
-                
-            segment = []
+        for i in range(sequencer_amount):
+            self.sequencer[i] = Sequencer(qubits=self.qubits, awg=self.awg, awg2=self.awg2, pulsar=self.pulsar,
+                          vsg=self.vsg, vsg2=self.vsg2,digitizer=self.digitizer)
             
-            repetition = []
-            
-            for j in range(dimension_2):
-                    
-                segment.append([])
-                
-                repetition.append([])
-                
-                self._update_cfg(loop = 2, idx = j)
-                    
-                for i in range(dimension_1):
-                    
-                    self._update_cfg(loop = 1, idx = i)
-                        
-                    amplitudes = [step['voltage_%d'%(q+1)] for q in range(self.qubits_number)]
-                    
-                    waiting_time = step.pop('waiting_time', None)
-                    parameter1 = step.pop('parameter1', None)
-                    parameter2 = step.pop('parameter2', None)
-                    element = self.make_element(name = name+'step%d_%d_%d'%(s,j,i), segment = seg, time = step['time'], amplitudes=amplitudes,
-                                                waiting_time = waiting_time, parameter1 = parameter1, parameter2 = parameter2)
-                    """
-                    for trigger, not used
-                    if segment_num == 0 and step_num == 1:
-                        element.add(SquarePulse(name = 'trigger', channel = 'ch4_marker2', amplitude = 2, length = 100e-9),
-                                    name = 'trigger',)
-                    """
-                    segment[j].append(element)
-                    rep = 1 if seg[:5] is 'manip' else int(step['time']/(1e-6))
-                    repetition[j].append(rep)
+            self.sequencer[i].sequence_cfg = self.sequence_cfg
+            self.sequencer[i].sequence_cfg_type = self.sequence_cfg_type
         
-        return segment, repetition
-
-
-    def make_initialize_segment_list(self, segment_num, name = 'initialize', qubits_name = None,):
         
-        segment = {}
-        repetition = {}
-
-        for s in range(len(self.sequence_cfg[segment_num])):
-
-           segment['step%d'%(s+1)], repetition['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)
-            
-        return segment, repetition
-
-    def make_readout_segment_list(self, segment_num, name = 'readout', qubits_name = None,):
-        
-        segment = {}
-        repetition = {}
-
-        for s in range(len(self.sequence_cfg[segment_num])):
-
-           self.readout_segment['step%d'%(s+1)], self.readout_repetition['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)
-            
-        return self.readout_segment, self.readout_repetition
+        return self.seq_cfg, self.seq_cfg_type
     
-    def make_manipulation_segment_list(self, segment_num, name = 'manipulation', qubits_name = None,):
-
-        for s in range(len(self.sequence_cfg[segment_num])):
-
-           self.manipulation_segment['step%d'%(s+1)], self.manipulation_repetition['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)
-
-        return self.manipulation_segment, self.manipulation_repetition
+    
     
     def make_all_segment_list(self,):
         
@@ -422,14 +200,14 @@ class Experiment:
 
         for segment_type in self.sequence_cfg_type:
 
-            if segment_type[:4] == 'init':
-                self.segment[segment_type], self.repetition[segment_type] = self.make_initialize_segment_list(segment_num = i, name = segment_type)
+            if segment_type.startswith('init') and not self.segment[segment_type]:
+                self.segment[segment_type], self.repetition[segment_type] = self.sequencer[j].make_initialize_segment_list(segment_num = i, name = segment_type)
 
-            elif segment_type[:5] == 'manip':
-                self.make_manipulation_segment_list(segment_num = i, name = segment_type)
+            elif segment_type.startswith('manip') and not self.segment[segment_type]:
+                self.segment[segment_type], self.repetition[segment_type] = self.sequencer[j].make_manipulation_segment_list(segment_num = i, name = segment_type)
 
-            elif segment_type[:4] == 'read':
-                self.make_readout_segment_list(segment_num = i, name = segment_type)
+            elif segment_type.startswith('read') and not self.segment[segment_type]:
+                self.segment[segment_type], self.repetition[segment_type] = self.sequencer[j].make_readout_segment_list(segment_num = i, name = segment_type)
 
             i+=1
 
@@ -447,7 +225,7 @@ class Experiment:
         i = idx_i
 #        print('rep_idx',rep_idx)
         for step in segment:
-            print('step',step)
+            print('step',step, 'idx_i', idx_i)
             
             if type(segment[step]) is not list:             ## smarter way for this
                 element = segment[step]
@@ -470,6 +248,10 @@ class Experiment:
             self.sequence.append(name = name, wfname = wfname, trigger_wait = False, repetitions = repe)
         
         return True
+    
+    """
+    problems below
+    """
     
     def update_segment_into_sequence_and_elts(self, segment, repetition, rep_idx = 0,idx_j = 0, idx_i = 0):         ## segment = self.initialize_segment
         
@@ -519,42 +301,45 @@ class Experiment:
         
         return True
     
-    
-    def generate_unit_sequence(self, rep_idx = 0, idx_i = 0, idx_j = 0):          # rep_idx = 10*i+j
+   
+    def generate_unit_sequence(self, seq_num = 0, rep_idx = 0, idx_i = 0, idx_j = 0):          # rep_idx = 10*i+j
         
         i = 0           ## not used in this version
         
         for segment_type in self.sequence_cfg_type:
 
-            if segment_type[:4] == 'init':
+            if segment_type.startswith('init'):   #[:4] == 'init':
                 
                 segment = self.segment[segment_type]
                 
                 repetition = self.repetition[segment_type]
                 
-            elif segment_type[:5] == 'manip':
+            elif segment_type.startswith('manip'):
                 
-                segment = self.manipulation_segment
+                segment = self.segment[segment_type]
                 
-                repetition = self.manipulation_repetition
+                repetition = self.repetition[segment_type]
                 
-            elif segment_type[:4] == 'read':
+            elif segment_type.startswith('read'):
                 
-                segment = self.readout_segment
+                segment = self.segment[segment_type]
                 
-                repetition = self.readout_repetition
+                repetition = self.repetition[segment_type]
                 
             self.add_segment(segment = segment, repetition = repetition, idx_j = idx_j, idx_i = idx_i)
             i+=1
+            
+        self.add_compensation(idx_j = idx_j, idx_i = idx_i)
 
         return True
  
     
     def generate_1D_sequence(self, idx_j = 0):
-        
+        seq_num = 0
         for idx_i in range(self.dimension_1):
             rep_idx = 10*idx_j+idx_i
-            self.generate_unit_sequence(idx_j = idx_j, idx_i = idx_i)
+            self.generate_unit_sequence(seq_num, idx_j = idx_j, idx_i = idx_i)
+            
 
         if idx_j == 0:
             self.load_sequence()
@@ -578,17 +363,53 @@ class Experiment:
         return True
     
     
-    
+    def add_marker_into_first_readout(self, awg, element = None):
+        
+        first_read_step = self.segment['read']['step1']
 
-    def add_new_element_to_awg_list(self, element):
+        if type(first_read_step) is list:
+            if type(first_read_step[0]) is list:
+                first_read = first_read_step[0][0]
+            else:
+                first_read = first_read_step[0]
+        else:
+            first_read = first_read_step
+        
+        tvals, wfs = first_read.normalized_waveforms()
+        name = '1st' + first_read.name
+        print('readoutname:', name)
+#        first_read.add(SquarePulse(name = 'read_marker', channel = self.digitier_readout_marker, amplitude=2, length=1e-6),
+#                       name='read_marker', refpulse = 'read1', refpoint = 'start')
+#        self.elts.append(first_read)
+        
+        channel = self.digitier_readout_marker
+        wfs[channel] += 1
+        i = (int(channel[2])-1)%4+1
+        for ch in ['ch%d'%i, 'ch%d_marker1'%i, 'ch%d_marker2'%i]:
+            if len(wfs[ch]) != 1000:
+                wfs[ch] = np.full((1000,),1)
+        wfs[channel] = np.full((1000,),1)
+        
+        awg.send_waveform_to_list(w = wfs['ch%d'%i], m1 = wfs['ch%d_marker1'%i],
+                                  m2 = wfs['ch%d_marker2'%i], wfmname = name+'_ch%d'%i)
+        element_no = len(self.segment['init']) + len(self.segment['manip']) + 1 + 1
+        element_no = 7
+        awg.set_sqel_waveform(waveform_name = name+'_ch%d'%i, channel = i,
+                              element_no = element_no)
+        return first_read
+
+    def add_marker_into_first_readout_v2(self, awg, element = None):
+        
+        return True
+    def add_new_element_to_awg_list(self, awg, element):
 
         name = element.name
 
         tvals, wfs = element.normalized_waveforms()
 
         for i in range(1,5):
-            self.awg.send_waveform_to_list(w = wfs['ch%d'%i], m1 = wfs['ch%d_marker1'%i],
-                                            m2 = wfs['ch%d_marker2'%i], wfmname = name+'_ch%d'%i)
+            awg.send_waveform_to_list(w = wfs['ch%d'%i], m1 = wfs['ch%d_marker1'%i],
+                                      m2 = wfs['ch%d_marker2'%i], wfmname = name+'_ch%d'%i)
 
         return True
 
@@ -615,17 +436,19 @@ class Experiment:
         
         return True
     
-    def restore_previous_sequence(self, filename = 'setup_0_.AWG'):
+    def restore_previous_sequence(self, awg, filename = 'setup_0_.AWG'):
         
-        self.awg.load_awg_file(filename = filename)
+        awg = awg
+        
+        awg.load_awg_file(filename = filename)
         
 #        self.awg.write('AWGCONTROL:SRESTORE "{}"'.format(filename))
         
         return True
     
-    def save_sequence(self,filename,disk):
+    def save_sequence(self, awg, filename,disk):
         
-        self.awg.write('AWGCONTROL:SSAVE "{}","{}"'.format(filename,'C:'))
+        awg.write('AWGCONTROL:SSAVE "{}","{}"'.format(filename,'C:'))
         
         return True
 #
@@ -660,9 +483,7 @@ class Experiment:
 
         return True
 
-    def set_compensation(self,):
-        
-        return True
+    
 
     def set_trigger(self,):
         
@@ -670,8 +491,14 @@ class Experiment:
 
         trigger_element.add(SquarePulse(name = 'TRG2', channel = 'ch8_marker2', amplitude=2, length=300e-9),
                             name='trigger2',)
-        trigger_element.add(SquarePulse(name = 'TRG1', channel = 'ch4_marker2', amplitude=2, length=1.43e-6),
+        trigger_element.add(SquarePulse(name = 'TRG1', channel = 'ch4_marker2', amplitude=2, length=1376e-9),
                             name='trigger1',refpulse = 'trigger2', refpoint = 'start', start = 200e-9)
+        
+        trigger_element.add(SquarePulse(name = 'TRG_digi', channel = 'ch2_marker1', amplitude=2, length=800e-9),
+                            name='TRG_digi',refpulse = 'trigger2', refpoint = 'start', start = 200e-9)
+        trigger_element.add(SquarePulse(name = 'SIG_digi', channel = 'ch8', amplitude=0.5, length=800e-9),
+                            name='SIG_digi',refpulse = 'TRG_digi', refpoint = 'start', start = 0)
+        
         
         extra_element = Element('extra', self.pulsar)
         extra_element.add(SquarePulse(name = 'EXT2', channel = 'ch8_marker2', amplitude=2, length=5e-9),
@@ -690,17 +517,24 @@ class Experiment:
         print('load sequence')
 #        elts = list(self.element.values())
         self.awg.delete_all_waveforms_from_list()
+        time.sleep(0.2)
         self.awg2.delete_all_waveforms_from_list()
+        time.sleep(5)
         self.set_trigger()
+        time.sleep(1)
         elts = self.elts
         sequence = self.sequence
         self.pulsar.program_awgs(sequence, *elts, AWGs = ['awg','awg2'],)       ## elts should be list(self.element.values)
         
+        time.sleep(5)
         
-        self.awg2.trigger_level(0.5)
+        self.add_marker_into_first_readout(self.awg2)
+#        self.awg2.trigger_level(0.5)
         self.awg2.set_sqel_trigger_wait(element_no = 1, state = 1)
+        time.sleep(1)
         last_element_num = self.awg2.sequence_length()
         self.awg.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 2)
+        time.sleep(0.2)
         self.awg2.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 2)
 
         return True
@@ -712,17 +546,21 @@ class Experiment:
         
         print('run experiment')
 
-        self.awg2.write('SOUR1:ROSC:SOUR EXT')
-        self.awg.write('SOUR1:ROSC:SOUR INT')
+#        self.awg2.write('SOUR1:ROSC:SOUR EXT')
+#        self.awg.write('SOUR1:ROSC:SOUR INT')
 #        self.awg.clock_source('EXT')
 #        self.awg.ch3_state.set(1)
         self.awg.all_channels_on()
-        self.awg.force_trigger()
+#        self.awg.force_trigger()
         self.awg2.all_channels_on()
+        
+        self.vsg.status('On')
+        self.vsg2.status('On')
+        time.sleep(0.5)
 #        self.awg2.force_trigger()
 #        self.awg.run()
 #        self.awg2.run()
-#        self.pulsar.start()
+        self.pulsar.start()
 
         return True
 
