@@ -196,8 +196,8 @@ class Experiment:
             print('sequencer name 2nd check',name)
             self.sequencer.append(sequencer_i)
             print('sequencer list', self.sequencer)
-            self.sequencer[i].sequence_cfg = self.sequence_cfg
-            self.sequencer[i].sequence_cfg_type = self.sequence_cfg_type
+            self.sequencer[i].sequence_cfg = self.seq_cfg[i]
+            self.sequencer[i].sequence_cfg_type = self.seq_cfg_type[i]
             
             self.sequencer[i].sweep_loop1 = self.sweep_loop1[i]
             self.sequencer[i].sweep_loop2 = self.sweep_loop2[i]

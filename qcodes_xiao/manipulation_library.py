@@ -90,7 +90,7 @@ class Ramsey(Manipulation):
 
         self.add_X(name='X1_Q1', qubit = self.qubits[0],)
 
-#        self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = self.parameter1,)
+        self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = self.parameter1,)
 
 #        self.add_Y(name = 'Y1_Q2', refgate = 'X2_Q1', qubit = self.qubits[1],)
 #
