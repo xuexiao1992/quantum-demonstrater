@@ -55,12 +55,13 @@ class Experiment:
             'loop2': self.sweep_loop2,
             }
 
-        self.sweep_loop3 = {}
+        self.sweep2_loop1 = {}
+        self.sweep2_loop2 = {}
 
         self.sweep_set = {}         ## {''}
         self.sweep_type = 'NoSweep'
 
-        self.manip_elem = None
+        self.manip_elem = []
         self.manip2_elem = None
         self.manipulation_elements = {
 #                'Rabi': None,
@@ -172,42 +173,63 @@ class Experiment:
         self.occupied_channel1 = 'ch2_marker2'
         self.occupied_channel2 = 'ch5_marker2'
 
-    def add_manip_elem(self, name, manip_elem):
+    def add_manip_elem(self, name, manip_elem, seq_num):
         
         self.manipulation_elements[name] = manip_elem
-        
+#        self.manip_elem.append([])
+        if seq_num > len(self.manip_elem):
+            for i in range(seq_num - len(self.manip_elem)):
+                self.manip_elem.append([])
+        self.manip_elem[seq_num-1].append(manip_elem)
+        print('33333333',self.manip_elem)
         return True
     
     def make_sequencers(self,):
         
         sequencer_amount = len(self.seq_cfg)
-        
+        self.sequencer = []
         for i in range(sequencer_amount):
-            self.sequencer[i] = Sequencer(qubits=self.qubits, awg=self.awg, awg2=self.awg2, pulsar=self.pulsar,
+            name = 'Seq_%d'%(i+1)#self.seq_cfg[i]
+            print('sequencer name',name)
+            sequencer_i = Sequencer(name = name, qubits=self.qubits, awg=self.awg, awg2=self.awg2, pulsar=self.pulsar,
                           vsg=self.vsg, vsg2=self.vsg2,digitizer=self.digitizer)
-            
+            print('sequencer name 2nd check',name)
+            self.sequencer.append(sequencer_i)
+            print('sequencer list', self.sequencer)
             self.sequencer[i].sequence_cfg = self.sequence_cfg
             self.sequencer[i].sequence_cfg_type = self.sequence_cfg_type
+            
+            self.sequencer[i].sweep_loop1 = self.sweep_loop1[i]
+            self.sequencer[i].sweep_loop2 = self.sweep_loop2[i]
+            self.sequencer[i].set_sweep()
+            print('sequencer type3', type(sequencer_i))
+            
+            self.sequencer[i].manip_elem = self.manip_elem[i]
+            for manip in self.manip_elem[i]:
+                self.sequencer[i].add_manip_elem(name = manip.name, manip_elem = manip)
+                
+            self.make_all_segment_list(seq_num = i)
+            print('sequencer type4', type(sequencer_i))
         
-        
-        return self.seq_cfg, self.seq_cfg_type
+        return self.sequencer
     
     
     
-    def make_all_segment_list(self,):
+    def make_all_segment_list(self, seq_num):
         
         i = 0
 
-        for segment_type in self.sequence_cfg_type:
+        for segment_type in self.seq_cfg_type[seq_num]:
+            print('segment_type', segment_type)
 
             if segment_type.startswith('init') and not self.segment[segment_type]:
-                self.segment[segment_type], self.repetition[segment_type] = self.sequencer[j].make_initialize_segment_list(segment_num = i, name = segment_type)
+                self.segment[segment_type], self.repetition[segment_type] = self.sequencer[seq_num].make_initialize_segment_list(segment_num = i, name = segment_type)
 
             elif segment_type.startswith('manip') and not self.segment[segment_type]:
-                self.segment[segment_type], self.repetition[segment_type] = self.sequencer[j].make_manipulation_segment_list(segment_num = i, name = segment_type)
+                self.segment[segment_type], self.repetition[segment_type] = self.sequencer[seq_num].make_manipulation_segment_list(segment_num = i, name = segment_type)
 
             elif segment_type.startswith('read') and not self.segment[segment_type]:
-                self.segment[segment_type], self.repetition[segment_type] = self.sequencer[j].make_readout_segment_list(segment_num = i, name = segment_type)
+                self.segment[segment_type], self.repetition[segment_type] = self.sequencer[seq_num].make_readout_segment_list(segment_num = i, name = segment_type)
 
             i+=1
 
@@ -218,11 +240,13 @@ class Experiment:
     this function below organizes segments. e.g. self.initialize_segment = {'step1': element1, 'step2': 1D/2D list, 'step3': element3...}
     """
     
-    def first_segment_into_sequence_and_elts(self, segment, repetition, rep_idx = 0,idx_j = 0, idx_i = 0):         ## segment = self.initialize_segment
+    def first_segment_into_sequence_and_elts(self, segment, repetition, rep_idx = 0,idx_j = 0, idx_i = 0, seq_num = 0):         ## segment = self.initialize_segment
         
         j = idx_j
         
         i = idx_i
+        
+        sq = seq_num
 #        print('rep_idx',rep_idx)
         for step in segment:
             print('step',step, 'idx_i', idx_i)
@@ -230,7 +254,7 @@ class Experiment:
             if type(segment[step]) is not list:             ## smarter way for this
                 element = segment[step]
                 wfname = element.name
-                name = wfname + '_%d_%d'%(j,i)
+                name = wfname + '_%d_%d_%d'%(sq,j,i)
                 repe = repetition[step]
                 if i == 0:
                     self.elts.append(element)
@@ -239,7 +263,7 @@ class Experiment:
                 ii = 0 if len(segment[step][0]) == 1 else i
                 element = segment[step][jj][ii]
                 wfname=element.name
-                name = wfname + '_%d_%d'%(j,i)
+                name = wfname + '_%d_%d_%d'%(sq,j,i)
                 
                 repe = repetition[step][jj][ii]
                 if ii != 0 or i==0:                                                         ## !!!!!!!!! here is a potential BUG!!!!!!
@@ -290,25 +314,65 @@ class Experiment:
         return True
     
     
-    def add_segment(self, segment, repetition, rep_idx = 0, idx_j = 0, idx_i = 0):
+    def add_segment(self, segment, repetition, rep_idx = 0, idx_j = 0, idx_i = 0, seq_num = 0):
         
         j = idx_j
         
         if j == 0:
-            self.first_segment_into_sequence_and_elts(segment, repetition, idx_j = idx_j, idx_i = idx_i)
+            self.first_segment_into_sequence_and_elts(segment, repetition, idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)
         else:
             self.update_segment_into_sequence_and_elts(segment, repetition, idx_j = idx_j, idx_i = idx_i)
         
         return True
     
+    def add_compensation(self, idx_j = 0, idx_i = 0, seq_num = 0):
+        unit_length = 0
+        for segment in self.sequence_cfg:
+            unit_length += len(segment) 
+        amplitude = [0,0]
+        
+        for i in range(unit_length):
+            wfname = self.sequence.elements[-(i+1)]['wfname']
+            for elt in self.elts:
+                if elt.name == wfname:
+                    element = elt
+                    break
+            tvals, wfs = element.ideal_waveforms()
+            repe = self.sequence.elements[-(i+1)]['repetitions']
+            amplitude[0] += np.sum(wfs[self.channel_VP[0]])*repe
+            amplitude[1] += np.sum(wfs[self.channel_VP[1]])*repe
+            
+        comp_amp = [-amplitude[k]/3000000 for k in range(2)]
+        
+        if np.max(np.abs(comp_amp)) >= 0.5:
+            raise ValueError('amp too large')
+        
+        compensation_element = Element('compensation_%d_%d'%(seq_num, idx_i), self.pulsar)
+
+        compensation_element.add(SquarePulse(name = 'COMPEN1', channel = self.channel_VP[0], amplitude=comp_amp[0], length=1e-6),
+                            name='compensation1',)
+        compensation_element.add(SquarePulse(name = 'COMPEN2', channel = self.channel_VP[1], amplitude=comp_amp[1], length=1e-6),
+                            name='compensation2',refpulse = 'compensation1', refpoint = 'start', start = 0)
+        
+        compensation_element.add(SquarePulse(name='comp_c1m2', channel=self.occupied_channel1, amplitude=2, length=1e-6),
+                                           name='comp%d_c1m2'%(i+1),refpulse = 'compensation1', refpoint = 'start')
+        compensation_element.add(SquarePulse(name='comp_c5m2', channel=self.occupied_channel2, amplitude=2, length=1e-6),
+                                           name='comp%d_c5m2'%(i+1),refpulse = 'compensation1', refpoint = 'start')
+        
+        self.elts.append(compensation_element)
+        self.sequence.append(name = 'compensation_%d_%d'%(seq_num, idx_i), 
+                             wfname = 'compensation_%d_%d'%(seq_num, idx_i), 
+                             trigger_wait = False, repetitions = 3000)
+        return True
+
    
     def generate_unit_sequence(self, seq_num = 0, rep_idx = 0, idx_i = 0, idx_j = 0):          # rep_idx = 10*i+j
         
         i = 0           ## not used in this version
         
-        for segment_type in self.sequence_cfg_type:
+        for segment_type in self.sequencer[seq_num].sequence_cfg_type:
 
-            if segment_type.startswith('init'):   #[:4] == 'init':
+            if segment_type.startswith('init'):
                 
                 segment = self.segment[segment_type]
                 
@@ -326,41 +390,37 @@ class Experiment:
                 
                 repetition = self.repetition[segment_type]
                 
-            self.add_segment(segment = segment, repetition = repetition, idx_j = idx_j, idx_i = idx_i)
+            self.add_segment(segment = segment, repetition = repetition, 
+                             idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)
             i+=1
             
-        self.add_compensation(idx_j = idx_j, idx_i = idx_i)
+        self.add_compensation(idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)
 
         return True
  
-    
     def generate_1D_sequence(self, idx_j = 0):
         seq_num = 0
-        for idx_i in range(self.dimension_1):
-            rep_idx = 10*idx_j+idx_i
-            self.generate_unit_sequence(seq_num, idx_j = idx_j, idx_i = idx_i)
-            
+        for sequencer in self.sequencer:
+            D1 = sequencer.dimension_1
+            for idx_i in range(D1):
+                self.generate_unit_sequence(idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)
+            seq_num += 1
+        if idx_j == 0:
+            self.load_sequence()
 
+        return self.sequence
+    
+    def generate_1D_sequence_v2(self, idx_j = 0):
+       
+        for sequencer in self.sequencer:
+            sequencer.generate_1D_sequence(idx_j = idx_j)
+
+        for idx_i in range(len(self.sequencer)):
+            self.generate_unit_sequence(idx_j = idx_j, idx_i = idx_i)
         if idx_j == 0:
             self.load_sequence()
         
         return self.sequence
-    
-
-    def run_1D_sweep(self, idx_j = 0):
-        
-        self.generate_1D_sweep_sequence( idx_j = idx_j)
-        
-        self.run_experiment()
-        
-        return True
-    
-    def run_2D_sweep(self, ):
-        
-        for j in range(self.dimension_2):
-            self.run_1D_sweep(idx_j = j)
-        
-        return True
     
     
     def add_marker_into_first_readout(self, awg, element = None):
@@ -451,39 +511,6 @@ class Experiment:
         awg.write('AWGCONTROL:SSAVE "{}","{}"'.format(filename,'C:'))
         
         return True
-#
-
-    """
-    this function is to be used......
-    """
-    def _loop_information(self, loop = 1):
-
-        para_num = len(self.sweep_loop['loop%d'%loop])
-
-        segment_number = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['segment_number'] for k in range(para_num)]
-        step = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['step'] for k in range(para_num)]
-        parameter = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['parameter'] for k in range(para_num)]
-
-        return segment_number, step, parameter
-
-
-
-    def _update_cfg(self, loop = 1, idx = 1):
-
-        para_num = len(self.sweep_loop['loop%d'%loop])      ## number of parameter in one loop e.g. loop1: para1, para2,,,,para_num = 2
-        i = idx
-
-        segment_number = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['segment_number'] for k in range(para_num)]
-        step = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['step'] for k in range(para_num)]
-        parameter = [self.sweep_set['loop%d_para%d'%(loop,(k+1))]['parameter'] for k in range(para_num)]
-#        print('parameter:' , parameter)
-
-        for k in range(para_num):
-            self.sequence_cfg[segment_number[k]][step[k]][parameter[k]] = self.sweep_loop['loop%d'%loop]['para%d'%(k+1)][i]
-
-        return True
-
-    
 
     def set_trigger(self,):
         

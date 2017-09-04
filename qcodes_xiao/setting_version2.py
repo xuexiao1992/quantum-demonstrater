@@ -139,7 +139,7 @@ def make_experiment_cfg():
 
     qubits = [qubit_1, qubit_2]
 
-    experiment = Calibration(name = 'experiment_test', qubits = [qubit_1, qubit_2], awg = awg, awg2 = awg2, pulsar = pulsar, 
+    experiment = Experiment(name = 'experiment_test', qubits = [qubit_1, qubit_2], awg = awg, awg2 = awg2, pulsar = pulsar, 
                              vsg = vsg, vsg2 = vsg2, digitizer = digitizer)
 
     experiment.sweep_loop1 = {
@@ -151,6 +151,11 @@ def make_experiment_cfg():
     experiment.sweep_loop2 = {
 #            'para1': [-0.4,-0.5,-0.3,-0.8,-0.5],
             }
+    experiment.sweep2_loop1 = {}
+    experiment.sweep2_loop2 = {}
+    
+    experiment.sweep_loop1 = [experiment.sweep_loop1, experiment.sweep2_loop1]
+    experiment.sweep_loop2 = [experiment.sweep_loop2, experiment.sweep2_loop2]
 
 #    loop1_para1 = [1,2,344,553,3]
 #    loop1_para2 = [33,2,11,22,3]
@@ -200,28 +205,31 @@ def make_experiment_cfg():
     experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg, ]         ## the NAME here in this list is not important , only the order matters
     experiment.sequence_cfg_type = ['init', 'manip','read',]
     
-    experiment.sequence2_cfg = [init_cfg, manip_cfg, read2_cfg,]
-    experiment.sequence2_cfg_type = ['init', 'manip','read2',]
+    experiment.sequence2_cfg = [init_cfg, manip2_cfg, read2_cfg,]
+    experiment.sequence2_cfg_type = ['init', 'manip2','read2',]
     
     experiment.seq_cfg = [experiment.sequence_cfg, experiment.sequence2_cfg]
     experiment.seq_cfg_type = [experiment.sequence_cfg_type, experiment.sequence2_cfg_type]
 
 #    experiment.manip_elem = Ramsey(name = 'Ramsey', pulsar = pulsar)
 #    experiment.manip_elem = Finding_Resonance(name = 'Finding_resonance', pulsar = pulsar)
-    experiment.manip_elem = Rabi(name = 'Rabi', pulsar = pulsar)
+    manip_elem = Rabi(name = 'Rabi', pulsar = pulsar)
 #    experiment.manip_elem.pulsar = None
     
-    experiment.manip2_elem = Ramsey(name = 'Ramsey', pulsar = pulsar)
+    manip2_elem = Ramsey(name = 'Ramsey', pulsar = pulsar)
 #    experiment.manip2_elem.pulsar = None
+#    experiment.manip_elem = [manip_elem, manip2_elem]
     
-    experiment.add_manip_elem('Rabi', experiment.manip_elem)
-    experiment.add_manip_elem('Ramsey', experiment.manip2_elem)
+    experiment.add_manip_elem('Rabi', manip_elem, seq_num = 1)
+    experiment.add_manip_elem('Ramsey', manip2_elem, seq_num = 2)
+    
+    experiment.make_sequencers()
     
 #    experiment.manipulation_elements = {
 #            'Rabi': None,
 #            }
 
-    experiment.set_sweep(0)
+#    experiment.set_sweep(0)
 #    experiment.set_sweep(1)
     return experiment
 

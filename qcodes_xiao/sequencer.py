@@ -23,6 +23,8 @@ import time
 class Sequencer:
 
     def __init__(self, name, qubits, awg, awg2, pulsar, **kw):
+        
+        self.name = name
 
         self.awg = awg
         self.awg2 = awg2
@@ -108,6 +110,12 @@ class Sequencer:
         self.occupied_channel1 = 'ch2_marker2'
         self.occupied_channel2 = 'ch5_marker2'
  
+    def add_manip_elem(self, name, manip_elem):
+        
+        self.manipulation_elements[name] = manip_elem
+        
+        return True
+    
     def set_sweep(self,):
         
         sweep_dimension = 0
@@ -138,7 +146,7 @@ class Sequencer:
             'loop2': self.sweep_loop2,
             }
         
-        self.make_all_segment_list()
+#        self.make_all_segment_list()
 
         return True
 
@@ -572,12 +580,8 @@ class Sequencer:
     def generate_1D_sequence(self, idx_j = 0):
 
         for idx_i in range(self.dimension_1):
-            rep_idx = 10*idx_j+idx_i
+#            rep_idx = 10*idx_j+idx_i
             self.generate_unit_sequence(idx_j = idx_j, idx_i = idx_i)
-            
-
-        if idx_j == 0:
-            self.load_sequence()
         
         return self.sequence
     
@@ -614,32 +618,5 @@ class Sequencer:
 
     
 
-
-    def load_sequence(self,):
-        
-        print('load sequence')
-#        elts = list(self.element.values())
-        self.awg.delete_all_waveforms_from_list()
-        time.sleep(0.2)
-        self.awg2.delete_all_waveforms_from_list()
-        time.sleep(5)
-        self.set_trigger()
-        time.sleep(1)
-        elts = self.elts
-        sequence = self.sequence
-        self.pulsar.program_awgs(sequence, *elts, AWGs = ['awg','awg2'],)       ## elts should be list(self.element.values)
-        
-        time.sleep(5)
-        
-        self.add_marker_into_first_readout(self.awg2)
-#        self.awg2.trigger_level(0.5)
-        self.awg2.set_sqel_trigger_wait(element_no = 1, state = 1)
-        time.sleep(1)
-        last_element_num = self.awg2.sequence_length()
-        self.awg.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 2)
-        time.sleep(0.2)
-        self.awg2.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 2)
-
-        return True
 
 
