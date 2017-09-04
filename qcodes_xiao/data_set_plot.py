@@ -22,6 +22,7 @@ from qcodes.data.data_array import DataArray
 from qcodes.plots.pyqtgraph import QtPlot
 from qcodes.plots.qcmatplotlib import MatPlot
 #%%
+"""
 data = np.array([1,2,3])
 data1 = np.array([[1,2,33,5],[5,232,7,3],[1,2,3,4]])
 
@@ -36,13 +37,13 @@ data_array3 = DataArray(preset_data = data, name = 'digitizer3')
 data_array5 = DataArray(preset_data = data, name = 'digitizer5')
 
 data_array6 = DataArray(preset_data = data1, name = 'digitizer6')
-
+"""
 #%%
 
 NewIO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents')
 formatter = HDF5FormatMetadata()
 try_location = 'trytrytry'
-
+"""
 #arrays = LP.containers()
 arrays2 = []
 arrays3 = [data_array1,]
@@ -51,7 +52,7 @@ arrays4 = [data_array1, data_array2, data_array3]
 data_set = new_data(arrays=arrays3, location=try_location, loc_record = {'name':'T1', 'label':'Vread_sweep'}, io = NewIO,)
 
 #data_set.save_metadata()
-
+"""
 
 #%% load data
 NewIO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents')
@@ -59,23 +60,23 @@ formatter = HDF5FormatMetadata()
 
 test_location = '2017-08-28/14-38-39_finding_resonance_Freq_sweep'
 new1_location = '2017-08-28/newnewnew'
-new_location = '2017-09-02/16-18-06_finding_resonance_Freq_sweep'
-data_set_2 = DataSet(location = test_location, io = NewIO,)
-data_set_2.read()
+new_location = '2017-09-04/11-08-54_finding_resonance_Freq_sweep'
+#data_set_2 = DataSet(location = test_location, io = NewIO,)
+#data_set_2.read()
 
-data_set_3 = load_data(location = new_location, io = NewIO,)
+raw_data_set = load_data(location = new_location, io = NewIO,)
 
 sample_rate = int(np.floor(61035/1))
 pretrigger = 16
 readout_time = 1e-3
 
-loop_num = 6
+loop_num = 31
 qubit_num = 1
-repetition = 10
+repetition = 200
 
 seg_size = int(((readout_time*sample_rate+pretrigger) // 16 + 1) * 16)
 #%%
-def convert_to_ordered_data(data_set,):
+def convert_to_ordered_data(data_set, name = 'frequency'):
     
     for parameter in data_set.arrays:
         data_array = data_set.arrays[parameter]
@@ -102,7 +103,7 @@ def convert_to_ordered_data(data_set,):
                 marker[k] = raw_marker[seg:data_num+seg]
                 setpara[k] = np.linspace(0, data_num-1, data_num)
                 
-            data_array2 = DataArray(preset_data = setpara, name = 'frequency', array_id = 'frequency_set', is_setpoint = True)
+            data_array2 = DataArray(preset_data = setpara, name = name, array_id = name+'_set', is_setpoint = True)
             data_array3 = DataArray(preset_data = data, name = parameter, array_id = arrayid, is_setpoint = False)
 #            data_array4 = DataArray(preset_data = data, name = parameter, array_id = arrayid, is_setpoint = False)
     
@@ -115,8 +116,8 @@ def convert_to_ordered_data(data_set,):
 
 #%%
 
-def convert_to_01_state(data_set, threshold):
-    
+def convert_to_01_state(data_set, threshold, name = 'frequency'):
+    data_set = convert_to_ordered_data(data_set, name)
     for parameter in data_set.arrays:
         data_array = data_set.arrays[parameter]
         dimension_1 = data_array.shape[0]
@@ -131,17 +132,17 @@ def convert_to_01_state(data_set, threshold):
             setpara = np.ndarray(shape = (dimension_1, seg_num))
             
             for k in range(dimension_1):
-                print('parameter', parameter)
+#                print('parameter', parameter)
                 for j in range(seg_num):
                     setpara[k][j] = j
                     for i in range(seg_size):
-                        if data_array.ndarray[k][j*seg_size+i] >= threshold:
+                        if data_array.ndarray[k][j*seg_size+i] <= threshold:
                             data[k][j] = 1
                             break
                     if i == seg_size-1:
                         data[k][j] = 0
             
-            data_array2 = DataArray(preset_data = setpara, name = 'frequency', array_id = 'frequency_set', is_setpoint = True)
+            data_array2 = DataArray(preset_data = setpara, name = name, array_id = name+'_set', is_setpoint = True)
             data_array3 = DataArray(preset_data = data, name = parameter, array_id = arrayid, is_setpoint = False)            
     data_set_new = DataSet(location = new_location, io = NewIO, formatter = formatter)
     data_set_new.add_array(data_array1)
@@ -150,9 +151,9 @@ def convert_to_01_state(data_set, threshold):
     
     return data_set_new
 #%%
-def convert_to_probability(data_set, threshold):
+def convert_to_probability(data_set, threshold, name = 'frequency'):
     
-    data_set = convert_to_01_state(data_set, threshold)
+    data_set = convert_to_01_state(data_set, threshold, name)
     
     for parameter in data_set.arrays:
         data_array = data_set.arrays[parameter]
@@ -182,13 +183,13 @@ def convert_to_probability(data_set, threshold):
                     probability = np.average(state[j])
                     data[k][j] = probability
                 
-            data_array2 = DataArray(preset_data = setpara, name = 'frequency', array_id = 'frequency_set', is_setpoint = True)
+            data_array2 = DataArray(preset_data = setpara, name = name, array_id = name+'_set', is_setpoint = True)
             data_array3 = DataArray(preset_data = data, name = parameter, array_id = arrayid, is_setpoint = False)
           
     data_set_new = DataSet(location = new_location, io = NewIO, formatter = formatter)
     data_set_new.add_array(data_array1)
     data_set_new.add_array(data_array2)
-    data_set_new.add_array(data_array3)              
+    data_set_new.add_array(data_array3)
     
     return data_set_new
     
@@ -197,11 +198,18 @@ def convert_to_probability(data_set, threshold):
 #data_set_100 = DataSet(location = new_location, formatter = formatter, io = NewIO,)
 
 #%% plot
+def data_set_plot(data_set, data_location):
+    
+    Plot = MatPlot()
+    
+    raw_data_set = load_data(location = data_location, io = NewIO,)
 
-Plot = MatPlot()
+    data_set_P = convert_to_probability(raw_data_set, threshold = 0.025)
+    x_data = data_set_P.arrays['vsg2_frequency_set'].ndarray
+    P_data = data_set_P.arrays['digitizer'].ndarray.T[0]
 
-x = [1,2,3]
+    x = x_data
 
-y = [22,3,555]
+    y = P_data
 
-plt.plot(x, y) 
+    plt.plot(x, y) 

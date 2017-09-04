@@ -184,7 +184,7 @@ class Experiment:
         print('33333333',self.manip_elem)
         return True
     
-    def make_sequencers(self,):
+    def make_sequencers(self, **kw):
         
         sequencer_amount = len(self.seq_cfg)
         self.sequencer = []
@@ -445,11 +445,15 @@ class Experiment:
         channel = self.digitier_readout_marker
         wfs[channel] += 1
         i = (int(channel[2])-1)%4+1
+        print('channel', 'ch%d'%i)
+        wfs_vp = wfs['ch%d'%int(channel[2])][0]
         for ch in ['ch%d'%i, 'ch%d_marker1'%i, 'ch%d_marker2'%i]:
             if len(wfs[ch]) != 1000:
                 wfs[ch] = np.full((1000,),1)
-        wfs[channel] = np.full((1000,),1)
-        
+        wfs['ch%d_marker1'%i] = np.full((1000,),1)
+        wfs['ch%d_marker2'%i] = np.full((1000,),1)
+        wfs['ch%d'%i] = np.full((1000,),wfs_vp)
+        print('ana', wfs['ch%d'%i], 'm1', wfs['ch%d_marker1'%i], 'm2', wfs['ch%d_marker2'%i])
         awg.send_waveform_to_list(w = wfs['ch%d'%i], m1 = wfs['ch%d_marker1'%i],
                                   m2 = wfs['ch%d_marker2'%i], wfmname = name+'_ch%d'%i)
         element_no = len(self.segment['init']) + len(self.segment['manip']) + 1 + 1

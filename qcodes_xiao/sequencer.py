@@ -18,7 +18,6 @@ import stationF006
 #from stationF006 import station
 from copy import deepcopy
 from manipulation_library import Ramsey
-import time
 #%%
 class Sequencer:
 
@@ -166,7 +165,7 @@ class Sequencer:
 
         return initialize
 
-    def _readout_element(self, name, amplitudes = [],**kw):
+    def _readout_element(self, name, amplitudes = [], trigger_digitizer = False, **kw):
 
         readout = Element(name = name, pulsar = self.pulsar)
 
@@ -178,10 +177,11 @@ class Sequencer:
         """
         for trigger digitizer
         """
-        readout.add(SquarePulse(name='read_trigger1', channel='ch2_marker1', amplitude=2, length=1e-6),
-                                name='read%d_trigger1'%(i+1),refpulse = 'read1', refpoint = 'start', start = 0)
-        readout.add(SquarePulse(name='read_trigger2', channel=self.digitizer_trigger_channel, amplitude=2, length=1e-6),
-                                name='read%d_trigger2'%(i+1),refpulse = 'read1', refpoint = 'start', start = 0)
+        if trigger_digitizer:
+            readout.add(SquarePulse(name='read_trigger1', channel='ch2_marker1', amplitude=2, length=1e-6),
+                                    name='read%d_trigger1'%(i+1),refpulse = 'read1', refpoint = 'start', start = 0)
+            readout.add(SquarePulse(name='read_trigger2', channel=self.digitizer_trigger_channel, amplitude=2, length=1e-6),
+                                    name='read%d_trigger2'%(i+1),refpulse = 'read1', refpoint = 'start', start = 0)
         
         """
         to make all elements equal length in different AWGs
@@ -253,7 +253,8 @@ class Sequencer:
                                                  parameter1 = parameter1, parameter2 = parameter2,
                                                  manip_elem = manip_elem)
         elif segment[:4] == 'read':
-            element = self._readout_element(name, amplitudes = amplitudes,)
+            trigger = True if name.find('step1')>=0 else False
+            element = self._readout_element(name, amplitudes = amplitudes, trigger_digitizer = trigger)
         else:
             element = None
         

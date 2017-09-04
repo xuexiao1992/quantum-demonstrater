@@ -227,7 +227,7 @@ class Experiment:
 
         return initialize
 
-    def _readout_element(self, name, amplitudes = [],**kw):
+    def _readout_element(self, name, amplitudes = [], trigger_digitizer = False, **kw):
 
         readout = Element(name = name, pulsar = self.pulsar)
 
@@ -239,10 +239,11 @@ class Experiment:
         """
         for trigger digitizer
         """
-        readout.add(SquarePulse(name='read_trigger1', channel='ch2_marker1', amplitude=2, length=1e-6),
-                                name='read%d_trigger1'%(i+1),refpulse = 'read1', refpoint = 'start', start = 0)
-        readout.add(SquarePulse(name='read_trigger2', channel=self.digitizer_trigger_channel, amplitude=2, length=1e-6),
-                                name='read%d_trigger2'%(i+1),refpulse = 'read1', refpoint = 'start', start = 0)
+        if trigger_digitizer:
+            readout.add(SquarePulse(name='read_trigger1', channel='ch2_marker1', amplitude=2, length=1e-6),
+                                    name='read%d_trigger1'%(i+1),refpulse = 'read1', refpoint = 'start', start = 0)
+            readout.add(SquarePulse(name='read_trigger2', channel=self.digitizer_trigger_channel, amplitude=2, length=1e-6),
+                                    name='read%d_trigger2'%(i+1),refpulse = 'read1', refpoint = 'start', start = 0)
         
         """
         to make all elements equal length in different AWGs

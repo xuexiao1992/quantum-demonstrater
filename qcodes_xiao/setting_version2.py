@@ -10,6 +10,7 @@ from pycqed.measurement.waveform_control.element import Element
 #from experiment import Experiment
 from experiment_version2 import Experiment
 from calibration import Calibration
+from data_set_plot import convert_to_ordered_data, convert_to_01_state, convert_to_probability
 
 import stationF006
 from manipulation import Manipulation
@@ -24,8 +25,9 @@ from qcodes.loops import Loop, ActiveLoop
 from qcodes.data.hdf5_format import HDF5Format, HDF5FormatMetadata
 from qcodes.data.gnuplot_format import GNUPlotFormat
 from qcodes.data.io import DiskIO
-from qcodes.data.data_set import new_data, DataSet
+from qcodes.data.data_set import new_data, DataSet,load_data
 from qcodes.data.data_array import DataArray
+import matplotlib.pyplot as plt
 
 import sys
 sys.path.append('C:\\Users\\LocalAdmin\\Documents\\GitHub\\PycQED_py3\\pycqed\\measurement\\waveform_control')
@@ -141,21 +143,24 @@ def make_experiment_cfg():
 
     experiment = Experiment(name = 'experiment_test', qubits = [qubit_1, qubit_2], awg = awg, awg2 = awg2, pulsar = pulsar, 
                              vsg = vsg, vsg2 = vsg2, digitizer = digitizer)
-
-    experiment.sweep_loop1 = {
+    global sweep_loop1
+    
+    sweep_loop1 = {
 #            'para1': [0.8,0.2,0.53,0.14,0.3],
-            'para1': sweep_array(start = 0, stop = 10e-6, points = 6),
+            'para1': sweep_array(start = 0, stop = 0.1e-6, points = 31),
 #            'para2': sweep_array(start = 0.1, stop = 0.5, points = 5),
             }
 
-    experiment.sweep_loop2 = {
+    sweep_loop2 = {
 #            'para1': [-0.4,-0.5,-0.3,-0.8,-0.5],
             }
-    experiment.sweep2_loop1 = {}
-    experiment.sweep2_loop2 = {}
+    sweep2_loop1 = {
+#            'para1': sweep_array(start = 0, stop = 10e-6, points = 6),
+            }
+    sweep2_loop2 = {}
     
-    experiment.sweep_loop1 = [experiment.sweep_loop1, experiment.sweep2_loop1]
-    experiment.sweep_loop2 = [experiment.sweep_loop2, experiment.sweep2_loop2]
+    experiment.sweep_loop1 = [sweep_loop1, sweep2_loop1]
+    experiment.sweep_loop2 = [sweep_loop2, sweep2_loop2]
 
 #    loop1_para1 = [1,2,344,553,3]
 #    loop1_para2 = [33,2,11,22,3]
@@ -175,7 +180,7 @@ def make_experiment_cfg():
             }
 
     manip_cfg = {
-            'step1' : set_manip(time = 15e-6, qubits = qubits, voltages = [30*0.5*-0.004,30*0.5*0.016], parameter1 = loop1_para1, manip_elem = 'Rabi')
+            'step1' : set_manip(time = 5e-6, qubits = qubits, voltages = [30*0.5*-0.004,30*0.5*0.016], parameter1 = loop1_para1, manip_elem = 'Rabi')
             }
 
     read_cfg = {
@@ -190,7 +195,7 @@ def make_experiment_cfg():
             }
     
     manip2_cfg = {
-            'step1' : set_manip(time = 1e-6, qubits = qubits, voltages = [30*0.5*-0.004,30*0.5*0.016], parameter1 = 250e-9, manip_elem = 'Ramsey')
+            'step1' : set_manip(time = 1e-6, qubits = qubits, voltages = [30*0.5*-0.004,30*0.5*0.016], parameter1 = loop1_para1, manip_elem = 'Ramsey')
             }
     
     read2_cfg = {
@@ -205,14 +210,14 @@ def make_experiment_cfg():
     experiment.sequence_cfg = [init_cfg, manip_cfg, read_cfg, ]         ## the NAME here in this list is not important , only the order matters
     experiment.sequence_cfg_type = ['init', 'manip','read',]
     
-    experiment.sequence2_cfg = [init_cfg, manip2_cfg, read2_cfg,]
-    experiment.sequence2_cfg_type = ['init', 'manip2','read2',]
+#    experiment.sequence2_cfg = [init_cfg, manip2_cfg, read2_cfg,]
+#    experiment.sequence2_cfg_type = ['init', 'manip2','read2',]
     
-    experiment.seq_cfg = [experiment.sequence_cfg, experiment.sequence2_cfg]
-    experiment.seq_cfg_type = [experiment.sequence_cfg_type, experiment.sequence2_cfg_type]
+    experiment.seq_cfg = [experiment.sequence_cfg, ]
+    experiment.seq_cfg_type = [experiment.sequence_cfg_type,]
 
 #    experiment.manip_elem = Ramsey(name = 'Ramsey', pulsar = pulsar)
-#    experiment.manip_elem = Finding_Resonance(name = 'Finding_resonance', pulsar = pulsar)
+#    manip_elem = Finding_Resonance(name = 'Finding_resonance', pulsar = pulsar)
     manip_elem = Rabi(name = 'Rabi', pulsar = pulsar)
 #    experiment.manip_elem.pulsar = None
     
@@ -220,10 +225,10 @@ def make_experiment_cfg():
 #    experiment.manip2_elem.pulsar = None
 #    experiment.manip_elem = [manip_elem, manip2_elem]
     
+#    experiment.add_manip_elem('Finding_resonance', manip_elem, seq_num = 1)
     experiment.add_manip_elem('Rabi', manip_elem, seq_num = 1)
-    experiment.add_manip_elem('Ramsey', manip2_elem, seq_num = 2)
-    
-    experiment.make_sequencers()
+    experiment.add_manip_elem('Ramsey', manip2_elem, seq_num = 1)
+    experiment.make_sequencers(seq1_name = 'Seq1', )
     
 #    experiment.manipulation_elements = {
 #            'Rabi': None,
@@ -247,8 +252,10 @@ Sweep_Count = Count[1:5:1]
 
 formatter = HDF5FormatMetadata()
 data_IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents')
-data_location = '2017-08-18/20-40-19_T1_Vread_sweep'
-
+#data_location = '2017-08-18/20-40-19_T1_Vread_sweep'
+experiment_name = 'Finding_Resonance'
+sweep_type = 'Rabi_Sweep'
+data_location = time.strftime("%Y-%m-%d/%H-%M-%S") + experiment_name + sweep_type
 #data_set = LP.get_data_set(location=None, loc_record = {'name':'T1', 'label':'Vread_sweep'}, io = data_IO,)
 
 #print('loop.data_set: %s' % LP.data_set)
@@ -256,13 +263,13 @@ data_location = '2017-08-18/20-40-19_T1_Vread_sweep'
 #data_set = LP.run()
 
 #dig = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size)
-def scan_outside_awg(name, set_parameter, measured_parameter, start, end, step):
+def scan_outside_awg(name, label, set_parameter, measured_parameter, start, end, step):
     
     Sweep_Value = set_parameter[start:end:step]
     
     LOOP = Loop(sweep_values = Sweep_Value).each(measured_parameter)
     
-    data_set = LOOP.get_data_set(location = None, loc_record = {'name': name, 'label': 'Freq_sweep'}, io = data_IO,)
+    data_set = LOOP.get_data_set(location = data_location, loc_record = {'name': name, 'label': sweep_type}, io = data_IO,)
     
     data_set = LOOP.run()
     
@@ -326,9 +333,9 @@ def set_digitizer(digitizer):
     
     seg_size = ((readout_time*sample_rate+pretrigger) // 16 + 1) * 16
     
-    sweep_num = 6
+    sweep_num = len(sweep_loop1['para1'])
     
-    repetition = 10
+    repetition = 200
     
     memsize = int((repetition+1)*sweep_num*qubit_num*seg_size)
     posttrigger_size = seg_size-pretrigger
@@ -394,14 +401,68 @@ def close():
     awg.stop()
     awg2.stop()
     time.sleep(0.5)
+    vsg.status('Off')
+    vsg2.status('Off')
     awg.delete_all_waveforms_from_list()
     awg2.delete_all_waveforms_from_list()
     return True
 
+
+#%%
+
+def data_set_plot(data_set, data_location,):
+    
+    Plot = MatPlot()
+    
+    threshold = 0.025
+    name = 'Rabi'
+    
+    raw_data_set = load_data(location = data_location, io = data_IO,)
+    """
+    for 1D sweep outside a sequence, sequence is only one unit sequence
+    """
+    if 1:
+        
+#        raw_data_set = load_data(location = data_location, io = data_IO,)
+        
+        data_set_P = convert_to_probability(raw_data_set, threshold = threshold, name = name)
+        
+        x_data = data_set_P.arrays['vsg2_frequency_set'].ndarray
+        P_data = data_set_P.arrays['digitizer'].ndarray.T[0]
+        
+        x = x_data
+        y = P_data
+        
+        plt.plot(x, y) 
+    """
+    for 2D sweep both inside sequence and outside a sequence
+    """
+    if 0:
+#        raw_data_set = load_data(location = data_location, io = data_IO,)
+        
+        data_set_P = convert_to_probability(raw_data_set, threshold = threshold, name = name)
+        
+        x_data = data_set_P.arrays['vsg2_frequency_set'].ndarray
+        y_data = data_set_P.arrays[name+'_set'].ndarray
+        P_data = data_set_P.arrays['digitizer'].ndarray
+        
+        X, Y = np.meshgrid(x_data, y_data)
+        
+        plt.pcolor(X,Y,P_data.T)
+    """
+    for 1D sweep inside a sequence, no qcodes-loop function
+    """
+    if 0:
+        data_set_P = convert_to_probability(raw_data_set, threshold = threshold, name = name)
+        x_data = data_set_P.arrays[name+'_set'].ndarray[0]
+
+        P_data = data_set_P.arrays['digitizer'].ndarray[0]
+
+        return 0
+    
+
 #%% test
-
 experiment = make_experiment_cfg()
-
 pulsar = experiment.pulsar
 awg = experiment.awg
 awg2 = experiment.awg2
@@ -412,12 +473,34 @@ digitizer, dig = set_digitizer(experiment.digitizer)
 experiment.generate_1D_sequence()
 
 vsg.frequency(18.4e9)
-vsg2.frequency(19.67e9)
+vsg2.frequency(19.6735e9)
 #experiment.load_sequence()
 time.sleep(1)
 experiment.run_experiment()
 #time.sleep(1)
 #pulsar.start()
 
-#data_set = scan_outside_awg(name = 'finding_resonance', set_parameter = vsg2.frequency, measured_parameter = dig, start=12.8e9, end=12.9e9, step=10e6)
 
+data_set = scan_outside_awg(name = experiment_name, label = sweep_type, set_parameter = vsg2.frequency, measured_parameter = dig, 
+                            start=19.67e9, end=19.6770e9, step=0.5e6)
+data = dig.get()
+pulse_length = sweep_loop1['para1']
+#
+data = np.array([data])
+pulse_length = np.array([pulse_length])
+
+data_array = DataArray(preset_data = data, name = 'digitizer',)
+#
+pulse_array = DataArray(preset_data = pulse_length, name = 'pulse_length', is_setpoint = True)
+#
+set_array = DataArray(preset_data = np.array([1]), name = 'pulse_length',  array_id = 'pulse_length_set', is_setpoint = True)
+#
+data_set = new_data(arrays= [set_array, pulse_array, data_array] , location=data_location, loc_record = {'name':experiment_name, 'label':sweep_type}, io = data_IO,)
+#
+#DS = convert_to_probability(data_set, 0.025)
+#
+#x_data = DS.arrays['frequency_set'].ndarray[0]
+#
+#P_data = DS.arrays['digitizer'].ndarray[0]
+
+#data_set_plot(data_set, data_location)
