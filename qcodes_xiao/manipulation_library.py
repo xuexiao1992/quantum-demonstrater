@@ -73,6 +73,7 @@ class Ramsey(Manipulation):
         self.pulsar = None
         self.parameter1 = kw.pop('parameter1', 0)
         self.parameter2 = kw.pop('parameter2', 0)
+        
 
     def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
@@ -129,6 +130,11 @@ class Rabi(Manipulation):
         self.pulsar = None
         self.parameter1 = kw.pop('parameter1', 0)
         self.parameter2 = kw.pop('parameter2', 0)
+        self.parameter = {
+                'duration_time': 0,
+                'amplitude' : 0,
+                }
+#        self.duration_time
 
     def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
@@ -142,9 +148,16 @@ class Rabi(Manipulation):
         self.parameter2 = kw.pop('parameter2', 0)
         return self
 
-    def make_circuit(self, ):
+    def make_circuit(self, qubit = 2, **kw):
+        
+        qubit_num = qubit
+        
+        qubit = self.qubits[int(qubit_num-1)]
+        
+        length = kw.pop('duration_time', qubit.Pi_pulse_length)
+        amplitude = kw.pop('amplitude', 1)
 
-        self.add_single_qubit_gate(name='Rabi_Oscillation', qubit = self.qubits[1], amplitude = 1, length = self.parameter1)
+        self.add_single_qubit_gate(name='Rabi_Oscillation', qubit = self.qubits[1], amplitude = amplitude, length = length)
 
         return self
 

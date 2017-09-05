@@ -201,13 +201,13 @@ class Sequencer:
 #        frequency = kw.pop('frequency', None)
 #        power = kw.pop('power', None)
         print('manip time:', time)
-        parameter1 = kw.pop('parameter1', None)
-        parameter2 = kw.pop('parameter2', None)
-        manip_elem = kw.pop('manip_elem', None)
+        parameter1 = kw.get('parameter1', None)
+        parameter2 = kw.get('parameter2', None)
+        manip_elem = kw.get('manip_elem', None)
         print(name)
         
         
-        manip = deepcopy(self.manip_elem)
+#        manip = deepcopy(self.manip_elem)
         
         if manip_elem not in self.manipulation_elements:
             raise NameError('Manipulation Element [%s] not in Experiment.'%manip_elem)
@@ -216,12 +216,12 @@ class Sequencer:
         
         
 #        manip = Ramsey()
-        manipulation = manip(name = name, qubits = self.qubits, pulsar = self.pulsar, 
-                             parameter1 = parameter1, parameter2 = parameter2,)
+        manipulation = manip(name = name, qubits = self.qubits, pulsar = self.pulsar, **kw)
+#                             parameter1 = parameter1, parameter2 = parameter2,)
 #                             waiting_time = waiting_time, duration_time = duration_time,
 #                             frequency = frequency, power = power)
 
-        manipulation.make_circuit()
+        manipulation.make_circuit(**kw)
         
         VP_start_point = -manip.VP_before
         VP_end_point = manip.VP_after
@@ -245,13 +245,13 @@ class Sequencer:
             element = self._initialize_element(name, amplitudes = amplitudes,)
         elif segment[:5] == 'manip':
 #            waiting_time = kw.pop('waiting_time',0)
-            parameter1 = kw.pop('parameter1', 0)
-            parameter2 = kw.pop('parameter2', 0)
-            manip_elem = kw.pop('manip_elem', None)
+            parameter1 = kw.get('parameter1', 0)
+            parameter2 = kw.get('parameter2', 0)
+            manip_elem = kw.get('manip_elem', None)
             print('parameter1', parameter1)
-            element = self._manipulation_element(name, time = time, amplitudes = amplitudes,
-                                                 parameter1 = parameter1, parameter2 = parameter2,
-                                                 manip_elem = manip_elem)
+            element = self._manipulation_element(name, time = time, amplitudes = amplitudes, **kw)
+#                                                 parameter1 = parameter1, parameter2 = parameter2,
+#                                                 manip_elem = manip_elem)
         elif segment[:4] == 'read':
             trigger = True if name.find('step1')>=0 else False
             element = self._readout_element(name, amplitudes = amplitudes, trigger_digitizer = trigger)
@@ -310,12 +310,17 @@ class Sequencer:
         if True not in is_in_loop:
                 
                 amplitudes = [step['voltage_%d'%(q+1)] for q in range(self.qubits_number)]
+                
+                specific_parameters = deepcopy(step)
+                specific_parameters.pop('time')
+                specific_parameters.pop('voltage_1')
+                specific_parameters.pop('voltage_2')
                 parameter1 = step.get('parameter1', None)
                 parameter2 = step.get('parameter2', None)
                 manip_elem = step.get('manip_elem', None)
 
-                element = self.make_element(name = name+'step%d'%s, segment = seg, time = step['time'], amplitudes=amplitudes,
-                                            parameter1 = parameter1, parameter2 = parameter2, manip_elem = manip_elem)
+                element = self.make_element(name = name+'step%d'%s, segment = seg, time = step['time'], amplitudes=amplitudes, **specific_parameters)
+#                                            parameter1 = parameter1, parameter2 = parameter2, manip_elem = manip_elem)
                 """
                 for trigger, not used
                 if segment_num == 0 and step_num == 1:
@@ -347,12 +352,18 @@ class Sequencer:
                         
                     amplitudes = [step['voltage_%d'%(q+1)] for q in range(self.qubits_number)]
                     
+                    specific_parameters = deepcopy(step)
+                    specific_parameters.pop('time')
+                    specific_parameters.pop('voltage_1')
+                    specific_parameters.pop('voltage_2')
+                    
                     waiting_time = step.get('waiting_time', None)
+                    
                     parameter1 = step.get('parameter1', None)
                     parameter2 = step.get('parameter2', None)
                     manip_elem = step.get('manip_elem', None)
-                    element = self.make_element(name = name+'step%d_%d_%d'%(s,j,i), segment = seg, time = step['time'], amplitudes=amplitudes,
-                                                waiting_time = waiting_time, parameter1 = parameter1, parameter2 = parameter2, manip_elem = manip_elem)
+                    element = self.make_element(name = name+'step%d_%d_%d'%(s,j,i), segment = seg, time = step['time'], amplitudes=amplitudes, **specific_parameters)
+#                                                waiting_time = waiting_time, parameter1 = parameter1, parameter2 = parameter2, manip_elem = manip_elem)
                     """
                     for trigger, not used
                     if segment_num == 0 and step_num == 1:

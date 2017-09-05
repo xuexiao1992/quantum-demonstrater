@@ -8,7 +8,7 @@ Created on Sat Aug 19 17:38:33 2017
 import numpy as np
 
 import matplotlib.pyplot as plt
-
+import matplotlib.widgets as widgets
 #import qcodes.instrument_drivers.Spectrum.M4i as M4i
 #from qcodes.instrument_drivers.Spectrum import pyspcm
 from qcodes.instrument.parameter import ArrayParameter, StandardParameter
@@ -21,6 +21,59 @@ from qcodes.data.data_set import new_data, DataSet,load_data
 from qcodes.data.data_array import DataArray
 from qcodes.plots.pyqtgraph import QtPlot
 from qcodes.plots.qcmatplotlib import MatPlot
+try:
+    from setting_version2 import sweep_loop1
+except ImportError:
+    print('sweep_loop1 from setting is not imported')
+#%%
+
+class SnaptoCursor(object):
+    def __init__(self, ax, x, y):
+        self.ax = ax
+        self.ly = ax.axvline(color='k', alpha=0.2)  # the vert line
+        self.marker, = ax.plot([0],[0], marker="o", color="crimson", zorder=3) 
+        self.x = x
+        self.y = y
+        self.txt = ax.text(0.7, 0.9, '')
+
+    def mouse_move(self, event):
+        if not event.inaxes: return
+        x, y = event.xdata, event.ydata
+        indx = np.searchsorted(self.x, [x])[0]
+        x = self.x[indx]
+        y = self.y[indx]
+        self.ly.set_xdata(x)
+        self.marker.set_data([x],[y])
+        self.txt.set_text('x=%1.2f, y=%1.2f' % (x, y))
+        self.txt.set_position((x,y))
+        self.ax.figure.canvas.draw_idle()
+#%%
+class DataCursor(object):
+    text_template = 'x: %0.2f\ny: %0.2f'
+    x, y = 0.0, 0.0
+    xoffset, yoffset = -20, 20
+    text_template = 'x: %0.2f\ny: %0.2f'
+
+    def __init__(self, ax):
+        self.ax = ax
+        self.annotation = ax.annotate(self.text_template, 
+                xy=(self.x, self.y), xytext=(self.xoffset, self.yoffset), 
+                textcoords='offset points', ha='right', va='bottom',
+                bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5),
+                arrowprops=dict(arrowstyle='->', connectionstyle='arc3,rad=0')
+                )
+        self.annotation.set_visible(False)
+
+    def __call__(self, event):
+        self.event = event
+        # xdata, ydata = event.artist.get_data()
+        # self.x, self.y = xdata[event.ind], ydata[event.ind]
+        self.x, self.y = event.mouseevent.xdata, event.mouseevent.ydata
+        if self.x is not None:
+            self.annotation.xy = self.x, self.y
+            self.annotation.set_text(self.text_template % (self.x, self.y))
+            self.annotation.set_visible(True)
+            event.canvas.draw()
 #%%
 """
 data = np.array([1,2,3])
@@ -71,6 +124,7 @@ pretrigger = 16
 readout_time = 1e-3
 
 loop_num = 31
+#loop_num = len(sweep_loop1['para1']) if 'para1' in sweep_loop1 else 1
 qubit_num = 1
 repetition = 200
 

@@ -142,3 +142,13 @@ b = {'ele_{}'.format(i): i for i in a}
 #    b=a*y
 #    c = func(a,b)
 #    return c
+
+
+def funca(a,**kw):
+    step = {'a':a}
+    step.update(kw)
+    return step
+
+def funcb(b, **kw):
+    step = funca(a = b, **kw)
+    return step

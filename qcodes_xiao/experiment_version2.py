@@ -19,6 +19,7 @@ import stationF006
 #from stationF006 import station
 from copy import deepcopy
 from manipulation_library import Ramsey
+from qcodes.instrument.parameter import ArrayParameter, StandardParameter
 import time
 #%%
 class Experiment:
@@ -182,6 +183,88 @@ class Experiment:
                 self.manip_elem.append([])
         self.manip_elem[seq_num-1].append(manip_elem)
         print('33333333',self.manip_elem)
+        return True
+    
+    def find_sequencer(self, name):
+        
+        for sequencer in self.sequencer:
+            if name == sequencer.name:
+                return sequencer
+                break
+        return 'sequencer not found'
+        
+    
+    def add_measurement(self, name, manip_elem, sequence_cfg, sequence_cfg_type):
+        
+        sequencer = Sequencer(name = name, qubits=self.qubits, awg=self.awg, awg2=self.awg2, pulsar=self.pulsar,
+                              vsg=self.vsg, vsg2=self.vsg2,digitizer=self.digitizer)
+        
+        i = len(self.sequencer)
+        
+        self.sequencer.append(sequencer)
+        
+        for seg in range(len(sequence_cfg_type)):
+            if sequence_cfg_type[seg].startswith('manip'):
+                sequence_cfg[seg]['step1'].update({'manip_elem': name})
+                self.add_manip_elem(name = name, manip_elem = manip_elem.pop(0), seq_num = i)
+                
+        self.sequencer[i].sequence_cfg = sequence_cfg
+        self.sequencer[i].sequence_cfg_type = sequence_cfg_type
+
+#        self.sequencer[i].sweep_loop1 = self.sweep_loop1[i]
+#        self.sequencer[i].sweep_loop2 = self.sweep_loop2[i]
+#        self.sequencer[i].set_sweep()
+        
+        return self
+
+    def __call__(self,):
+        
+        return self
+    
+    def add_X_parameter(self, measurement, parameter, sweep_array):
+        
+        sequencer = self.find_sequencer(measurement)
+        
+        if type(parameter) is StandardParameter:
+            True
+        else:
+            for para in sequencer.sweep_loop1:
+                if len(sequencer.sweep_loop1[para]) == 0:
+                    break
+            parameter = 'loop1_'+para
+            sequencer.sweep_loop1[para] = sweep_array
+            
+#        sequencer.set_sweep()
+        
+        return True
+    
+    def add_Y_parameter(self, measurement, parameter, sweep_array):
+        
+        sequencer = self.find_sequencer(measurement)
+        
+        if type(parameter) is StandardParameter:
+            True
+        else:
+            for para in sequencer.sweep_loop2:
+                if len(sequencer.sweep_loop2[para]) == 0:
+                    break
+            parameter = 'loop2_'+para
+            sequencer.sweep_loop2[para] = sweep_array
+            
+#        sequencer.set_sweep()
+        
+        return True
+    
+    def set_sweep(self,):
+        
+        for seq in range(len(self.sequencer)):
+            self.sequencer[seq].set_sweep()
+            self.make_all_segment_list(seq)
+        
+        """
+        loop function
+        """
+        
         return True
     
     def make_sequencers(self, **kw):
