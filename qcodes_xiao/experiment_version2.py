@@ -15,6 +15,15 @@ from sequencer import Sequencer
 #from readout import Readout
 from qubit import Qubit
 from pycqed.measurement.waveform_control.pulse import CosPulse, SquarePulse, LinearPulse
+
+from qcodes.instrument.sweep_values import SweepFixedValues
+from qcodes.loops import Loop, ActiveLoop
+from qcodes.data.hdf5_format import HDF5Format, HDF5FormatMetadata
+from qcodes.data.gnuplot_format import GNUPlotFormat
+from qcodes.data.io import DiskIO
+from qcodes.data.data_set import new_data, DataSet,load_data
+from qcodes.data.data_array import DataArray
+
 import stationF006
 #from stationF006 import station
 from copy import deepcopy
@@ -24,7 +33,9 @@ import time
 #%%
 class Experiment:
 
-    def __init__(self, name, qubits, awg, awg2, pulsar, **kw):
+    def __init__(self, name, label, qubits, awg, awg2, pulsar, **kw):
+        self.name = name
+        self.label = label
 
         self.awg = awg
         self.awg2 = awg2
@@ -61,6 +72,18 @@ class Experiment:
 
         self.sweep_set = {}         ## {''}
         self.sweep_type = 'NoSweep'
+        
+        self.dig = None
+        
+        self.Loop = None
+        self.X_parameter = None
+        self.Y_parameter = None
+        
+        self.formatter = HDF5FormatMetadata()
+        self.data_IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents')
+        self.data_location = time.strftime("%Y-%m-%d/%H-%M-%S") + name + label
+        self.data_set = None
+
 
         self.manip_elem = []
         self.manip2_elem = None
@@ -194,22 +217,26 @@ class Experiment:
         return 'sequencer not found'
         
     
-    def add_measurement(self, name, manip_elem, sequence_cfg, sequence_cfg_type):
+    def add_measurement(self, measurement_name, manip_name, manip_elem, sequence_cfg, sequence_cfg_type):
         
-        sequencer = Sequencer(name = name, qubits=self.qubits, awg=self.awg, awg2=self.awg2, pulsar=self.pulsar,
+        sequencer = Sequencer(name = measurement_name, qubits=self.qubits, awg=self.awg, awg2=self.awg2, pulsar=self.pulsar,
                               vsg=self.vsg, vsg2=self.vsg2,digitizer=self.digitizer)
         
-        i = len(self.sequencer)
         
+        i = len(self.sequencer)
         self.sequencer.append(sequencer)
         
         for seg in range(len(sequence_cfg_type)):
             if sequence_cfg_type[seg].startswith('manip'):
-                sequence_cfg[seg]['step1'].update({'manip_elem': name})
-                self.add_manip_elem(name = name, manip_elem = manip_elem.pop(0), seq_num = i)
-                
+                Name = manip_name.pop(0)
+                Elem = manip_elem.pop(0)
+                sequence_cfg[seg]['step1'].update({'manip_elem': Name})
+                self.add_manip_elem(name = Name, manip_elem = Elem, seq_num = i+1)
+                self.sequencer[i].manipulation_elements[Name] = Elem
         self.sequencer[i].sequence_cfg = sequence_cfg
         self.sequencer[i].sequence_cfg_type = sequence_cfg_type
+        self.seq_cfg.append(sequence_cfg)
+        self.seq_cfg_type.append(sequence_cfg_type)
 
 #        self.sequencer[i].sweep_loop1 = self.sweep_loop1[i]
 #        self.sequencer[i].sweep_loop2 = self.sweep_loop2[i]
@@ -226,13 +253,19 @@ class Experiment:
         sequencer = self.find_sequencer(measurement)
         
         if type(parameter) is StandardParameter:
-            True
-        else:
-            for para in sequencer.sweep_loop1:
-                if len(sequencer.sweep_loop1[para]) == 0:
-                    break
-            parameter = 'loop1_'+para
+            
+            Sweep_Value = parameter[sweep_array[0]:sweep_array[-1]:(sweep_array[1]-sweep_array[0])]
+    
+            self.Loop = Loop(sweep_values = Sweep_Value).each(self.dig)
+            
+        elif type(parameter) is str:
+            i = len(sequencer.sweep_loop1)+1
+            para = 'para'+str(i)
+            loop = 'loop1_'+para
             sequencer.sweep_loop1[para] = sweep_array
+            for seg in range(len(sequencer.sequence_cfg_type)):
+                if sequencer.sequence_cfg_type[seg].startswith('manip'):
+                    sequencer.sequence_cfg[seg]['step1'].update({parameter: loop})
             
 #        sequencer.set_sweep()
         
@@ -243,7 +276,14 @@ class Experiment:
         sequencer = self.find_sequencer(measurement)
         
         if type(parameter) is StandardParameter:
-            True
+            
+            Sweep_Value = parameter[sweep_array[0]:sweep_array[-1]:(sweep_array[1]-sweep_array[0])]
+            
+            if self.Loop is None:
+                self.Loop = Loop(sweep_values = Sweep_Value).each(self.dig)
+            else:
+                self.Loop = Loop(sweep_values = Sweep_Value).each(self.Loop)
+            
         else:
             for para in sequencer.sweep_loop2:
                 if len(sequencer.sweep_loop2[para]) == 0:
@@ -255,6 +295,9 @@ class Experiment:
         
         return True
     
+    def function(self, x):
+        return True
+
     def set_sweep(self,):
         
         for seq in range(len(self.sequencer)):
@@ -264,7 +307,11 @@ class Experiment:
         """
         loop function
         """
-        
+        if self.Loop is None:
+            Count = StandardParameter(name = 'Count', set_cmd = self.function)
+            Sweep_Count = Count[1:2:1]
+            self.Loop = Loop(sweep_values = Sweep_Count).each(self.dig)
+            
         return True
     
     def make_sequencers(self, **kw):
@@ -410,7 +457,7 @@ class Experiment:
     
     def add_compensation(self, idx_j = 0, idx_i = 0, seq_num = 0):
         unit_length = 0
-        for segment in self.sequence_cfg:
+        for segment in self.sequencer[seq_num].sequence_cfg:
             unit_length += len(segment) 
         amplitude = [0,0]
         
@@ -675,9 +722,29 @@ class Experiment:
 #        self.awg.run()
 #        self.awg2.run()
         self.pulsar.start()
+        
+        time.sleep(5)
+        
+        if self.Loop is not None:
+            self.data_set = self.Loop.run(location = self.data_location, loc_record = {'name': self.name, 'label': self.label}, io = self.data_IO,)
+            
+            self.awg.stop()
+            self.awg2.stop()
+            
+            self.vsg.status('Off')
+            self.vsg2.status('Off')
 
+        return self.data_set
+
+    def close(self,):
+        self.awg.stop()
+        self.awg2.stop()
+        time.sleep(0.5)
+        self.vsg.status('Off')
+        self.vsg2.status('Off')
+        self.awg.delete_all_waveforms_from_list()
+        self.awg2.delete_all_waveforms_from_list()
         return True
-
 
 
     def run_all(self, name):                    ## the idea is to make a shortcut to run all the experiment one time
@@ -701,6 +768,3 @@ class Experiment:
         return True
 
 
-
-
-        return self.sweep_matrix

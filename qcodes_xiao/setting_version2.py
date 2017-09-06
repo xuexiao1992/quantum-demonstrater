@@ -134,7 +134,8 @@ def make_experiment_cfg():
 
     qubits = [qubit_1, qubit_2]
 
-    experiment = Experiment(name = 'experiment_test', qubits = [qubit_1, qubit_2], awg = awg, awg2 = awg2, pulsar = pulsar, 
+    experiment = Experiment(name = 'experiment_test', label = 'Rabi_scan', qubits = [qubit_1, qubit_2], 
+                            awg = awg, awg2 = awg2, pulsar = pulsar, 
                              vsg = vsg, vsg2 = vsg2, digitizer = digitizer)
     global sweep_loop1
     
@@ -514,7 +515,7 @@ experiment.run_experiment()
 
 
 #data_set = scan_outside_awg(name = experiment_name, label = sweep_type, set_parameter = vsg2.frequency, measured_parameter = dig, 
-#                            start=19.6650e9, end=19.68e9, step=1e6)
+#                            start=19.672e9, end=19.682e9, step=10e6)
 
 #data_set = scan_inside_awg(name = experiment.name, label = sweep_type)
 
