@@ -21,6 +21,10 @@ from qcodes.data.data_set import new_data, DataSet,load_data
 from qcodes.data.data_array import DataArray
 from qcodes.plots.pyqtgraph import QtPlot
 from qcodes.plots.qcmatplotlib import MatPlot
+
+import qcodes.instrument_drivers.Spectrum.M4i as M4i
+from qcodes.instrument_drivers.Spectrum import pyspcm
+import time
 try:
     from setting_version2 import sweep_loop1
 except ImportError:
@@ -123,14 +127,14 @@ sample_rate = int(np.floor(61035/1))
 pretrigger = 16
 readout_time = 1e-3
 
-loop_num = 31
+#loop_num = 5
 #loop_num = len(sweep_loop1['para1']) if 'para1' in sweep_loop1 else 1
 qubit_num = 1
 repetition = 200
 
 seg_size = int(((readout_time*sample_rate+pretrigger) // 16 + 1) * 16)
 #%%
-def convert_to_ordered_data(data_set, name = 'frequency'):
+def convert_to_ordered_data(data_set, loop_num, name = 'frequency',):
     
     for parameter in data_set.arrays:
         data_array = data_set.arrays[parameter]
@@ -170,8 +174,8 @@ def convert_to_ordered_data(data_set, name = 'frequency'):
 
 #%%
 
-def convert_to_01_state(data_set, threshold, name = 'frequency'):
-    data_set = convert_to_ordered_data(data_set, name)
+def convert_to_01_state(data_set, threshold, loop_num, name = 'frequency',):
+    data_set = convert_to_ordered_data(data_set, loop_num, name)
     for parameter in data_set.arrays:
         data_array = data_set.arrays[parameter]
         dimension_1 = data_array.shape[0]
@@ -205,9 +209,9 @@ def convert_to_01_state(data_set, threshold, name = 'frequency'):
     
     return data_set_new
 #%%
-def convert_to_probability(data_set, threshold, name = 'frequency'):
+def convert_to_probability(data_set, threshold, loop_num, name = 'frequency'):
     
-    data_set = convert_to_01_state(data_set, threshold, name)
+    data_set = convert_to_01_state(data_set, threshold, loop_num, name)
     
     for parameter in data_set.arrays:
         data_array = data_set.arrays[parameter]
@@ -267,3 +271,92 @@ def data_set_plot(data_set, data_location):
     y = P_data
 
     plt.plot(x, y) 
+
+#%%
+#import stationF006
+#digitizer = station.digitizer
+class digitizer_param(ArrayParameter):
+    
+    def __init__(self, name, mV_range, memsize, seg_size, posttrigger_size,
+                 digitizer, label=None, unit=None, instrument=None, **kwargs):
+        
+#        global digitizer
+        self.digitizer = digitizer
+        channel_amount = bin(self.digitizer.enable_channels()).count('1')
+       
+        super().__init__(name=name, shape=(channel_amount*memsize,), instrument=instrument, **kwargs)
+        
+        self.mV_range = mV_range
+        self.memsize = memsize
+        self.seg_size =seg_size
+        self.posttrigger_size = posttrigger_size
+        
+    def get(self):
+#        res = digitizer.single_trigger_acquisition(self.mV_range,self.memsize,self.posttrigger_size)
+        time.sleep(0.2)
+        res = self.digitizer.multiple_trigger_acquisition(self.mV_range,self.memsize,self.seg_size,self.posttrigger_size)
+        
+#        res = multiple_trigger_acquisition(digitizer, self.mV_range,self.memsize,self.seg_size,self.posttrigger_size)
+#        res = digitizer.single_software_trigger_acquisition(self.mV_range,self.memsize,self.posttrigger_size)
+        print(res.shape)
+        return res
+        
+    def __getitem__(self, keys):
+        """
+        Slice a Parameter to get a SweepValues object
+        to iterate over during a sweep
+        """
+        return SweepFixedValues(self, keys)
+
+#%%
+def set_digitizer(digitizer, sweep_num):
+    pretrigger=16
+    mV_range=1000
+    
+    sample_rate = int(np.floor(61035/1))
+    
+    digitizer.sample_rate(sample_rate)
+    
+    sample_rate = digitizer.sample_rate()
+    
+    readout_time = 1e-3
+    
+    qubit_num = 1
+    
+    seg_size = ((readout_time*sample_rate+pretrigger) // 16 + 1) * 16
+    
+    sweep_num = sweep_num#len(sweep_loop1['para1']) if 'para1' in sweep_loop1 else 1
+    import data_set_plot
+    data_set_plot.loop_num = sweep_num
+    
+    repetition = 200
+    
+    memsize = int((repetition+1)*sweep_num*qubit_num*seg_size)
+    posttrigger_size = seg_size-pretrigger
+    
+    #digitizer.enable_channels(pyspcm.CHANNEL0 | pyspcm.CHANNEL3)
+    digitizer.clock_mode(pyspcm.SPC_CM_INTPLL)
+    #digitizer.clock_mode(pyspcm.SPC_CM_EXTREFCLOCK)
+    
+    digitizer.enable_channels(pyspcm.CHANNEL1 | pyspcm.CHANNEL2)
+    
+#    digitizer.enable_channels(pyspcm.CHANNEL1)
+    digitizer.data_memory_size(memsize)
+    
+    digitizer.segment_size(seg_size)
+    
+    digitizer.posttrigger_memory_size(posttrigger_size)
+    
+    digitizer.timeout(60000)
+    
+    digitizer.set_channel_settings(1,1000, input_path = 0, termination = 0, coupling = 0, compensation = None)
+    
+    #trig_mode = pyspcm.SPC_TMASK_SOFTWARE
+    #trig_mode = pyspcm.SPC_TM_POS
+    trig_mode = pyspcm.SPC_TM_POS | pyspcm.SPC_TM_REARM
+    
+    digitizer.set_ext0_OR_trigger_settings(trig_mode = trig_mode, termination = 0, coupling = 0, level0 = 800, level1 = 900)
+    
+    dig = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size, digitizer = digitizer)
+
+    return digitizer, dig

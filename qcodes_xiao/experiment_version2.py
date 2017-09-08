@@ -30,6 +30,11 @@ from copy import deepcopy
 from manipulation_library import Ramsey
 from qcodes.instrument.parameter import ArrayParameter, StandardParameter
 import time
+from qcodes.plots.qcmatplotlib import MatPlot
+from qcodes.plots.pyqtgraph import QtPlot
+
+from data_set_plot import convert_to_ordered_data, convert_to_01_state, convert_to_probability, set_digitizer
+
 #%%
 class Experiment:
 
@@ -78,11 +83,16 @@ class Experiment:
         self.Loop = None
         self.X_parameter = None
         self.Y_parameter = None
+        self.X_parameter_type = None
+        self.Y_parameter_type = None
         
         self.formatter = HDF5FormatMetadata()
         self.data_IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents')
         self.data_location = time.strftime("%Y-%m-%d/%H-%M-%S") + name + label
         self.data_set = None
+        self.threshold = 0.025
+        self.probability_data = new_data(location = self.data_location+'_averaged_probability', io = self.data_IO)
+        self.plot = QtPlot()
 
 
         self.manip_elem = []
@@ -254,11 +264,20 @@ class Experiment:
         
         if type(parameter) is StandardParameter:
             
-            Sweep_Value = parameter[sweep_array[0]:sweep_array[-1]:(sweep_array[1]-sweep_array[0])]
+            self.digitizer, self.dig = set_digitizer(self.digitizer, 1)
+            
+            step = (sweep_array[1]-sweep_array[0])
+            
+            Sweep_Value = parameter[sweep_array[0]:sweep_array[-1]+step:step]
     
-            self.Loop = Loop(sweep_values = Sweep_Value).each(self.dig)
+            self.Loop = Loop(sweep_values = Sweep_Value, delay = 5).each(self.dig)
+            
+            self.X_parameter_type = 'Out_Sequence'
             
         elif type(parameter) is str:
+            
+            self.digitizer, self.dig = set_digitizer(self.digitizer, len(sweep_array))
+            
             i = len(sequencer.sweep_loop1)+1
             para = 'para'+str(i)
             loop = 'loop1_'+para
@@ -266,8 +285,11 @@ class Experiment:
             for seg in range(len(sequencer.sequence_cfg_type)):
                 if sequencer.sequence_cfg_type[seg].startswith('manip'):
                     sequencer.sequence_cfg[seg]['step1'].update({parameter: loop})
-            
-#        sequencer.set_sweep()
+                    
+            self.X_parameter_type = 'In_Sequence'
+        
+        self.dimension_1 = len(sweep_array)
+        self.sweep_type = '1D'
         
         return True
     
@@ -277,28 +299,34 @@ class Experiment:
         
         if type(parameter) is StandardParameter:
             
-            Sweep_Value = parameter[sweep_array[0]:sweep_array[-1]:(sweep_array[1]-sweep_array[0])]
+            step = (sweep_array[1]-sweep_array[0])
+            
+            Sweep_Value = parameter[sweep_array[0]:sweep_array[-1]+step:step]
             
             if self.Loop is None:
-                self.Loop = Loop(sweep_values = Sweep_Value).each(self.dig)
+                self.Loop = Loop(sweep_values = Sweep_Value, delay = 5).each(self.dig)
             else:
-                self.Loop = Loop(sweep_values = Sweep_Value).each(self.Loop)
+                self.Loop = Loop(sweep_values = Sweep_Value, delay = 5).each(self.Loop)
             
+            self.Y_parameter_type = 'Out_Sequence'
         else:
             for para in sequencer.sweep_loop2:
                 if len(sequencer.sweep_loop2[para]) == 0:
                     break
             parameter = 'loop2_'+para
             sequencer.sweep_loop2[para] = sweep_array
-            
-#        sequencer.set_sweep()
+
+            self.Y_parameter_type = 'In_Sequence'
+        
+        self.dimension_2 = len(sweep_array)
+        self.sweep_type = '2D'
         
         return True
     
     def function(self, x):
         return True
 
-    def set_sweep(self,):
+    def set_sweep(self, repetition = False, **kw):
         
         for seq in range(len(self.sequencer)):
             self.sequencer[seq].set_sweep()
@@ -307,11 +335,35 @@ class Experiment:
         """
         loop function
         """
-        if self.Loop is None:
+        if repetition is True:
+#        if self.Loop is None:
+            count = kw.pop('count', 1)
             Count = StandardParameter(name = 'Count', set_cmd = self.function)
-            Sweep_Count = Count[1:2:1]
+            Sweep_Count = Count[1:count+1:1]
             self.Loop = Loop(sweep_values = Sweep_Count).each(self.dig)
             
+        return True
+    
+    def live_plotting(self,):
+        loop_num = self.dimension_1 if self.X_parameter_type is 'In_Sequence' else 1
+        probability_dataset = convert_to_probability(self.data_set, self.threshold, loop_num)
+        for parameter in probability_dataset.arrays:
+            if parameter in self.probability_data.arrays:
+                self.probability_data.arrays[parameter].ndarray = probability_dataset.arrays[parameter].ndarray
+            else:
+                self.probability_data.arrays[parameter] = probability_dataset.arrays[parameter]
+            
+        self.plot.update()
+        
+        return self.probability_data
+    
+    def plot_average(self,):
+        
+        average_plot = QtPlot()
+        
+        averaged_data = self.probability_data
+        
+        average_plot.add(averaged_data.digitizer,figsize=(1200, 500))
         return True
     
     def make_sequencers(self, **kw):
@@ -726,7 +778,12 @@ class Experiment:
         time.sleep(5)
         
         if self.Loop is not None:
-            self.data_set = self.Loop.run(location = self.data_location, loc_record = {'name': self.name, 'label': self.label}, io = self.data_IO,)
+#            self.data_set = self.Loop.run(location = self.data_location, loc_record = {'name': self.name, 'label': self.label}, io = self.data_IO,)
+            self.data_set = self.Loop.get_data_set(location = self.data_location, loc_record = {'name': self.name, 'label': self.label}, io = self.data_IO,)
+            self.live_plotting()
+#            self.plot = QtPlot()
+            self.plot.add(self.probability_data.digitizer,figsize=(1200, 500))
+            self.Loop.with_bg_task(task = self.live_plotting, bg_final_task = self.plot.save, min_delay = 3).run()
             
             self.awg.stop()
             self.awg2.stop()

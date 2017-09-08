@@ -156,7 +156,7 @@ def set_5014pulsar(awg, awg2):
                               delay=0, active=True, AWG = awg if i<4 else awg2)
     return pulsar
 #%%
-def set_digitizer(digitizer,):
+def set_digitizer(digitizer, sweep_num):
     pretrigger=16
     mV_range=1000
     
@@ -172,7 +172,7 @@ def set_digitizer(digitizer,):
     
     seg_size = ((readout_time*sample_rate+pretrigger) // 16 + 1) * 16
     
-    sweep_num = 31#len(sweep_loop1['para1']) if 'para1' in sweep_loop1 else 1
+    sweep_num = sweep_num#len(sweep_loop1['para1']) if 'para1' in sweep_loop1 else 1
     import data_set_plot
     data_set_plot.loop_num = sweep_num
     
@@ -195,8 +195,6 @@ def set_digitizer(digitizer,):
     digitizer.posttrigger_memory_size(posttrigger_size)
     
     digitizer.timeout(60000)
-    
-    
     
     digitizer.set_channel_settings(1,1000, input_path = 0, termination = 0, coupling = 0, compensation = None)
     
@@ -337,12 +335,12 @@ awg = experiment.awg
 awg2 = experiment.awg2
 vsg = experiment.vsg
 vsg2 = experiment.vsg2    
-digitizer, dig = set_digitizer(experiment.digitizer)
+#digitizer, dig = set_digitizer(experiment.digitizer)
     
 #experiment.seq_cfg = [sequence_cfg, ]
 #experiment.seq_cfg_type = [sequence_cfg_type,]
-
-experiment.dig = dig 
+vsg.frequency(18.4e9)
+vsg2.frequency(19.672e9)
 
 manip2_elem = Ramsey(name = 'Ramsey', pulsar = pulsar)
 manip3_elem = Finding_Resonance(name = 'Finding_resonance', pulsar = pulsar)
@@ -351,18 +349,20 @@ manip3_elem = Finding_Resonance(name = 'Finding_resonance', pulsar = pulsar)
 rabi = Rabi(name = 'Rabi', pulsar = pulsar)
 duration_time = 0
 
+sweep_num = 31
+#digitizer, dig = set_digitizer(experiment.digitizer, sweep_num)
+#experiment.dig = dig 
+
 experiment.add_measurement('2D_Rabi_Scan', ['Rabi'], [rabi], sequence_cfg, sequence_cfg_type)
-#experiment.add_X_parameter('2D_Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 1e-6, 31))
-experiment.add_X_parameter(measurement = '2D_Rabi_Scan', parameter = vsg2.frequency, sweep_array = sweep_array(19.66e9, 19.68e9, 10))
-
-experiment.set_sweep()
+experiment.add_X_parameter('2D_Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 1e-6, 31))
+experiment.add_Y_parameter(measurement = '2D_Rabi_Scan', parameter = vsg2.frequency, sweep_array = sweep_array(19.672e9, 19.680e9, 17))
 
 
+experiment.set_sweep(repetition = False, count = 1)
 
 experiment.generate_1D_sequence()
 
-vsg.frequency(18.4e9)
-vsg2.frequency(19.672e9)
+
 #experiment.load_sequence()
 time.sleep(1)
 #data_set = experiment.run_experiment()

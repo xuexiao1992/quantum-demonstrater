@@ -9,13 +9,13 @@ import numpy as np
 import qcodes as qc
 from qcodes.loops import Loop, ActiveLoop
 import numpy as np
-
+from qcodes.data.data_set import new_data, DataSet,load_data
 from qcodes.data.hdf5_format import HDF5Format, HDF5FormatMetadata
 from qcodes.data.io import DiskIO
 from qcodes.instrument.parameter import ManualParameter, StandardParameter, ArrayParameter
 from qcodes.utils.validators import Numbers
 from functools import partial
-
+#%%
 aa = 5
 aaa=4
 def Pfunction(a):
@@ -68,8 +68,13 @@ data = LP.get_data_set(location=None, loc_record = {'name':'T1', 'label':'Vread_
 #data = LP.get_data_set(data_manager=False, location=None, loc_record = {'name':'T1', 'label':'T_load_sweep'})
 print('loop.data_set: %s' % LP.data_set)
 
+DS = new_data(location = 'aaaaaaaaaa',io = NewIO)
 
-
+def live_plotting():
+    for para in data.arrays:
+        DS.arrays[para] = data.arrays[para]
+    return DS
+DS = live_plotting()
 #def add_T1exp_metadata(data):
 #        
 #        data.metadata['Parameters'] = {'Nrep': 10, 't_empty': 2, 't_load': 2.4, 't_read': 2.2}
@@ -79,7 +84,7 @@ print('loop.data_set: %s' % LP.data_set)
 #add_T1exp_metadata(data)
 
 #datatata = LP.run(background=False)
-
+#%%
 
 
 
@@ -107,7 +112,60 @@ b = {'ele_{}'.format(i): i for i in a}
 #aa = np.array([1,2,3,4,5])
 #
 #bb = np.array([44,55,33,22,77])
+#%%
 
+from qcodes.instrument.parameter import ArrayParameter, StandardParameter
+from qcodes.instrument.sweep_values import SweepFixedValues
+from qcodes.loops import Loop, ActiveLoop
+from qcodes.data.hdf5_format import HDF5Format, HDF5FormatMetadata
+from qcodes.data.gnuplot_format import GNUPlotFormat
+from qcodes.data.io import DiskIO
+from qcodes.data.data_set import new_data, DataSet,load_data
+from qcodes.data.data_array import DataArray
+import matplotlib.pyplot as plt
+import matplotlib.widgets as widgets
+from qcodes.plots.qcmatplotlib import MatPlot
+from qcodes.plots.pyqtgraph import QtPlot
+from mpldatacursor import datacursor
+import numpy as np
+#%%
+
+NewIO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents')
+formatter = HDF5FormatMetadata()
+try_location = '2017-09-04/17-23-05Finding_ResonanceRabi_Sweep'
+
+DS = load_data(location = try_location, io = NewIO,)
+
+DS_P = convert_to_probability(DS, 0.025)
+
+DS_new = new_data(location = try_location, io = NewIO,)
+
+
+x_data = np.linspace(1,10,10)
+y_data = np.linspace(11,20,10)
+#z_data = np.linspace(101,201,101)
+
+Mplot = MatPlot(x_data,y_data)
+Qplot = QtPlot(x_data,y_data)
+
+Mplot = MatPlot()
+
+config = {
+        'x': np.linspace(1,20,20),
+        'y': np.linspace(11,30,20)
+        }
+#Mplot.traces[0]['config'] = config
+
+data = np.array([1,2,3])
+data1 = np.array([[1,2,33,5],[5,232,7,3],[1,2,3,4]])
+
+data_array1 = DataArray(preset_data = data, name = 'digitizer', is_setpoint = True)
+
+data_array2 = DataArray(preset_data = data, name = 'digitizer2')
+data_set = new_data(arrays=arrays3, location=try_location, loc_record = {'name':'T1', 'label':'Vread_sweep'}, io = NewIO,)
+
+#Mplot.add_updaters(updater = , plot_config = )
+#%%
 
 #
 #def test(x,y,z):

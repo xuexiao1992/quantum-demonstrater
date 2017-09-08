@@ -509,7 +509,7 @@ vsg.frequency(18.4e9)
 vsg2.frequency(19.672e9)
 #experiment.load_sequence()
 time.sleep(1)
-experiment.run_experiment()
+#experiment.run_experiment()
 #time.sleep(1)
 #pulsar.start()
 

@@ -128,13 +128,6 @@ class Rabi(Manipulation):
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = None
-        self.parameter1 = kw.pop('parameter1', 0)
-        self.parameter2 = kw.pop('parameter2', 0)
-        self.parameter = {
-                'duration_time': 0,
-                'amplitude' : 0,
-                }
-#        self.duration_time
 
     def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
