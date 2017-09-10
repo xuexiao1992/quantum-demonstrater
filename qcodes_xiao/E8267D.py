@@ -43,7 +43,7 @@ class E8267D(VisaInstrument):
                            set_cmd='POW:AMPL' + ' {:.4f}',
                            get_parser=float,
                            set_parser=float,
-                           vals=vals.Numbers(min_power, 16))
+                           vals=vals.Numbers(min_power, 20))
         self.add_parameter('status',
                            get_cmd=':OUTP?',
                            set_cmd='OUTP {}',

@@ -117,7 +117,7 @@ formatter = HDF5FormatMetadata()
 
 test_location = '2017-08-28/14-38-39_finding_resonance_Freq_sweep'
 new1_location = '2017-08-28/newnewnew'
-new_location = '2017-09-04/11-08-54_finding_resonance_Freq_sweep'
+new_location = '2017-09-04/17-23-05Finding_ResonanceRabi_Sweep'
 #data_set_2 = DataSet(location = test_location, io = NewIO,)
 #data_set_2.read()
 
@@ -135,7 +135,7 @@ repetition = 200
 seg_size = int(((readout_time*sample_rate+pretrigger) // 16 + 1) * 16)
 #%%
 def convert_to_ordered_data(data_set, loop_num, name = 'frequency',):
-    
+#    Dimension = '1D'
     for parameter in data_set.arrays:
         data_array = data_set.arrays[parameter]
         dimension_1 = data_array.shape[0]
@@ -143,6 +143,9 @@ def convert_to_ordered_data(data_set, loop_num, name = 'frequency',):
         if parameter.endswith('set'):
             if data_array.ndarray.ndim == 1:
                 data_array1 = DataArray(preset_data = data_array.ndarray, name = parameter, array_id = arrayid, is_setpoint = True)
+#            elif data_array.ndarray.ndim == 2:
+#                Dimension = '2D'
+                
         elif not parameter.endswith('set'):
             
             data_num = int(data_set.arrays[parameter].shape[1]/2/(repetition+1) * repetition)
@@ -167,7 +170,8 @@ def convert_to_ordered_data(data_set, loop_num, name = 'frequency',):
     
     data_set_new = DataSet(location = new_location, io = NewIO, formatter = formatter)
     data_set_new.add_array(data_array1)
-    data_set_new.add_array(data_array2)
+    if loop_num != 1:
+        data_set_new.add_array(data_array2)
     data_set_new.add_array(data_array3)
 #    data_set_new.add_array(data_array4)
     return data_set_new
@@ -204,7 +208,9 @@ def convert_to_01_state(data_set, threshold, loop_num, name = 'frequency',):
             data_array3 = DataArray(preset_data = data, name = parameter, array_id = arrayid, is_setpoint = False)            
     data_set_new = DataSet(location = new_location, io = NewIO, formatter = formatter)
     data_set_new.add_array(data_array1)
-    data_set_new.add_array(data_array2)
+    if loop_num > 1:
+        data_set_new.add_array(data_array2)
+    
     data_set_new.add_array(data_array3)
     
     return data_set_new
@@ -242,11 +248,15 @@ def convert_to_probability(data_set, threshold, loop_num, name = 'frequency'):
                     data[k][j] = probability
                 
             data_array2 = DataArray(preset_data = setpara, name = name, array_id = name+'_set', is_setpoint = True)
+#            if loop_num == 1:
+#                data = data.T[0]
             data_array3 = DataArray(preset_data = data, name = parameter, array_id = arrayid, is_setpoint = False)
           
     data_set_new = DataSet(location = new_location, io = NewIO, formatter = formatter)
     data_set_new.add_array(data_array1)
-    data_set_new.add_array(data_array2)
+    if loop_num > 1:
+        data_set_new.add_array(data_array2)
+    
     data_set_new.add_array(data_array3)
     
     return data_set_new

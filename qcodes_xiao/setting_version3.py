@@ -307,9 +307,6 @@ qubit_2 = station.qubit_2
 
 qubits = [qubit_1, qubit_2]
 
-experiment = Experiment(name = 'experiment_test', label = 'Rabi_scan', qubits = [qubit_1, qubit_2], 
-                        awg = awg, awg2 = awg2, pulsar = pulsar, 
-                        vsg = vsg, vsg2 = vsg2, digitizer = digitizer)
     
 init_cfg = {
         'step1' : set_step(time = 1.5e-3, qubits = qubits, voltages = [30*0.5*0.004, 30*0.5*-0.001]),
@@ -329,6 +326,12 @@ read_cfg = {
 sequence_cfg = [init_cfg, manip_cfg, read_cfg, ]         ## the NAME here in this list is not important , only the order matters
 sequence_cfg_type = ['init', 'manip','read',]
 
+#%%
+
+
+experiment = Experiment(name = 'experiment_test', label = 'Rabi_scan', qubits = [qubit_1, qubit_2], 
+                        awg = awg, awg2 = awg2, pulsar = pulsar, 
+                        vsg = vsg, vsg2 = vsg2, digitizer = digitizer)
 
 pulsar = experiment.pulsar
 awg = experiment.awg
@@ -349,13 +352,14 @@ manip3_elem = Finding_Resonance(name = 'Finding_resonance', pulsar = pulsar)
 rabi = Rabi(name = 'Rabi', pulsar = pulsar)
 duration_time = 0
 
-sweep_num = 31
+#sweep_num = 31
 #digitizer, dig = set_digitizer(experiment.digitizer, sweep_num)
 #experiment.dig = dig 
 
 experiment.add_measurement('2D_Rabi_Scan', ['Rabi'], [rabi], sequence_cfg, sequence_cfg_type)
-experiment.add_X_parameter('2D_Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 1e-6, 31))
-experiment.add_Y_parameter(measurement = '2D_Rabi_Scan', parameter = vsg2.frequency, sweep_array = sweep_array(19.672e9, 19.680e9, 17))
+#experiment.add_X_parameter('2D_Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 1e-6, 51))
+#experiment.add_Y_parameter(measurement = '2D_Rabi_Scan', parameter = vsg2.frequency, sweep_array = sweep_array(19.672e9, 19.680e9, 17))
+experiment.add_X_parameter(measurement = '2D_Rabi_Scan', parameter = vsg2.power, sweep_array = sweep_array(16, 18, 11))
 
 
 experiment.set_sweep(repetition = False, count = 1)
@@ -366,5 +370,4 @@ experiment.generate_1D_sequence()
 #experiment.load_sequence()
 time.sleep(1)
 #data_set = experiment.run_experiment()
-
 

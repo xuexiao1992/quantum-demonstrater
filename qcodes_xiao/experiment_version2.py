@@ -336,8 +336,8 @@ class Experiment:
         loop function
         """
         if repetition is True:
-#        if self.Loop is None:
             count = kw.pop('count', 1)
+#        if self.Loop is None:
             Count = StandardParameter(name = 'Count', set_cmd = self.function)
             Sweep_Count = Count[1:count+1:1]
             self.Loop = Loop(sweep_values = Sweep_Count).each(self.dig)
@@ -361,7 +361,21 @@ class Experiment:
         
         average_plot = QtPlot()
         
-        averaged_data = self.probability_data
+        averaged_data = new_data(location = self.data_location+'_averaged_data', io = self.data_IO)
+        
+        i = 0
+        data_array = []
+        
+        for parameter in self.probability_data.arrays:
+            if len(self.probability_data.arrays[parameter].ndarray.shape) == 2:
+                data = deepcopy(self.probability_data.arrays[parameter].ndarray)
+                data = np.average(data, axis = 0)
+                is_setpoint = self.probability_data.arrays[parameter].is_setpoint
+                name = self.probability_data.arrays[parameter].name
+                array_id = self.probability_data.arrays[parameter].array_id
+                data_array.append(DataArray(preset_data = data, name = name, array_id = array_id, is_setpoint = is_setpoint))
+                averaged_data.add_array(data_array[i])
+                i+=1
         
         average_plot.add(averaged_data.digitizer,figsize=(1200, 500))
         return True
