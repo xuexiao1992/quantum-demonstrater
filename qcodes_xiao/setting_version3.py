@@ -14,7 +14,7 @@ from data_set_plot import convert_to_ordered_data, convert_to_01_state, convert_
 
 import stationF006
 from manipulation import Manipulation
-from manipulation_library import Ramsey, Finding_Resonance, Rabi
+from manipulation_library import Ramsey, Finding_Resonance, Rabi, CRot
 #from digitizer_setting import digitizer_param
 
 import qcodes.instrument_drivers.Spectrum.M4i as M4i
@@ -30,6 +30,8 @@ from qcodes.data.data_array import DataArray
 import matplotlib.pyplot as plt
 import matplotlib.widgets as widgets
 from qcodes.plots.qcmatplotlib import MatPlot
+from qcodes.plots.pyqtgraph import QtPlot
+
 from mpldatacursor import datacursor
 import sys
 sys.path.append('C:\\Users\\LocalAdmin\\Documents\\GitHub\\PycQED_py3\\pycqed\\measurement\\waveform_control')
@@ -156,7 +158,7 @@ def set_5014pulsar(awg, awg2):
                               delay=0, active=True, AWG = awg if i<4 else awg2)
     return pulsar
 #%%
-def set_digitizer(digitizer, sweep_num):
+def set_digitizer(digitizer, sweep_num, qubit_num = 1):
     pretrigger=16
     mV_range=1000
     
@@ -168,7 +170,7 @@ def set_digitizer(digitizer, sweep_num):
     
     readout_time = 1e-3
     
-    qubit_num = 1
+    qubit_num = qubit_num
     
     seg_size = ((readout_time*sample_rate+pretrigger) // 16 + 1) * 16
     
@@ -320,11 +322,20 @@ manip_cfg = {
         }
 
 read_cfg = {
+        'step1' : set_step(time = 2e-3, qubits = qubits, voltages = [30*0.5*0, 30*0.5*0]),
+        }
+#init_cfg = {
+#        'step1' : set_step(time = 1.5e-3, qubits = qubits, voltages = [30*0.5*0.004, 30*0.5*-0.001]),
+#        }
+manip2_cfg = {
+        'step1' : set_manip(time = 5e-6, qubits = qubits, voltages = [30*0.5*-0.004,30*0.5*0.016],)
+        }
+read2_cfg = {
         'step1' : set_step(time = 1e-3, qubits = qubits, voltages = [30*0.5*0, 30*0.5*0]),
         }
-    
-sequence_cfg = [init_cfg, manip_cfg, read_cfg, ]         ## the NAME here in this list is not important , only the order matters
-sequence_cfg_type = ['init', 'manip','read',]
+
+sequence_cfg = [init_cfg, manip_cfg, read_cfg,]         ## the NAME here in this list is not important , only the order matters
+sequence_cfg_type = ['init', 'manip','read', ]
 
 #%%
 
@@ -333,6 +344,7 @@ experiment = Experiment(name = 'experiment_test', label = 'Rabi_scan', qubits = 
                         awg = awg, awg2 = awg2, pulsar = pulsar, 
                         vsg = vsg, vsg2 = vsg2, digitizer = digitizer)
 
+print('experiment initialized')
 pulsar = experiment.pulsar
 awg = experiment.awg
 awg2 = experiment.awg2
@@ -343,29 +355,35 @@ vsg2 = experiment.vsg2
 #experiment.seq_cfg = [sequence_cfg, ]
 #experiment.seq_cfg_type = [sequence_cfg_type,]
 vsg.frequency(18.4e9)
-vsg2.frequency(19.672e9)
+vsg2.frequency(19.676e9)
 
 manip2_elem = Ramsey(name = 'Ramsey', pulsar = pulsar)
 manip3_elem = Finding_Resonance(name = 'Finding_resonance', pulsar = pulsar)
 
 
 rabi = Rabi(name = 'Rabi', pulsar = pulsar)
+crot = CRot(name = 'CRot', pulsar = pulsar)
 duration_time = 0
+
 
 #sweep_num = 31
 #digitizer, dig = set_digitizer(experiment.digitizer, sweep_num)
 #experiment.dig = dig 
 
+experiment.qubit_number = 1
+
 experiment.add_measurement('2D_Rabi_Scan', ['Rabi'], [rabi], sequence_cfg, sequence_cfg_type)
-#experiment.add_X_parameter('2D_Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 1e-6, 51))
-#experiment.add_Y_parameter(measurement = '2D_Rabi_Scan', parameter = vsg2.frequency, sweep_array = sweep_array(19.672e9, 19.680e9, 17))
-experiment.add_X_parameter(measurement = '2D_Rabi_Scan', parameter = vsg2.power, sweep_array = sweep_array(16, 18, 11))
+#experiment.add_X_parameter('2D_Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 1e-6, 11), element = 'Rabi')
+#experiment.add_X_parameter('2D_Rabi_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.05e9, 0.05e9, 11), element = 'CRot')
+#experiment.add_X_parameter(measurement = '2D_Rabi_Scan', parameter = vsg2.frequency, sweep_array = sweep_array(19.666e9, 19.680e9, 15))
+experiment.add_X_parameter(measurement = '2D_Rabi_Scan', parameter = vsg2.power, sweep_array = sweep_array(1, 1.8, 17))
+print('sweep parameter set')
 
+experiment.set_sweep(repetition = True, plot_average = False, count = 10)
 
-experiment.set_sweep(repetition = False, count = 1)
-
+print('loading sequence')
 experiment.generate_1D_sequence()
-
+print('sequence loaded')
 
 #experiment.load_sequence()
 time.sleep(1)

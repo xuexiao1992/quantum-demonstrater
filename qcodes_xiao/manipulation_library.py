@@ -122,7 +122,6 @@ class Rabi(Manipulation):
 
         super().__init__(name, pulsar, **kw)
         self.refphase = {}
-        self.waiting_time = kw.pop('waiting_time', 0)
         self.qubits = kw.pop('qubits', None)
         if self.qubits is not None:
             self.qubits_name = [qubit.name for qubit in self.qubits]
@@ -136,9 +135,6 @@ class Rabi(Manipulation):
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = kw.pop('pulsar', None)
-        self.waiting_time = kw.pop('waiting_time', self.waiting_time)
-        self.parameter1 = kw.pop('parameter1', 0)
-        self.parameter2 = kw.pop('parameter2', 0)
         return self
 
     def make_circuit(self, qubit = 2, **kw):
@@ -147,26 +143,25 @@ class Rabi(Manipulation):
         
         qubit = self.qubits[int(qubit_num-1)]
         
-        length = kw.pop('duration_time', qubit.Pi_pulse_length)
-        amplitude = kw.pop('amplitude', 1)
+        amplitude = kw.get('amplitude', 1)
+        length = kw.get('duration_time', qubit.Pi_pulse_length)
+        print('length', length)
 
         self.add_single_qubit_gate(name='Rabi_Oscillation', qubit = self.qubits[1], amplitude = amplitude, length = length)
 
         return self
 
-class CRot_Readout(Manipulation):
+class CRot(Manipulation):
 
     def __init__(self, name, pulsar, **kw):
 
-        super().__init__(name, pulsar)
-        self.waiting_time = kw.pop('waiting_time', 0)
+        super().__init__(name, pulsar, **kw)
+        self.refphase = {}
         self.qubits = kw.pop('qubits', None)
         if self.qubits is not None:
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
-        self.parameter1 = kw.pop('parameter1', 0)
-        self.parameter2 = kw.pop('parameter2', 0)
-
+        self.pulsar = None
     def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
         self.qubits = kw.pop('qubits', None)
@@ -174,18 +169,22 @@ class CRot_Readout(Manipulation):
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = kw.pop('pulsar', None)
-
-        self.parameter1 = kw.pop('parameter1', 0)
-        self.parameter2 = kw.pop('parameter2', 0)
-
         return self
 
-    def make_circuit(self, waiting_time = 0):
+    def make_circuit(self, qubit = 2, **kw):
+        qubit_num = qubit
+        
+        qubit = self.qubits[int(qubit_num-1)]
+        length = kw.get('duration_time', qubit.Pi_pulse_length)
+        print('length', length)
+        amplitude = kw.get('amplitude', 1)
+        frequency_shift = kw.pop('frequency_shift', 0)
+        print('frequency shift', frequency_shift)
 
-        self.add_single_qubit_gate(name='Rabi_Oscillation', qubit = self.qubits[0], amplitude = self.parameter1, length = self.parameter2)
+        self.add_single_qubit_gate(name='Rabi_Oscillation', qubit = self.qubits[1], amplitude = amplitude, 
+                                   length = qubit.Pi_pulse_length, frequency_shift = frequency_shift)
 
         return self
-
 
 class Grover(Manipulation):
 

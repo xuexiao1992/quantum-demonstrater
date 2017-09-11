@@ -57,7 +57,7 @@ class Experiment:
         self.channel_VP = [qubit.plunger_gate['channel_VP'] for qubit in qubits]
         self.channel_PM = [qubit.microwave_gate['channel_PM'] for qubit in qubits]
 
-        self.qubits_number = len(qubits)
+        self.qubit_number = len(qubits)
 
         self.sequence = Sequence(name = name)
 
@@ -85,15 +85,22 @@ class Experiment:
         self.Y_parameter = None
         self.X_parameter_type = None
         self.Y_parameter_type = None
+        self.X_sweep_array = None
+        self.Y_sweep_array = None
         
         self.formatter = HDF5FormatMetadata()
         self.data_IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents')
         self.data_location = time.strftime("%Y-%m-%d/%H-%M-%S") + name + label
         self.data_set = None
         self.threshold = 0.025
-        self.probability_data = new_data(location = self.data_location+'_averaged_probability', io = self.data_IO)
+        self.probability_data = new_data(location = self.data_location+'_averaged_probability', io = self.data_IO, formatter = self.formatter)
         self.plot = QtPlot()
-
+        
+        self.average_plot = QtPlot()
+        
+        self.averaged_data = new_data(location = self.data_location+'_averaged_data', io = self.data_IO, formatter = self.formatter)
+        
+        self.plot_average = False
 
         self.manip_elem = []
         self.manip2_elem = None
@@ -258,9 +265,13 @@ class Experiment:
         
         return self
     
-    def add_X_parameter(self, measurement, parameter, sweep_array):
+    def add_X_parameter(self, measurement, parameter, sweep_array, **kw):
         
         sequencer = self.find_sequencer(measurement)
+        
+        self.X_sweep_array = sweep_array
+        
+        element = kw.pop('element', None)
         
         if type(parameter) is StandardParameter:
             
@@ -272,6 +283,7 @@ class Experiment:
     
             self.Loop = Loop(sweep_values = Sweep_Value, delay = 5).each(self.dig)
             
+            self.X_parameter = parameter.full_name
             self.X_parameter_type = 'Out_Sequence'
             
         elif type(parameter) is str:
@@ -284,8 +296,11 @@ class Experiment:
             sequencer.sweep_loop1[para] = sweep_array
             for seg in range(len(sequencer.sequence_cfg_type)):
                 if sequencer.sequence_cfg_type[seg].startswith('manip'):
-                    sequencer.sequence_cfg[seg]['step1'].update({parameter: loop})
-                    
+                    if sequencer.sequence_cfg[seg]['step1']['manip_elem'] == element:
+                        sequencer.sequence_cfg[seg]['step1'].update({parameter: loop})
+#                    break
+            
+            self.X_parameter = parameter
             self.X_parameter_type = 'In_Sequence'
         
         self.dimension_1 = len(sweep_array)
@@ -297,6 +312,8 @@ class Experiment:
         
         sequencer = self.find_sequencer(measurement)
         
+        self.Y_sweep_array = sweep_array
+        
         if type(parameter) is StandardParameter:
             
             step = (sweep_array[1]-sweep_array[0])
@@ -306,8 +323,10 @@ class Experiment:
             if self.Loop is None:
                 self.Loop = Loop(sweep_values = Sweep_Value, delay = 5).each(self.dig)
             else:
-                self.Loop = Loop(sweep_values = Sweep_Value, delay = 5).each(self.Loop)
+                LOOP = self.Loop
+                self.Loop = Loop(sweep_values = Sweep_Value, delay = 5).each(LOOP)
             
+            self.Y_parameter = parameter.full_name
             self.Y_parameter_type = 'Out_Sequence'
         else:
             for para in sequencer.sweep_loop2:
@@ -315,7 +334,8 @@ class Experiment:
                     break
             parameter = 'loop2_'+para
             sequencer.sweep_loop2[para] = sweep_array
-
+            
+            self.Y_parameter = parameter
             self.Y_parameter_type = 'In_Sequence'
         
         self.dimension_2 = len(sweep_array)
@@ -326,7 +346,9 @@ class Experiment:
     def function(self, x):
         return True
 
-    def set_sweep(self, repetition = False, **kw):
+    def set_sweep(self, repetition = False, plot_average = False, **kw):
+        
+        self.plot_average = plot_average
         
         for seq in range(len(self.sequencer)):
             self.sequencer[seq].set_sweep()
@@ -340,13 +362,17 @@ class Experiment:
 #        if self.Loop is None:
             Count = StandardParameter(name = 'Count', set_cmd = self.function)
             Sweep_Count = Count[1:count+1:1]
-            self.Loop = Loop(sweep_values = Sweep_Count).each(self.dig)
+            if self.Loop is None:
+                self.Loop = Loop(sweep_values = Sweep_Count).each(self.dig)
+            else:
+                LOOP = self.Loop
+                self.Loop = Loop(sweep_values = Sweep_Count).each(LOOP)
             
         return True
     
     def live_plotting(self,):
         loop_num = self.dimension_1 if self.X_parameter_type is 'In_Sequence' else 1
-        probability_dataset = convert_to_probability(self.data_set, self.threshold, loop_num)
+        probability_dataset = convert_to_probability(self.data_set, self.threshold, loop_num, self.qubit_number, self.X_parameter, self.X_sweep_array)
         for parameter in probability_dataset.arrays:
             if parameter in self.probability_data.arrays:
                 self.probability_data.arrays[parameter].ndarray = probability_dataset.arrays[parameter].ndarray
@@ -355,13 +381,17 @@ class Experiment:
             
         self.plot.update()
         
+        if self.plot_average:
+            self.plot_average_data()
+            self.average_plot.update()
+        
         return self.probability_data
     
-    def plot_average(self,):
+    def plot_average_data(self,):
         
-        average_plot = QtPlot()
+#        average_plot = QtPlot()
         
-        averaged_data = new_data(location = self.data_location+'_averaged_data', io = self.data_IO)
+#        averaged_data = new_data(location = self.data_location+'_averaged_data', io = self.data_IO)
         
         i = 0
         data_array = []
@@ -373,11 +403,16 @@ class Experiment:
                 is_setpoint = self.probability_data.arrays[parameter].is_setpoint
                 name = self.probability_data.arrays[parameter].name
                 array_id = self.probability_data.arrays[parameter].array_id
+                
                 data_array.append(DataArray(preset_data = data, name = name, array_id = array_id, is_setpoint = is_setpoint))
-                averaged_data.add_array(data_array[i])
+                if parameter in self.averaged_data.arrays:
+                    self.averaged_data.arrays[parameter].ndarray = data_array[i].ndarray
+                else:
+                    self.averaged_data.arrays[parameter] = data_array[i]
+#                    self.averaged_data.add_array(data_array[i])
                 i+=1
         
-        average_plot.add(averaged_data.digitizer,figsize=(1200, 500))
+#        self.average_plot.add(self.averaged_data.digitizer,figsize=(1200, 500))
         return True
     
     def make_sequencers(self, **kw):
@@ -744,9 +779,9 @@ class Experiment:
         print('load sequence')
 #        elts = list(self.element.values())
         self.awg.delete_all_waveforms_from_list()
-        time.sleep(0.2)
+        time.sleep(0.1)
         self.awg2.delete_all_waveforms_from_list()
-        time.sleep(5)
+        time.sleep(1)
         self.set_trigger()
         time.sleep(1)
         elts = self.elts
@@ -796,7 +831,12 @@ class Experiment:
             self.data_set = self.Loop.get_data_set(location = self.data_location, loc_record = {'name': self.name, 'label': self.label}, io = self.data_IO,)
             self.live_plotting()
 #            self.plot = QtPlot()
-            self.plot.add(self.probability_data.digitizer,figsize=(1200, 500))
+            self.plot.add(self.probability_data.digitizerqubit_1,figsize=(1200, 500))
+            if self.plot_average:
+                if self.X_parameter_type is 'In_Sequence':
+                    self.average_plot.add(x=self.averaged_data.arrays[self.X_parameter+'_set'],y=self.averaged_data.digitizerqubit_1,figsize=(1200, 500))
+                else:
+                    self.average_plot.add(x=self.averaged_data.arrays[self.X_parameter+'_set'],y=self.averaged_data.digitizerqubit_1,figsize=(1200, 500))
             self.Loop.with_bg_task(task = self.live_plotting, bg_final_task = self.plot.save, min_delay = 3).run()
             
             self.awg.stop()

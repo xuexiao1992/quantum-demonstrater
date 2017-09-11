@@ -79,7 +79,7 @@ class Single_Qubit_Gate(Gate):
 
         ## voltage pulse is not used here
         voltage_pulse = SquarePulse(channel = self.channel_VP, name = '%s_voltage_pulse'%self.name,
-                                    amplitude = 0, length = pulse_length + waiting_time)
+                                    amplitude = 0, length = 0)#pulse_length + waiting_time)
 
         PM_pulse = SquarePulse(channel = self.channel_PM, name = '%s_PM_pulse'%self.name,
                                amplitude = 2, length = pulse_length+self.PM_before+self.PM_after)

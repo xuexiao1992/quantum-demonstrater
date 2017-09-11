@@ -143,35 +143,20 @@ def convert_to_ordered_data(data_set, loop_num, qubit_num, name = 'frequency', u
         if parameter.endswith('set'):
             if data_array.ndarray.ndim == 1:
                 set_array1 = DataArray(preset_data = data_array.ndarray, name = parameter, array_id = arrayid, is_setpoint = True)
-            elif data_array.ndarray.ndim == 2: 
-                if not parameter.startswith('index'):
-                    dimension_2 = data_array.shape[1]
-                    set_array2 = DataArray(preset_data = data_array.ndarray, name = parameter, array_id = arrayid, is_setpoint = True)
-                elif loop_num > 1:
-                    if sweep_array is None:
-                        dimension_2 = int(data_array.shape[-1]/2/(repetition+1)/seg_size)
-                        sweep_array = np.linspace(0,dimension_2-1,dimension_2)
-                    else:
-                        dimension_2 = len(sweep_array)
-                    data_array = np.ndarray(shape = (dimension_1, dimension_2))
-                    for k in range(dimension_1):
-                        data_array[k] = sweep_array
-                    set_array2 = DataArray(preset_data = data_array, name = name+'_set', array_id = name+'_set', is_setpoint = True)
-        
-        elif not parameter.endswith('set') and data_array.ndarray.ndim == 2:
+            elif data_array.ndarray.ndim == 2 and not parameter.startswith('index'):
+                set_array2 = DataArray(preset_data = data_array.ndarray, name = parameter, array_id = arrayid, is_setpoint = True)
+                
+        elif not parameter.endswith('set'):
             
-            dimension_2 = int(data_array.shape[-1]/2/(repetition+1)/seg_size)
-            
-            data_num = int(data_array.shape[-1]/2/(repetition+1) * repetition)
+            data_num = int(data_set.arrays[parameter].shape[1]/2/(repetition+1) * repetition)
             
             qubit_data_num = int(data_num/qubit_num)
             
             data = np.ndarray(shape = (dimension_1, data_num))
+            marker = np.ndarray(shape = (dimension_1, data_num))
+            setpara = np.ndarray(shape = (dimension_1, qubit_data_num))
             
             qubit_data = np.ndarray(shape = (qubit_num, dimension_1, qubit_data_num))
-            
-            qubit_data_reshape = np.ndarray(shape = (qubit_num, dimension_1, dimension_2, int(qubit_data_num/dimension_2)))
-            
             qubit_data_array = []
             for k in range(dimension_1):
                 raw_data = data_array[k][::2]
@@ -180,42 +165,33 @@ def convert_to_ordered_data(data_set, loop_num, qubit_num, name = 'frequency', u
                     if raw_marker[seg] > 0.1:           ##  a better threshold ???
                         break                
                 data[k] = raw_data[seg:data_num+seg]
-                print('seg',seg)
+                marker[k] = raw_marker[seg:data_num+seg]
+                if sweep_array is None:
+                    setpara[k] = np.linspace(0, data_num-1, qubit_data_num)
+                else:
+                    sa = np.vstack([np.repeat(sweep_array,int(seg_size),axis = 0)]*repetition)
+                    setpara[k] = sa.reshape(sa.size,)
             
                 if qubit_num > 1:
                     data_reshape = data[k].reshape(int(data_num/seg_size), seg_size)
                     for q in range(qubit_num):
                         qubit_data[q][k] = np.append(np.array([]), data_reshape[q::qubit_num])
-                        qubit_data_reshape[q][k] = qubit_data[q][k].reshape(dimension_2, int(qubit_data[q][k].size/dimension_2))
                 elif qubit_num == 1:
                     qubit_data[0][k] = data[k]
-                    qubit_data_reshape[0][k] = qubit_data[0][k].reshape(dimension_2, int(qubit_data[0][k].size/dimension_2))
                 
+            set_array3 = DataArray(preset_data = setpara, name = name, array_id = name+'_set', is_setpoint = True)
             for q in range(qubit_num):
-                qubit_data_array.append(DataArray(preset_data = qubit_data_reshape[q], name = parameter+'qubit_%d'%(q+1), 
-                                                  array_id = arrayid+'qubit_%d'%(q+1), is_setpoint = False))
-                
-        elif not parameter.endswith('set') and data_array.ndarray.ndim == 3:
-            qubit_data_array = []
-            raw_data_num = int(data_array.shape[-1]/(repetition+1)*repetition)
-            data_num = int(raw_data_num/2)
-            qubit_data_num = int(data_num/qubit_num)
-            qubit_data_reshape = np.ndarray(shape = (qubit_num, dimension_1, dimension_2, int(qubit_data_num)))
-            for q in range(qubit_num):
-                for k in range(dimension_1):
-                    for l in range(dimension_2):
-                        raw_data = data_array[k][l][::2]
-                        data = raw_data[:data_num]
-                        qubit_data_reshape[q][k][l] = data[q::qubit_num]
-                qubit_data_array.append(DataArray(preset_data = qubit_data_reshape[q], name = parameter+'qubit_%d'%(q+1), 
+                qubit_data_array.append(DataArray(preset_data = qubit_data[q], name = parameter+'qubit_%d'%(q+1), 
                                                   array_id = arrayid+'qubit_%d'%(q+1), is_setpoint = False))
     
     data_set_new = DataSet(location = new_location, io = NewIO, formatter = formatter)
     data_set_new.add_array(set_array1)
     data_set_new.add_array(set_array2)
+    if loop_num != 1:
+        data_set_new.add_array(set_array3)
     for q in range(qubit_num):
         data_set_new.add_array(qubit_data_array[q])
-
+#    data_set_new.add_array(data_array4)
     return data_set_new
 
 #%%
@@ -233,29 +209,31 @@ def convert_to_01_state(data_set, threshold, loop_num, qubit_num, name = 'freque
             if len(data_array.shape) == 1:
                 set_array1 = DataArray(preset_data = data_array.ndarray, name = parameter, array_id = arrayid, is_setpoint = True)
             elif len(data_array.shape) == 2 and not parameter.startswith('index'):
-                dimension_2 = data_array.shape[1]
                 set_array2 = DataArray(preset_data = data_array.ndarray, name = parameter, array_id = arrayid, is_setpoint = True)
 
         elif parameter[-3:] != 'set':
-            dimension_2 = data_array.shape[1]
-            seg_num = int(data_set.arrays[parameter].shape[-1]/seg_size)
-            data = np.ndarray(shape = (dimension_1, dimension_2, seg_num))
+            seg_num = int(data_set.arrays[parameter].shape[1]/seg_size)
+            data = np.ndarray(shape = (dimension_1, seg_num))
+            setpara = np.ndarray(shape = (dimension_1, seg_num))
             
             for k in range(dimension_1):
-                for l in range(dimension_2):
-                    for j in range(seg_num):
-                        for i in range(seg_size):
-                            if data_array.ndarray[k][l][j*seg_size+i] <= threshold:
-                                data[k][l][j] = 1
-                                break
-                            if i == seg_size-1:
-                                data[k][l][j] = 0
+                for j in range(seg_num):
+                    setpara[k][j] = j
+                    for i in range(seg_size):
+                        if data_array.ndarray[k][j*seg_size+i] <= threshold:
+                            data[k][j] = 1
+                            break
+                    if i == seg_size-1:
+                        data[k][j] = 0
             
+            set_array3 = DataArray(preset_data = setpara, name = name, array_id = name+'_set', is_setpoint = True)
             qubit_data_array.append(DataArray(preset_data = data, name = parameter, array_id = arrayid, is_setpoint = False))
             
     data_set_new = DataSet(location = new_location, io = NewIO, formatter = formatter)
     data_set_new.add_array(set_array1)
     data_set_new.add_array(set_array2)
+    if loop_num > 1:
+        data_set_new.add_array(set_array3)
     for q in range(qubit_num):
         data_set_new.add_array(qubit_data_array[q])
     
@@ -273,24 +251,40 @@ def convert_to_probability(data_set, threshold, loop_num, qubit_num = 1, name = 
             if len(data_array.shape) == 1:
                 set_array1 = DataArray(preset_data = data_array.ndarray, name = parameter, array_id = arrayid, is_setpoint = True)
             if len(data_array.shape) == 2 and not parameter.startswith('index'):
-                dimension_2 = data_array.shape[1]
                 set_array2 = DataArray(preset_data = data_array.ndarray, name = parameter, array_id = arrayid, is_setpoint = True)
     
         elif parameter[-3:] != 'set':
-            dimension_2 = data_array.shape[1]
+            seg_num = int(data_set.arrays[parameter].shape[1])
 
-            probability_data = np.ndarray(shape = (dimension_1, dimension_2))
+            data = np.ndarray(shape = (dimension_1, loop_num))
+            setpara = np.ndarray(shape = (dimension_1, loop_num))
             
             for k in range(dimension_1):
-                for l in range(dimension_2):
-                    probability_data[k][l] = np.average(data_array.ndarray[k][l])
-                    
+#                data_k = []
+#                setpara_k = []
+                state = np.ndarray(shape = (loop_num, int(seg_num/loop_num)))
+                for i in range(seg_num):
+                    loop = i%loop_num
+                    sweep = i//loop_num
+                    state[loop][sweep] = data_array.ndarray[k][i]
+                
+                for j in range(loop_num):
+                    setpara[k][j] = j
+                    probability = np.average(state[j])
+                    data[k][j] = probability
             
-            qubit_data_array.append(DataArray(preset_data = probability_data, name = parameter, array_id = arrayid, is_setpoint = False))
+                if loop_num > 1 and sweep_array is not None:
+                    setpara[k] = sweep_array
+            set_array3 = DataArray(preset_data = setpara, name = name, array_id = name+'_set', is_setpoint = True)
+#            if loop_num == 1:
+#                data = data.T[0]
+            qubit_data_array.append(DataArray(preset_data = data, name = parameter, array_id = arrayid, is_setpoint = False))
           
     data_set_new = DataSet(location = new_location, io = NewIO, formatter = formatter)
     data_set_new.add_array(set_array1)
     data_set_new.add_array(set_array2)
+    if loop_num > 1:
+        data_set_new.add_array(set_array3)
     for q in range(qubit_num):
         data_set_new.add_array(qubit_data_array[q])
     

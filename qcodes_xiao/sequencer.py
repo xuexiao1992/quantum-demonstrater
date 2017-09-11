@@ -290,15 +290,16 @@ class Sequencer:
         step = self.sequence_cfg[segment_num]['step%d'%s]           ## s is step number in one segment
         is_in_loop = []
         loop_num = []
+        """
         for k in range(self.qubits_number):
             m, n = self._is_in_loop(segment_num, 'step%d'%s,'voltage_%d'%(k+1))
             is_in_loop.append(m)
             loop_num.append(n)
-        
-        for parameter in ['time', 'waiting_time', 'duration_time', 'IQ_amplitude', 'parameter1', 'parameter2']:
+        """
+        for parameter in step:
 #            if parameter not in:
 #                continue
-            m, n = self._is_in_loop(segment_num, 'step%d'%s,parameter)
+            m, n = self._is_in_loop(segment_num, 'step%d'%s ,parameter)
             is_in_loop.append(m)
             loop_num.append(n)
         
@@ -357,8 +358,6 @@ class Sequencer:
                     specific_parameters.pop('voltage_1')
                     specific_parameters.pop('voltage_2')
                     
-                    waiting_time = step.get('waiting_time', None)
-                    
                     parameter1 = step.get('parameter1', None)
                     parameter2 = step.get('parameter2', None)
                     manip_elem = step.get('manip_elem', None)
@@ -408,8 +407,6 @@ class Sequencer:
 
            segment['step%d'%(s+1)], repetition['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)
            
-#           repetition['step%d'%(s+1)] = 1
-          
         return segment, repetition
     
     def make_all_segment_list(self,):
