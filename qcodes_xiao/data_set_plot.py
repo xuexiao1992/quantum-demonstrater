@@ -19,9 +19,16 @@ from qcodes.data.gnuplot_format import GNUPlotFormat
 from qcodes.data.io import DiskIO
 from qcodes.data.data_set import new_data, DataSet,load_data
 from qcodes.data.data_array import DataArray
+
 from qcodes.plots.pyqtgraph import QtPlot
 from qcodes.plots.qcmatplotlib import MatPlot
 
+from mpldatacursor import datacursor
+
+import pyqtgraph as pg
+from pyqtgraph.Qt import QtGui, QtCore
+from pyqtgraph.GraphicsScene.mouseEvents import MouseDragEvent, MouseClickEvent, HoverEvent
+from pyqtgraph.GraphicsScene.GraphicsScene import GraphicsScene
 import qcodes.instrument_drivers.Spectrum.M4i as M4i
 from qcodes.instrument_drivers.Spectrum import pyspcm
 import time
@@ -31,6 +38,56 @@ except ImportError:
     print('sweep_loop1 from setting is not imported')
 #%%
 
+def gaussian(A, B, x):
+  return A * np.exp(-(x/(2. * B))**2.)
+
+def mouseMoved(evt):
+  mousePoint = p.vb.mapSceneToView(evt[0])
+  label.setText("<span style='font-size: 14pt; color: white'> x = %0.2f, <span style='color: white'> y = %0.2f</span>" % (mousePoint.x(), mousePoint.y()))
+
+
+# Initial data frame
+x = np.linspace(-5., 5., 10000)
+y = gaussian(5., 0.2, x)
+
+
+# Generate layout
+win = pg.GraphicsWindow()
+label = pg.LabelItem(justify = "right")
+win.addItem(label)
+
+p = win.addPlot(row = 1, col = 0)
+
+plot = p.plot(x, y, pen = "y")
+
+proxy = pg.SignalProxy(p.scene().sigMouseMoved, rateLimit=60, slot=mouseMoved)
+
+# Update layout with new data
+#noise = np.random.normal(0, .2, len(y))
+#y_new = y + noise
+
+#plot.setData(x, y_new, pen = "y", clear = True)
+#p.enableAutoRange("xy", False)
+
+pg.QtGui.QApplication.processEvents()
+
+#%%
+def mouseMoved(evt):
+  mousePoint = p.vb.mapSceneToView(evt[0])
+  label.setText("<span style='font-size: 14pt; color: black'> x = %0.2f, <span style='color: black'> y = %0.2f</span>" % (mousePoint.x(), mousePoint.y()))
+
+
+label = pg.LabelItem(justify = "right")
+
+pt = QtPlot(remote = False)
+pt.add(x,y)
+pt.win.addItem(label)
+proxy = pg.SignalProxy(pt.subplots[0].scene().sigMouseMoved, rateLimit=60, slot=mouseMoved)
+pg.QtGui.QApplication.processEvents()
+
+#win.close()
+
+#%%
 class SnaptoCursor(object):
     def __init__(self, ax, x, y):
         self.ax = ax
