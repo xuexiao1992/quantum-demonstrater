@@ -273,7 +273,7 @@ class Experiment:
         
         element = kw.pop('element', None)
         
-        if type(parameter) is StandardParameter:
+        if type(parameter) is StandardParameter:#isinstance(obj, Tektronix_AWG5014)
             
             self.digitizer, self.dig = set_digitizer(self.digitizer, 1)
             
