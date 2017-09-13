@@ -12,7 +12,7 @@ import qcodes.instrument_drivers.tektronix.AWG5014 as AWG5014
 #import qcodes.instrument_drivers.QuTech.IVVI as IVVI
 import qcodes.instrument_drivers.tektronix.AWG5200 as AWG5200
 
-#import qcodes.instrument_drivers.Spectrum.M4i as M4i
+import qcodes.instrument_drivers.Spectrum.M4i as M4i
 from qubit import Qubit 
 #import users.boterjm.Drivers.QuTech.IVVI as IVVI
 #import users.boterjm.Drivers.Spectrum.M4i as M4i
@@ -141,12 +141,9 @@ def initialize(reinit=False, server_name=None):
 #    logging.info('LD400: load AWG driver')
 #    awg2 = AWG5014.Tektronix_AWG5014(name='awg2', address='TCPIP0::169.254.110.163::inst0::INSTR', server_name=server_name)
 #    print('awg2 loaded')
-
-    """
-
-
+    
     logging.info('LD400: load AWG driver')
-    awg2 = AWG5014.Tektronix_AWG5014(name='awg2', address='TCPIP0::192.168.0.4::inst0::INSTR', server_name=server_name)
+    awg2 = AWG5014.Tektronix_AWG5014(name='awg2', address='TCPIP0::192.168.0.6::inst0::INSTR', server_name=server_name)
     print('awg2 loaded')
     
     logging.info('LD400: load AWG driver')
@@ -159,6 +156,7 @@ def initialize(reinit=False, server_name=None):
     awg.clock_freq(1e9)
     awg2.clock_freq(1e9)
     awg2.trigger_level(0.5)
+    
     #Loading Microwave source
     logging.info('Keysight signal generator driver')
     vsg = E8267D.E8267D(name='vsg',address='TCPIP::192.168.0.11::INSTR',server_name=server_name)
@@ -173,14 +171,15 @@ def initialize(reinit=False, server_name=None):
     logging.info('LD400: load AWG driver')
     awg = AWG5200.Tektronix_AWG5014(name='awg', address='TCPIP0::192.168.0.8::inst0::INSTR', timeout = 180, server_name=server_name)
     print('awg loaded')
+    """
 
 #    #load keithley driver
 #    keithley = Keithley_2700.Keithley_2700(name='keithley', address='GPIB0::15::INSTR', server_name=server_name)
 #    
 
 #     Loading digitizer
-#    logging.info('LD400: load digitizer driver')
-#    digitizer = M4i.M4i(name='digitizer', server_name=server_name)
+    logging.info('LD400: load digitizer driver')
+    digitizer = M4i.M4i(name='digitizer', server_name=server_name)
     if digitizer==None:
         print('Digitizer driver not laoded')
     else:
@@ -205,8 +204,8 @@ def initialize(reinit=False, server_name=None):
     #station = qcodes.Station(ivvi, awg, lockin1, lockin2, digitizer, gates)
 #    station = qcodes.Station(ivvi, lockin1, lockin2, digitizer, gates)
 #    station = qcodes.Station(awg, awg2, vsg, vsg2, digitizer, qubit_1, qubit_2)
-    components = [awg,qubit_1,qubit_2]
-    station = Station(*components, update_snapshot=False)
+    components = [awg, awg2, vsg, vsg2, digitizer, qubit_1, qubit_2]
+    station = Station(*components, update_snapshot=True)
     print('station initialized')
     logging.info('Initialized LDHe station')
     print('Initialized LDHe station\n')

@@ -224,7 +224,7 @@ class Sequencer:
         manipulation.make_circuit(**kw)
         
         VP_start_point = -manip.VP_before
-        VP_end_point = manip.VP_after
+#        VP_end_point = manip.VP_after
 
         for i in range(len(self.qubits)):
             refpulse = None if i ==0 else 'manip1'

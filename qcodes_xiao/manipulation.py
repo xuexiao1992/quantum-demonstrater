@@ -25,7 +25,7 @@ class Manipulation(Element):
         self.total_time = 0     ## used for finally adding the gate voltage pulse
 
         self.VP_before = 250e-9
-        self.VP_after = 250e-9
+#        self.VP_after = 250e-9
         self.length = 0
 
         self.qubits = qubits

@@ -127,6 +127,8 @@ class Rabi(Manipulation):
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = None
+        self.amplitude = kw.pop('amplitude', 1)
+        self.frequency_shift = kw.pop('frequency_shift', 0)
 
     def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
@@ -143,11 +145,13 @@ class Rabi(Manipulation):
         
         qubit = self.qubits[int(qubit_num-1)]
         
-        amplitude = kw.get('amplitude', 1)
+        amplitude = kw.get('amplitude', self.amplitude)
         length = kw.get('duration_time', qubit.Pi_pulse_length)
+        frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
         print('length', length)
 
-        self.add_single_qubit_gate(name='Rabi_Oscillation', qubit = self.qubits[1], amplitude = amplitude, length = length)
+        self.add_single_qubit_gate(name='Rabi_Oscillation', qubit = self.qubits[1], amplitude = amplitude, 
+                                   length = length, frequency_shift = frequency_shift)
 
         return self
 
@@ -162,6 +166,8 @@ class CRot(Manipulation):
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = None
+        self.amplitude = kw.pop('amplitude', 0)
+        self.frequency_shift = kw.pop('frequency_shift', 0)
     def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
         self.qubits = kw.pop('qubits', None)
@@ -175,14 +181,17 @@ class CRot(Manipulation):
         qubit_num = qubit
         
         qubit = self.qubits[int(qubit_num-1)]
+        
         length = kw.get('duration_time', qubit.Pi_pulse_length)
-        print('length', length)
-        amplitude = kw.get('amplitude', 1)
-        frequency_shift = kw.pop('frequency_shift', 0)
-        print('frequency shift', frequency_shift)
+        amplitude = kw.get('amplitude', self.amplitude)
+        frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
 
-        self.add_single_qubit_gate(name='Rabi_Oscillation', qubit = self.qubits[1], amplitude = amplitude, 
-                                   length = qubit.Pi_pulse_length, frequency_shift = frequency_shift)
+        self.add_CPhase(name = 'CP_Q12', control_qubit = self.qubits[0], target_qubit = self.qubits[1],
+                        amplitude_control = amplitude, amplitude_target = 0, length = 400e-9)
+        
+        self.add_single_qubit_gate(name='CRot', refgate = 'CP_Q12', qubit = self.qubits[1], 
+                                   refpoint = 'start', waiting_time = 100e-9, amplitude = 1, 
+                                   length = length, frequency_shift = frequency_shift,)
 
         return self
 

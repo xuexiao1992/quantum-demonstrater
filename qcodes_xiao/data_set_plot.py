@@ -37,7 +37,7 @@ try:
 except ImportError:
     print('sweep_loop1 from setting is not imported')
 #%%
-
+"""
 def gaussian(A, B, x):
   return A * np.exp(-(x/(2. * B))**2.)
 
@@ -56,10 +56,10 @@ win = pg.GraphicsWindow()
 label = pg.LabelItem(justify = "right")
 win.addItem(label)
 
-p = win.addPlot(row = 1, col = 0)
-
+#p = win.addPlot(row = 1, col = 0)
+p = win.addPlot()
 plot = p.plot(x, y, pen = "y")
-
+#p = win.addPlot(x,y)
 proxy = pg.SignalProxy(p.scene().sigMouseMoved, rateLimit=60, slot=mouseMoved)
 
 # Update layout with new data
@@ -74,19 +74,22 @@ pg.QtGui.QApplication.processEvents()
 #%%
 def mouseMoved(evt):
   mousePoint = p.vb.mapSceneToView(evt[0])
+#  label.setText("<span style='font-size: 14pt; color: black'> x = %0.2f, <span style='color: black'> y = %0.2f</span> , <span style='color: black'> z = %0.2f</span>" % (mousePoint.x(), mousePoint.y(), mousePoint.z()))
   label.setText("<span style='font-size: 14pt; color: black'> x = %0.2f, <span style='color: black'> y = %0.2f</span>" % (mousePoint.x(), mousePoint.y()))
-
 
 label = pg.LabelItem(justify = "right")
 
 pt = QtPlot(remote = False)
+x = [1,2,3]
+y = [11,22,33]
 pt.add(x,y)
+#pt.add(DS.frequency_set, DS.vsg2_frequency_set,DS.digitizerqubit_1)
 pt.win.addItem(label)
 proxy = pg.SignalProxy(pt.subplots[0].scene().sigMouseMoved, rateLimit=60, slot=mouseMoved)
-pg.QtGui.QApplication.processEvents()
+#pg.QtGui.QApplication.processEvents()s
 
 #win.close()
-
+"""
 #%%
 class SnaptoCursor(object):
     def __init__(self, ax, x, y):
@@ -187,7 +190,7 @@ readout_time = 1e-3
 #loop_num = 5
 #loop_num = len(sweep_loop1['para1']) if 'para1' in sweep_loop1 else 1
 qubit_num = 1
-repetition = 200
+repetition = 100
 
 seg_size = int(((readout_time*sample_rate+pretrigger) // 16 + 1) * 16)
 #%%
@@ -204,7 +207,7 @@ def convert_to_ordered_data(data_set, qubit_num = 1, name = 'frequency', unit = 
 
         if parameter.endswith('set'):
             if data_array.ndim == 2 and parameter.startswith('index'):
-                dimension_2 = int(data_array.shape[-1]/2/(repetition+1)/seg_size)
+                dimension_2 = int(data_array.shape[-1]/2/(repetition+1)/seg_size/qubit_num)
                 sweep_array = sweep_array if sweep_array is not None else np.linspace(0,dimension_2-1,dimension_2)
                 data_array = np.array([sweep_array for k in range(dimension_1)])
                 array_name = name+'_set'
@@ -216,22 +219,23 @@ def convert_to_ordered_data(data_set, qubit_num = 1, name = 'frequency', unit = 
             data_num = int(data_array.shape[-1]/2/(repetition+1) * repetition)
             qubit_data_num = int(data_num/qubit_num)
 
-            dimension_2 = int(data_array.shape[-1]/2/(repetition+1)/seg_size)
+            dimension_2 = int(data_array.shape[-1]/2/(repetition+1)/seg_size/qubit_num)
             qubit_data = np.ndarray(shape = (qubit_num, dimension_1, dimension_2, int(qubit_data_num/dimension_2)))
             
             for k in range(dimension_1):
                 raw_data = data_array[k][::2]
                 raw_marker = data_array[k][1::2]
-                for seg in range(seg_size*dimension_2):
-                    if raw_marker[seg] > 0.1:           ##  a better threshold ???
+                for seg in range(seg_size*qubit_num*dimension_2):
+                    if raw_marker[seg] > 0.2:           ##  a better threshold ???
                         break                
                 data = raw_data[seg:data_num+seg]
                 print('seg',seg)
                 data_reshape = data.reshape(int(data_num/seg_size), seg_size)
+                print('data_shape',data_reshape.shape)
                 for l in range(dimension_2):
                     for q in range(qubit_num):
                         
-                        qubit_data[q][k][l] = data_reshape[q+l::dimension_2*qubit_num].reshape(seg_size*repetition,)
+                        qubit_data[q][k][l] = data_reshape[qubit_num*l+q::dimension_2*qubit_num].reshape(seg_size*repetition,)
 
                         qubit_data_array.append(DataArray(preset_data = qubit_data[q], name = parameter+'qubit_%d'%(q+1), 
                                                           array_id = array_id+'qubit_%d'%(q+1), is_setpoint = False))
@@ -240,7 +244,8 @@ def convert_to_ordered_data(data_set, qubit_num = 1, name = 'frequency', unit = 
             data_num = int(data_array.shape[-1]/2/(repetition+1) * repetition)
             qubit_data_num = int(data_num/qubit_num)
 
-            dimension_2 = data_array[1]
+            dimension_2 = data_array.shape[1]
+            print('qubit_num, dimension_1, dimension_2, int(qubit_data_num)', qubit_num, dimension_1, dimension_2, int(qubit_data_num))
             qubit_data = np.ndarray(shape = (qubit_num, dimension_1, dimension_2, int(qubit_data_num)))
             
             for k in range(dimension_1):
@@ -385,7 +390,7 @@ class digitizer_param(ArrayParameter):
         return SweepFixedValues(self, keys)
 
 #%%
-def set_digitizer(digitizer, sweep_num):
+def set_digitizer(digitizer, sweep_num, qubit_num):
     pretrigger=16
     mV_range=1000
     
@@ -397,7 +402,7 @@ def set_digitizer(digitizer, sweep_num):
     
     readout_time = 1e-3
     
-    qubit_num = 1
+    qubit_num = qubit_num
     
     seg_size = ((readout_time*sample_rate+pretrigger) // 16 + 1) * 16
     
@@ -405,7 +410,7 @@ def set_digitizer(digitizer, sweep_num):
     import data_set_plot
     data_set_plot.loop_num = sweep_num
     
-    repetition = 200
+    repetition = 100
     
     memsize = int((repetition+1)*sweep_num*qubit_num*seg_size)
     posttrigger_size = seg_size-pretrigger

@@ -94,9 +94,10 @@ class Experiment:
         self.data_set = None
         self.threshold = 0.025
         self.probability_data = new_data(location = self.data_location+'_averaged_probability', io = self.data_IO, formatter = self.formatter)
-        self.plot = QtPlot()
         
-        self.average_plot = QtPlot()
+        self.plot = []
+        self.average_plot = []
+        
         
         self.averaged_data = new_data(location = self.data_location+'_averaged_data', io = self.data_IO, formatter = self.formatter)
         
@@ -124,77 +125,22 @@ class Experiment:
         self.dimension_2 = 1
 
 
-        self.initialize_segment = {
-#                'step1': None,
-                }
-
-        self.readout_segment = {
-#                'step1': None,
-#                'step2': None,
-#                'step3': None,
-                }
-
-        self.manipulation_segment = {
-#                'step1': None,
-                }
-        
-        self.initialize2_segment = {
-#                'step1': None
-                }
-        
-        self.readout2_segment = {
-#                'step1': None,
-#                'step2': None,
-#                'step3': None,
-                }
-
-        self.manipulation2_segment = {
-#                'step1': None,
-                }
-        
         self.segment = {
-                'init': self.initialize_segment,
-                'manip': self.manipulation_segment,
-                'read': self.readout_segment,
-                'init2': self.initialize2_segment,
-                'manip2': self.manipulation2_segment,
-                'read2': self.readout2_segment,
-                }
-        
-        self.initialize_repetition = {
-                'step1': 1,
-                'step2': 1,
-                'step3': 1,
-                }
-        self.manipulation_repetition = {
-                'step1': 1,
-                }
-        self.readout_repetition = {
-                'step1': 1,
-                'step2': 1,
-                'step3': 1,
-                }
-        self.initialize2_repetition = {
-                'step1': 1,
-                'step2': 1,
-                'step3': 1,
-                }
-        self.manipulation2_repetition = {
-                'step1': 1,
-                }
-        self.readout2_repetition = {
-                'step1': 1,
-                'step2': 1,
-                'step3': 1,
+#                'init': self.initialize_segment,
+#                'manip': self.manipulation_segment,
+#                'read': self.readout_segment,
+#                'init2': self.initialize2_segment,
+#                'manip2': self.manipulation2_segment,
+#                'read2': self.readout2_segment,
                 }
 
         self.repetition = {
-                'init': self.initialize_repetition,
-                'manip': None,
-                'read': self.readout_repetition,
-                'init2': self.initialize2_repetition,
-                'manip2': None,
-                'read2': self.readout2_repetition,
+#                'init': self.initialize_repetition,
+#                'manip': None,
+#                'read': self.readout_repetition,
+#                'init2': self.initialize2_repetition,
+#                'manip2': None,
+#                'read2': self.readout2_repetition,
                 }
         
         self.element = {}           ##  will be used in    pulsar.program_awg(myseq, self.elements)
@@ -275,7 +221,7 @@ class Experiment:
         
         if type(parameter) is StandardParameter:#isinstance(obj, Tektronix_AWG5014)
             
-            self.digitizer, self.dig = set_digitizer(self.digitizer, 1)
+            self.digitizer, self.dig = set_digitizer(self.digitizer, 1, self.qubit_number)
             
             step = (sweep_array[1]-sweep_array[0])
             
@@ -288,7 +234,7 @@ class Experiment:
             
         elif type(parameter) is str:
             
-            self.digitizer, self.dig = set_digitizer(self.digitizer, len(sweep_array))
+            self.digitizer, self.dig = set_digitizer(self.digitizer, len(sweep_array), self.qubit_number)
             
             i = len(sequencer.sweep_loop1)+1
             para = 'para'+str(i)
@@ -350,6 +296,14 @@ class Experiment:
         
         self.plot_average = plot_average
         
+        for i in range(self.qubit_number):
+            d = i if i == 1 else 2
+            self.plot.append(QtPlot(window_title = 'raw plotting qubit_%d'%d, remote = False))
+#            self.plot.append(MatPlot(figsize = (8,5)))
+            if plot_average:
+#                self.average_plot.append(QtPlot(window_title = 'average data qubit_%d'%d, remote = False))
+                self.average_plot.append(MatPlot(figsize = (8,5)))
+        
         for seq in range(len(self.sequencer)):
             self.sequencer[seq].set_sweep()
             self.make_all_segment_list(seq)
@@ -372,26 +326,31 @@ class Experiment:
     
     def live_plotting(self,):
         loop_num = self.dimension_1 if self.X_parameter_type is 'In_Sequence' else 1
-        probability_dataset = convert_to_probability(self.data_set, self.threshold, loop_num, self.qubit_number, self.X_parameter, self.X_sweep_array)
+        probability_dataset = convert_to_probability(data_set = self.data_set, threshold = self.threshold, qubit_num = self.qubit_number, 
+                                                     name = self.X_parameter, sweep_array = self.X_sweep_array)
         for parameter in probability_dataset.arrays:
             if parameter in self.probability_data.arrays:
                 self.probability_data.arrays[parameter].ndarray = probability_dataset.arrays[parameter].ndarray
             else:
                 self.probability_data.arrays[parameter] = probability_dataset.arrays[parameter]
-            
-        self.plot.update()
+        
+        for i in range(self.qubit_number):
+            self.plot[i].update()
         
         if self.plot_average:
             self.plot_average_data()
-            self.average_plot.update()
+            for i in range(self.qubit_number):
+                self.average_plot[i].update()
         
         return self.probability_data
     
+    def plot_save(self):
+        
+        for i in range(self.qubit_number):
+            self.plot[i].save
+        return True
+    
     def plot_average_data(self,):
-        
-#        average_plot = QtPlot()
-        
-#        averaged_data = new_data(location = self.data_location+'_averaged_data', io = self.data_IO)
         
         i = 0
         data_array = []
@@ -413,6 +372,25 @@ class Experiment:
                 i+=1
         
 #        self.average_plot.add(self.averaged_data.digitizer,figsize=(1200, 500))
+        return True
+    
+    def plot_probability(self):
+        for i in range(self.qubit_number):
+            self.plot[i].add(x = self.probability_data.arrays[self.X_parameter+'_set'],
+                     y = self.probability_data.arrays['Count_set'] if self.sweep_type is '1D' else self.probability_data.arrays[self.Y_parameter+'_set'],
+                     z = self.probability_data.arrays['digitizerqubit_%d'%(i+1)], figsize=(1200, 500))
+        return True
+    
+    def plot_average_probability(self,):
+        if self.X_parameter_type is 'In_Sequence':
+            for i in range(self.qubit_number):
+                self.average_plot[i].add(x=self.averaged_data.arrays[self.X_parameter+'_set'],
+                                 y=self.averaged_data.arrays['digitizerqubit_%d'%(i+1)],)# figsize=(1200, 500))
+        else:
+            for i in range(self.qubit_number):
+                self.average_plot[i].add(x=self.averaged_data.arrays[self.X_parameter+'_set'],
+                                 y=self.averaged_data.arrays['digitizerqubit_%d'%(i+1)],)#figsize=(1200, 500))
+        
         return True
     
     def make_sequencers(self, **kw):
@@ -453,13 +431,13 @@ class Experiment:
         for segment_type in self.seq_cfg_type[seq_num]:
             print('segment_type', segment_type)
 
-            if segment_type.startswith('init') and not self.segment[segment_type]:
+            if segment_type.startswith('init') and segment_type not in self.segment:#not self.segment[segment_type]:
                 self.segment[segment_type], self.repetition[segment_type] = self.sequencer[seq_num].make_initialize_segment_list(segment_num = i, name = segment_type)
 
-            elif segment_type.startswith('manip') and not self.segment[segment_type]:
+            elif segment_type.startswith('manip') and segment_type not in self.segment:#not self.segment[segment_type]:
                 self.segment[segment_type], self.repetition[segment_type] = self.sequencer[seq_num].make_manipulation_segment_list(segment_num = i, name = segment_type)
 
-            elif segment_type.startswith('read') and not self.segment[segment_type]:
+            elif segment_type.startswith('read') and segment_type not in self.segment:#not self.segment[segment_type]:
                 self.segment[segment_type], self.repetition[segment_type] = self.sequencer[seq_num].make_readout_segment_list(segment_num = i, name = segment_type)
 
             i+=1
@@ -828,17 +806,18 @@ class Experiment:
         
         if self.Loop is not None:
 #            self.data_set = self.Loop.run(location = self.data_location, loc_record = {'name': self.name, 'label': self.label}, io = self.data_IO,)
-            self.data_set = self.Loop.get_data_set(location = self.data_location, loc_record = {'name': self.name, 'label': self.label}, io = self.data_IO,)
+            self.data_set = self.Loop.get_data_set(location = self.data_location, 
+                                                   loc_record = {'name': self.name, 'label': self.label}, 
+                                                   io = self.data_IO,)
             self.live_plotting()
 #            self.plot = QtPlot()
-            self.plot.add(self.probability_data.digitizerqubit_1,figsize=(1200, 500))
+
+            self.plot_probability()
             if self.plot_average:
-                if self.X_parameter_type is 'In_Sequence':
-                    self.average_plot.add(x=self.averaged_data.arrays[self.X_parameter+'_set'],y=self.averaged_data.digitizerqubit_1,figsize=(1200, 500))
-                else:
-                    self.average_plot.add(x=self.averaged_data.arrays[self.X_parameter+'_set'],y=self.averaged_data.digitizerqubit_1,figsize=(1200, 500))
-            self.Loop.with_bg_task(task = self.live_plotting, bg_final_task = self.plot.save, min_delay = 3).run()
+                self.plot_average_probability()
             
+#            self.Loop.with_bg_task(task = self.live_plotting, bg_final_task = self.plot_save, min_delay = 1.5).run()
+            self.Loop.with_bg_task(task = self.live_plotting, min_delay = 5).run()
             self.awg.stop()
             self.awg2.stop()
             

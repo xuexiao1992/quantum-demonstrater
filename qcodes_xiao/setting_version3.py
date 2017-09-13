@@ -157,58 +157,6 @@ def set_5014pulsar(awg, awg2):
                               high=2, low=0, offset=0.,
                               delay=0, active=True, AWG = awg if i<4 else awg2)
     return pulsar
-#%%
-def set_digitizer(digitizer, sweep_num, qubit_num = 1):
-    pretrigger=16
-    mV_range=1000
-    
-    sample_rate = int(np.floor(61035/1))
-    
-    digitizer.sample_rate(sample_rate)
-    
-    sample_rate = digitizer.sample_rate()
-    
-    readout_time = 1e-3
-    
-    qubit_num = qubit_num
-    
-    seg_size = ((readout_time*sample_rate+pretrigger) // 16 + 1) * 16
-    
-    sweep_num = sweep_num#len(sweep_loop1['para1']) if 'para1' in sweep_loop1 else 1
-    import data_set_plot
-    data_set_plot.loop_num = sweep_num
-    
-    repetition = 200
-    
-    memsize = int((repetition+1)*sweep_num*qubit_num*seg_size)
-    posttrigger_size = seg_size-pretrigger
-    
-    #digitizer.enable_channels(pyspcm.CHANNEL0 | pyspcm.CHANNEL3)
-    digitizer.clock_mode(pyspcm.SPC_CM_INTPLL)
-    #digitizer.clock_mode(pyspcm.SPC_CM_EXTREFCLOCK)
-    
-    digitizer.enable_channels(pyspcm.CHANNEL1 | pyspcm.CHANNEL2)
-    
-#    digitizer.enable_channels(pyspcm.CHANNEL1)
-    digitizer.data_memory_size(memsize)
-    
-    digitizer.segment_size(seg_size)
-    
-    digitizer.posttrigger_memory_size(posttrigger_size)
-    
-    digitizer.timeout(60000)
-    
-    digitizer.set_channel_settings(1,1000, input_path = 0, termination = 0, coupling = 0, compensation = None)
-    
-    #trig_mode = pyspcm.SPC_TMASK_SOFTWARE
-    #trig_mode = pyspcm.SPC_TM_POS
-    trig_mode = pyspcm.SPC_TM_POS | pyspcm.SPC_TM_REARM
-    
-    digitizer.set_ext0_OR_trigger_settings(trig_mode = trig_mode, termination = 0, coupling = 0, level0 = 800, level1 = 900)
-    
-    dig = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size)
-
-    return digitizer, dig
 
 #%%
 formatter = HDF5FormatMetadata()
@@ -318,24 +266,29 @@ init_cfg = {
         }
 
 manip_cfg = {
-        'step1' : set_manip(time = 5e-6, qubits = qubits, voltages = [30*0.5*-0.004,30*0.5*0.016],)
+        'step1' : set_manip(time = 1e-6, qubits = qubits, voltages = [30*0.5*-0.004,30*0.5*0.016],)
         }
 
 read_cfg = {
-        'step1' : set_step(time = 2e-3, qubits = qubits, voltages = [30*0.5*0, 30*0.5*0]),
+        'step1' : set_step(time = 0.1e-3, qubits = qubits, voltages = [30*0.5*0, 30*0.5*0]),
+        'step2' : set_step(time = 0.9e-3, qubits = qubits, voltages = [30*0.5*0, 30*0.5*0]),
         }
-#init_cfg = {
-#        'step1' : set_step(time = 1.5e-3, qubits = qubits, voltages = [30*0.5*0.004, 30*0.5*-0.001]),
-#        }
-manip2_cfg = {
-        'step1' : set_manip(time = 5e-6, qubits = qubits, voltages = [30*0.5*-0.004,30*0.5*0.016],)
-        }
-read2_cfg = {
+init2_cfg = {
         'step1' : set_step(time = 1e-3, qubits = qubits, voltages = [30*0.5*0, 30*0.5*0]),
         }
+manip2_cfg = {
+        'step1' : set_manip(time = 1e-6, qubits = qubits, voltages = [30*0.5*-0.004,30*0.5*0.016],)
+        }
+read2_cfg = {
+        'step1' : set_step(time = 0.1e-3, qubits = qubits, voltages = [30*0.5*-0.004, 30*0.5*0]),
+        'step2' : set_step(time = 0.9e-3, qubits = qubits, voltages = [30*0.5*-0.004, 30*0.5*0]),
+        }
+
+#sequence_cfg = [init_cfg, manip_cfg, read_cfg, init2_cfg, manip2_cfg, read2_cfg]         ## the NAME here in this list is not important , only the order matters
+#sequence_cfg_type = ['init', 'manip','read', 'init2', 'manip2', 'read2']
 
 sequence_cfg = [init_cfg, manip_cfg, read_cfg,]         ## the NAME here in this list is not important , only the order matters
-sequence_cfg_type = ['init', 'manip','read', ]
+sequence_cfg_type = ['init', 'manip','read',]
 
 #%%
 
@@ -350,19 +303,22 @@ awg = experiment.awg
 awg2 = experiment.awg2
 vsg = experiment.vsg
 vsg2 = experiment.vsg2    
+#self.digitizer_trigger_channel = 'ch5_marker1'
+#self.digitier_readout_marker = 'ch6_marker1'
+
 #digitizer, dig = set_digitizer(experiment.digitizer)
     
 #experiment.seq_cfg = [sequence_cfg, ]
 #experiment.seq_cfg_type = [sequence_cfg_type,]
 vsg.frequency(18.4e9)
-vsg2.frequency(19.676e9)
+vsg2.frequency(19.6778e9)
 
 manip2_elem = Ramsey(name = 'Ramsey', pulsar = pulsar)
 manip3_elem = Finding_Resonance(name = 'Finding_resonance', pulsar = pulsar)
 
 
 rabi = Rabi(name = 'Rabi', pulsar = pulsar)
-crot = CRot(name = 'CRot', pulsar = pulsar)
+crot = CRot(name = 'CRot', pulsar = pulsar, amplitude = 30*0.5*-0.028, frequency_shift = 0.046e9)
 duration_time = 0
 
 
@@ -371,15 +327,21 @@ duration_time = 0
 #experiment.dig = dig 
 
 experiment.qubit_number = 1
+experiment.threshold = 0.025
+experiment.add_measurement('2D_Rabi_Scan', ['Rabi','CRot'], [rabi, crot], sequence_cfg, sequence_cfg_type)
+#experiment.add_measurement('2D_Rabi_Scan', ['Rabi'], [rabi], sequence_cfg, sequence_cfg_type)
+experiment.add_X_parameter('2D_Rabi_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.05e9, 0.05e9, 11), element = 'Rabi')
 
-experiment.add_measurement('2D_Rabi_Scan', ['Rabi'], [rabi], sequence_cfg, sequence_cfg_type)
-#experiment.add_X_parameter('2D_Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 1e-6, 11), element = 'Rabi')
-#experiment.add_X_parameter('2D_Rabi_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.05e9, 0.05e9, 11), element = 'CRot')
+
+
+#experiment.add_measurement('2D_Rabi_Scan', ['CRot'], [crot], sequence_cfg, sequence_cfg_type)
+#experiment.add_X_parameter('2D_Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 0.6e-6, 21), element = 'Rabi')
+
 #experiment.add_X_parameter(measurement = '2D_Rabi_Scan', parameter = vsg2.frequency, sweep_array = sweep_array(19.666e9, 19.680e9, 15))
-experiment.add_X_parameter(measurement = '2D_Rabi_Scan', parameter = vsg2.power, sweep_array = sweep_array(1, 1.8, 17))
+#experiment.add_X_parameter(measurement = '2D_Rabi_Scan', parameter = vsg2.power, sweep_array = sweep_array(1, 1.8, 17))
 print('sweep parameter set')
 
-experiment.set_sweep(repetition = True, plot_average = False, count = 10)
+experiment.set_sweep(repetition = True, plot_average = False, count = 5)
 
 print('loading sequence')
 experiment.generate_1D_sequence()
