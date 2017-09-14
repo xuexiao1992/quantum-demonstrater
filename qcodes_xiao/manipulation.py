@@ -56,7 +56,7 @@ class Manipulation(Element):
 
 
     def add_single_qubit_gate(self, name = None, qubit = None, axis = [1,0,0], degree = 90,
-                              amplitude = None, length = 50e-9, frequency_shift = 0, refphase = 0,
+                              amplitude = 1, length = 50e-9, frequency_shift = 0, refphase = 0,
                               refgate = None, refpoint = 'end', waiting_time = 0, refpoint_new = 'start'):
         # no idea yet  perhaps call the element.add() function but just to add the first pulse
         # and record the information of the last pulse
@@ -151,48 +151,56 @@ class Manipulation(Element):
 
 
 
-    def add_X_Pi(self, name = None, qubit = None, refgate = None, refpoint = 'end',
-                  waiting_time = 0, refpoint_new = 'start'):
+    def add_X_Pi(self, name, qubit, refgate = None, refpoint = 'end',
+                  waiting_time = 0, refpoint_new = 'start', **kw):
         # these are some quick calls for some often-used gate
 
         refphase = self.refphase[qubit.name]
+        
+        length = kw.pop('length', qubit.Pi_pulse_length)
 
         self.add_single_qubit_gate(name = name, qubit = qubit, axis = [1, 0, 0], degree = 180,
-                                   refgate = refgate, refpoint = refpoint, refphase = refphase,
+                                   length = length, refgate = refgate, refpoint = refpoint, refphase = refphase,
                                    waiting_time = waiting_time, refpoint_new = refpoint_new)
         return True
 
 
-    def add_Y_Pi(self, name = None, qubit = None, refgate = None, refpoint = 'end',
-                  waiting_time = 0, refpoint_new = 'start'):
+    def add_Y_Pi(self, name, qubit, refgate = None, refpoint = 'end',
+                  waiting_time = 0, refpoint_new = 'start', **kw):
 
         refphase = self.refphase[qubit.name]
+        
+        length = kw.pop('length', qubit.Pi_pulse_length)
 
         self.add_single_qubit_gate(name = name, qubit = qubit, axis = [0, 1, 0], degree = 180,
-                                   refgate = refgate, refpoint = refpoint, refphase = refphase,
+                                   length = length, refgate = refgate, refpoint = refpoint, refphase = refphase,
                                    waiting_time = waiting_time, refpoint_new = refpoint_new)
 
         return True
 
-    def add_X(self, name = None, qubit = None, refgate = None, refpoint = 'end',
-                  waiting_time = 0, refpoint_new = 'start'):
+    def add_X(self, name, qubit, refgate = None, refpoint = 'end',
+              waiting_time = 0, refpoint_new = 'start', **kw):
 
         refphase = self.refphase[qubit.name]
+        
+        length = kw.pop('length', qubit.halfPi_pulse_length)
 
         self.add_single_qubit_gate(name = name, qubit = qubit, axis = [1, 0, 0], degree = 90,
-                                   length = qubit.halfPi_pulse_length, refgate = refgate, refpoint = refpoint, refphase = refphase,
-                                   waiting_time = waiting_time, refpoint_new = refpoint_new)
+                                   length = length, refgate = refgate, refpoint = refpoint, refphase = refphase,
+                                   waiting_time = waiting_time, refpoint_new = refpoint_new, **kw)
 
         return True
 
-    def add_Y(self, name = None, qubit = None, refgate = None, refpoint = 'end',
-                 waiting_time = 0, refpoint_new = 'start'):
+    def add_Y(self, name, qubit, refgate = None, refpoint = 'end',
+                 waiting_time = 0, refpoint_new = 'start', **kw):
 
         refphase = self.refphase[qubit.name]
+        
+        length = kw.pop('length', qubit.halfPi_pulse_length)
 
-        self.add_single_qubit_gate(name = name, qubit = qubit, axis = [0, 1, 0], degree = 90, length = qubit.halfPi_pulse_length,
-                                   refgate = refgate, refpoint = refpoint, refphase = refphase,
-                                   waiting_time = waiting_time, refpoint_new = refpoint_new)
+        self.add_single_qubit_gate(name = name, qubit = qubit, axis = [0, 1, 0], degree = 90, 
+                                   length = length, refgate = refgate, refpoint = refpoint, refphase = refphase,
+                                   waiting_time = waiting_time, refpoint_new = refpoint_new, **kw)
 
         return True
 
@@ -203,42 +211,3 @@ class Manipulation(Element):
 
 
         return True
-
-#    def add_Arbitrary_rotation(self, name = '', qubit, axis = [1,0,0], refgate = None, refpoint = 'end',
-#                               waiting_time = 0, refpoint_new = 'start'):
-#
-#        return True
-#
-##
-#    def add_CRotation(self, name = None, control_qubit = None, target_qubit = None, refgate = None, refpoint = 'end',
-#                      waiting_time = 0, refpoint_new = 'start'):
-#
-#        refphase = self.refphase[target_qubit.name]
-#
-#        self.add_two_qubit_gate(name = name, control_qubit = control_qubit, target_qubit = target_qubit,
-#                                refgate = None, refpoint = 'end',
-#                                refphase = refphase, waiting_time = 0, refpoint_new = refpoint_new)
-#
-#        return True
-
-#    def add_CPhase(self, name = None, control_qubit = None, target_qubit = None, refgate = None, refpoint = 'end',
-#                   waiting_time = 0, refpoint_new = 'start'):
-#
-#        refphase = self.refphase[target_qubit.name]
-#
-#        self.add_two_qubit_gate(name = name, control_qubit = control_qubit, target_qubit = target_qubit,
-#                                refgate = None, refpoint = 'end',
-#                                refphase = refphase, waiting_time = 0, refpoint_new = refpoint_new)
-#
-#        return True
-
-#    def add_CNot(self, name = None, control_qubit = None, target_qubit = None, refgate = None, refpoint = 'end',
-#                  waiting_time = 0, refpoint_new = 'start'):
-#
-#        refphase = self.refphase[target_qubit.name]
-#
-#        self.add_two_qubit_gate(name = name, control_qubit = control_qubit, target_qubit = target_qubit,
-#                                refgate = None, refpoint = 'end',
-#                                refphase = refphase, waiting_time = 0, refpoint_new = refpoint_new)
-#
-#        return True

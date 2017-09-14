@@ -177,7 +177,7 @@ formatter = HDF5FormatMetadata()
 #formatter = GNUPlotFormat()
 test_location = '2017-08-28/14-38-39_finding_resonance_Freq_sweep'
 new1_location = '2017-08-28/newnewnew'
-new_location = '2017-09-04/17-23-05Finding_ResonanceRabi_Sweep'
+new_location = '2017-09-14/15-44-52experiment_testRabi_scan'
 #data_set_2 = DataSet(location = test_location, io = NewIO,)
 #data_set_2.read()
 
@@ -185,8 +185,8 @@ new_location = '2017-09-04/17-23-05Finding_ResonanceRabi_Sweep'
 #%%
 sample_rate = int(np.floor(61035/1))
 pretrigger = 16
-readout_time = 1e-3
-
+#readout_time = 1e-3
+readout_time = 700e-6
 #loop_num = 5
 #loop_num = len(sweep_loop1['para1']) if 'para1' in sweep_loop1 else 1
 qubit_num = 1
@@ -194,7 +194,7 @@ repetition = 100
 
 seg_size = int(((readout_time*sample_rate+pretrigger) // 16 + 1) * 16)
 #%%
-def convert_to_ordered_data(data_set, qubit_num = 1, name = 'frequency', unit = 'GHz', sweep_array = None):
+def convert_to_ordered_data(data_set, qubit_num = 1, repetition = 100, name = 'frequency', unit = 'GHz', sweep_array = None):
 
     qubit_data_array = []
     set_array = []
@@ -212,7 +212,8 @@ def convert_to_ordered_data(data_set, qubit_num = 1, name = 'frequency', unit = 
                 data_array = np.array([sweep_array for k in range(dimension_1)])
                 array_name = name+'_set'
                 array_id = name+'_set'
-            set_array.append(DataArray(preset_data = data_array, name = array_name, array_id = array_id, is_setpoint = True))
+            if data_array.ndim != 3 or not parameter.startswith('index'):
+                set_array.append(DataArray(preset_data = data_array, name = array_name, array_id = array_id, is_setpoint = True))
             
         elif not parameter.endswith('set') and data_array.ndim == 2:
             
@@ -251,13 +252,18 @@ def convert_to_ordered_data(data_set, qubit_num = 1, name = 'frequency', unit = 
             for k in range(dimension_1):
                 for l in range(dimension_2):
                     raw_data = data_array[k][l][::2]
-                    data = raw_data[:data_num]
+                    raw_marker = data_array[k][l][1::2]
+                    for seg in range(seg_size*qubit_num):
+                        if raw_marker[seg] > 0.2:           ##  a better threshold ???
+                            break               
+                    data = raw_data[seg:data_num+seg]          ## here data consists both data from qubit1 and qubit2
                     for q in range(qubit_num):
-                        qubit_data[q][k][l] = data[q::qubit_num]
+                        data_reshape = data.reshape(int(data_num/seg_size), seg_size)
+                        qubit_data[q][k][l] = data_reshape[q::qubit_num].reshape(seg_size*repetition,)
                         qubit_data_array.append(DataArray(preset_data = qubit_data[q], name = parameter+'qubit_%d'%(q+1), 
                                                           array_id = array_id+'qubit_%d'%(q+1), is_setpoint = False))
     
-    data_set_new = DataSet(location = new_location, io = NewIO, formatter = formatter)
+    data_set_new = DataSet(location = new_location+'_ordered_raw_data', io = NewIO, formatter = formatter)
     for array in set_array:
         data_set_new.add_array(array)
     for q in range(qubit_num):
@@ -267,8 +273,8 @@ def convert_to_ordered_data(data_set, qubit_num = 1, name = 'frequency', unit = 
 
 #%%
 
-def convert_to_01_state(data_set, threshold, qubit_num = 1, name = 'frequency', unit = 'GHz', sweep_array = None):
-    data_set = convert_to_ordered_data(data_set, qubit_num, name, unit, sweep_array)
+def convert_to_01_state(data_set, threshold, qubit_num = 1, repetition = 100, name = 'frequency', unit = 'GHz', sweep_array = None):
+    data_set = convert_to_ordered_data(data_set, qubit_num, repetition, name, unit, sweep_array)
     
     qubit_data_array = []
     set_array = []
@@ -292,7 +298,7 @@ def convert_to_01_state(data_set, threshold, qubit_num = 1, name = 'frequency', 
             qubit_data_array.append(DataArray(preset_data = data, name = parameter, 
                                               array_id = array_id, is_setpoint = False))
             
-    data_set_new = DataSet(location = new_location, io = NewIO, formatter = formatter)
+    data_set_new = DataSet(location = new_location+'_01_state', io = NewIO, formatter = formatter)
 
     for array in set_array:
         data_set_new.add_array(array)
@@ -301,9 +307,9 @@ def convert_to_01_state(data_set, threshold, qubit_num = 1, name = 'frequency', 
     
     return data_set_new
 #%%
-def convert_to_probability(data_set, threshold, qubit_num = 1, name = 'frequency', unit = 'GHz', sweep_array = None):
+def convert_to_probability(data_set, threshold, qubit_num = 1, repetition = 100, name = 'frequency', unit = 'GHz', sweep_array = None):
     
-    data_set = convert_to_01_state(data_set, threshold, qubit_num, name, unit, sweep_array)
+    data_set = convert_to_01_state(data_set, threshold, qubit_num, repetition, name, unit, sweep_array)
     qubit_data_array = []
     set_array = []
     for parameter in data_set.arrays:
@@ -326,7 +332,7 @@ def convert_to_probability(data_set, threshold, qubit_num = 1, name = 'frequency
             qubit_data_array.append(DataArray(preset_data = probability_data, name = parameter, 
                                               array_id = arrayid, is_setpoint = False))
           
-    data_set_new = DataSet(location = new_location, io = NewIO, formatter = formatter)
+    data_set_new = DataSet(location = new_location+'_average_probability', io = NewIO, formatter = formatter)
 
     for array in set_array:
         data_set_new.add_array(array)
@@ -390,7 +396,7 @@ class digitizer_param(ArrayParameter):
         return SweepFixedValues(self, keys)
 
 #%%
-def set_digitizer(digitizer, sweep_num, qubit_num):
+def set_digitizer(digitizer, sweep_num, qubit_num, repetition):
     pretrigger=16
     mV_range=1000
     
@@ -400,7 +406,7 @@ def set_digitizer(digitizer, sweep_num, qubit_num):
     
     sample_rate = digitizer.sample_rate()
     
-    readout_time = 1e-3
+    readout_time = 0.7e-3
     
     qubit_num = qubit_num
     
@@ -410,7 +416,7 @@ def set_digitizer(digitizer, sweep_num, qubit_num):
     import data_set_plot
     data_set_plot.loop_num = sweep_num
     
-    repetition = 100
+    repetition = repetition
     
     memsize = int((repetition+1)*sweep_num*qubit_num*seg_size)
     posttrigger_size = seg_size-pretrigger

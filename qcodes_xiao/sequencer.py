@@ -225,10 +225,15 @@ class Sequencer:
         
         VP_start_point = -manip.VP_before
 #        VP_end_point = manip.VP_after
+        wfs, tvals = manipulation.normalized_waveforms()
+        max_length = max([len(tvals[ch]) for ch in tvals])/1e9
 
         for i in range(len(self.qubits)):
             refpulse = None if i ==0 else 'manip1'
             start = VP_start_point if i ==0 else 0
+            
+            time = max(time, max_length-VP_start_point)
+            
             manipulation.add(SquarePulse(name='manip%d'%(i+1), channel=self.channel_VP[i], amplitude=amplitudes[i], length=time),
                            name='manip%d'%(i+1), refpulse = refpulse, refpoint = 'start', start = start)
             
@@ -244,14 +249,7 @@ class Sequencer:
         if segment[:4] == 'init':
             element = self._initialize_element(name, amplitudes = amplitudes,)
         elif segment[:5] == 'manip':
-#            waiting_time = kw.pop('waiting_time',0)
-            parameter1 = kw.get('parameter1', 0)
-            parameter2 = kw.get('parameter2', 0)
-            manip_elem = kw.get('manip_elem', None)
-            print('parameter1', parameter1)
             element = self._manipulation_element(name, time = time, amplitudes = amplitudes, **kw)
-#                                                 parameter1 = parameter1, parameter2 = parameter2,
-#                                                 manip_elem = manip_elem)
         elif segment[:4] == 'read':
             trigger = True if name.find('step1')>=0 else False
             element = self._readout_element(name, amplitudes = amplitudes, trigger_digitizer = trigger)
@@ -316,9 +314,9 @@ class Sequencer:
                 specific_parameters.pop('time')
                 specific_parameters.pop('voltage_1')
                 specific_parameters.pop('voltage_2')
-                parameter1 = step.get('parameter1', None)
-                parameter2 = step.get('parameter2', None)
-                manip_elem = step.get('manip_elem', None)
+#                parameter1 = step.get('parameter1', None)
+#                parameter2 = step.get('parameter2', None)
+#                manip_elem = step.get('manip_elem', None)
 
                 element = self.make_element(name = name+'step%d'%s, segment = seg, time = step['time'], amplitudes=amplitudes, **specific_parameters)
 #                                            parameter1 = parameter1, parameter2 = parameter2, manip_elem = manip_elem)

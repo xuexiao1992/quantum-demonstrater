@@ -88,6 +88,8 @@ class Experiment:
         self.X_sweep_array = None
         self.Y_sweep_array = None
         
+        self.seq_repetition = 100
+        
         self.formatter = HDF5FormatMetadata()
         self.data_IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents')
         self.data_location = time.strftime("%Y-%m-%d/%H-%M-%S") + name + label
@@ -188,18 +190,19 @@ class Experiment:
         
         i = len(self.sequencer)
         self.sequencer.append(sequencer)
-        
-        for seg in range(len(sequence_cfg_type)):
-            if sequence_cfg_type[seg].startswith('manip'):
+        seq_cfg = deepcopy(sequence_cfg)
+        seq_cfg_type = deepcopy(sequence_cfg_type)
+        for seg in range(len(seq_cfg_type)):
+            if seq_cfg_type[seg].startswith('manip'):
                 Name = manip_name.pop(0)
                 Elem = manip_elem.pop(0)
-                sequence_cfg[seg]['step1'].update({'manip_elem': Name})
+                seq_cfg[seg]['step1'].update({'manip_elem': Name})
                 self.add_manip_elem(name = Name, manip_elem = Elem, seq_num = i+1)
                 self.sequencer[i].manipulation_elements[Name] = Elem
-        self.sequencer[i].sequence_cfg = sequence_cfg
-        self.sequencer[i].sequence_cfg_type = sequence_cfg_type
-        self.seq_cfg.append(sequence_cfg)
-        self.seq_cfg_type.append(sequence_cfg_type)
+        self.sequencer[i].sequence_cfg = seq_cfg
+        self.sequencer[i].sequence_cfg_type = seq_cfg_type
+        self.seq_cfg.append(seq_cfg)
+        self.seq_cfg_type.append(seq_cfg_type)
 
 #        self.sequencer[i].sweep_loop1 = self.sweep_loop1[i]
 #        self.sequencer[i].sweep_loop2 = self.sweep_loop2[i]
@@ -221,7 +224,7 @@ class Experiment:
         
         if type(parameter) is StandardParameter:#isinstance(obj, Tektronix_AWG5014)
             
-            self.digitizer, self.dig = set_digitizer(self.digitizer, 1, self.qubit_number)
+            self.digitizer, self.dig = set_digitizer(self.digitizer, 1, self.qubit_number, self.seq_repetition)
             
             step = (sweep_array[1]-sweep_array[0])
             
@@ -234,7 +237,7 @@ class Experiment:
             
         elif type(parameter) is str:
             
-            self.digitizer, self.dig = set_digitizer(self.digitizer, len(sweep_array), self.qubit_number)
+            self.digitizer, self.dig = set_digitizer(self.digitizer, len(sweep_array), self.qubit_number, self.seq_repetition)
             
             i = len(sequencer.sweep_loop1)+1
             para = 'para'+str(i)
@@ -327,7 +330,7 @@ class Experiment:
     def live_plotting(self,):
         loop_num = self.dimension_1 if self.X_parameter_type is 'In_Sequence' else 1
         probability_dataset = convert_to_probability(data_set = self.data_set, threshold = self.threshold, qubit_num = self.qubit_number, 
-                                                     name = self.X_parameter, sweep_array = self.X_sweep_array)
+                                                     repetition = self.seq_repetition, name = self.X_parameter, sweep_array = self.X_sweep_array)
         for parameter in probability_dataset.arrays:
             if parameter in self.probability_data.arrays:
                 self.probability_data.arrays[parameter].ndarray = probability_dataset.arrays[parameter].ndarray
@@ -338,7 +341,7 @@ class Experiment:
             self.plot[i].update()
         
         if self.plot_average:
-            self.plot_average_data()
+            self.calculate_average_data()
             for i in range(self.qubit_number):
                 self.average_plot[i].update()
         
@@ -350,7 +353,7 @@ class Experiment:
             self.plot[i].save
         return True
     
-    def plot_average_data(self,):
+    def calculate_average_data(self,):
         
         i = 0
         data_array = []
@@ -382,6 +385,10 @@ class Experiment:
         return True
     
     def plot_average_probability(self,):
+        if len(self.average_plot) == 0:
+            for i in range(self.qubit_number):
+                self.average_plot.append(MatPlot(figsize = (8,5)))
+        self.calculate_average_data()
         if self.X_parameter_type is 'In_Sequence':
             for i in range(self.qubit_number):
                 self.average_plot[i].add(x=self.averaged_data.arrays[self.X_parameter+'_set'],
@@ -816,8 +823,8 @@ class Experiment:
             if self.plot_average:
                 self.plot_average_probability()
             
-#            self.Loop.with_bg_task(task = self.live_plotting, bg_final_task = self.plot_save, min_delay = 1.5).run()
-            self.Loop.with_bg_task(task = self.live_plotting, min_delay = 5).run()
+            self.Loop.with_bg_task(task = self.live_plotting, bg_final_task = self.plot_save, min_delay = 1.5).run()
+#            self.Loop.with_bg_task(task = self.live_plotting, min_delay = 2).run()
             self.awg.stop()
             self.awg2.stop()
             

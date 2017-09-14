@@ -277,18 +277,18 @@ init2_cfg = {
         'step1' : set_step(time = 1e-3, qubits = qubits, voltages = [30*0.5*0, 30*0.5*0]),
         }
 manip2_cfg = {
-        'step1' : set_manip(time = 1e-6, qubits = qubits, voltages = [30*0.5*-0.004,30*0.5*0.016],)
+        'step1' : set_manip(time = 2e-6, qubits = qubits, voltages = [30*0.5*-0.004,30*0.5*0.016],)
         }
 read2_cfg = {
-        'step1' : set_step(time = 0.1e-3, qubits = qubits, voltages = [30*0.5*-0.004, 30*0.5*0]),
-        'step2' : set_step(time = 0.9e-3, qubits = qubits, voltages = [30*0.5*-0.004, 30*0.5*0]),
+        'step1' : set_step(time = 0.1e-3, qubits = qubits, voltages = [30*0.5*0, 30*0.5*0]),
+        'step2' : set_step(time = 0.9e-3, qubits = qubits, voltages = [30*0.5*0, 30*0.5*0]),
         }
 
-#sequence_cfg = [init_cfg, manip_cfg, read_cfg, init2_cfg, manip2_cfg, read2_cfg]         ## the NAME here in this list is not important , only the order matters
-#sequence_cfg_type = ['init', 'manip','read', 'init2', 'manip2', 'read2']
+sequence_cfg = [init_cfg, manip_cfg, read_cfg, init2_cfg, manip2_cfg, read2_cfg]         ## the NAME here in this list is not important , only the order matters
+sequence_cfg_type = ['init', 'manip','read', 'init2', 'manip2', 'read2']
 
-sequence_cfg = [init_cfg, manip_cfg, read_cfg,]         ## the NAME here in this list is not important , only the order matters
-sequence_cfg_type = ['init', 'manip','read',]
+sequence2_cfg = [init_cfg, manip_cfg, read_cfg,]
+sequence2_cfg_type = ['init', 'manip','read',]
 
 #%%
 
@@ -310,36 +310,46 @@ vsg2 = experiment.vsg2
     
 #experiment.seq_cfg = [sequence_cfg, ]
 #experiment.seq_cfg_type = [sequence_cfg_type,]
-vsg.frequency(18.4e9)
+vsg.frequency(18.392e9)
+#vsg.frequency(18.372e9)
 vsg2.frequency(19.6778e9)
 
-manip2_elem = Ramsey(name = 'Ramsey', pulsar = pulsar)
-manip3_elem = Finding_Resonance(name = 'Finding_resonance', pulsar = pulsar)
-
+ramsey = Ramsey(name = 'Ramsey', pulsar = pulsar, duration_time = 125e-9)
+finding_resonance = Finding_Resonance(name = 'Finding_resonance', pulsar = pulsar)
 
 rabi = Rabi(name = 'Rabi', pulsar = pulsar)
-crot = CRot(name = 'CRot', pulsar = pulsar, amplitude = 30*0.5*-0.028, frequency_shift = 0.046e9)
+crot = CRot(name = 'CRot', pulsar = pulsar, amplitude = 30*0.5*-0.026, frequency_shift = 0.054e9, duration_time = 275e-9)
+rabi2 = Rabi(name = 'Rabi2', pulsar = pulsar, qubit = 'qubit_1',)
 duration_time = 0
-
-
+#qubit_1.Pi_pulse_length = 250e-9
+#qubit_2.Pi_pulse_length = 250e-9
 #sweep_num = 31
 #digitizer, dig = set_digitizer(experiment.digitizer, sweep_num)
 #experiment.dig = dig 
 
 experiment.qubit_number = 1
 experiment.threshold = 0.025
-experiment.add_measurement('2D_Rabi_Scan', ['Rabi','CRot'], [rabi, crot], sequence_cfg, sequence_cfg_type)
+experiment.seq_repetition = 100
+#experiment.add_measurement('2D_Rabi_Scan', ['Rabi2','CRot'], [rabi2, crot], sequence_cfg, sequence_cfg_type)
+
 #experiment.add_measurement('2D_Rabi_Scan', ['Rabi'], [rabi], sequence_cfg, sequence_cfg_type)
-experiment.add_X_parameter('2D_Rabi_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.05e9, 0.05e9, 11), element = 'Rabi')
-
-
+#experiment.add_X_parameter('2D_Rabi_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.01e9, 0.01e9, 21), element = 'Rabi')
+#experiment.add_X_parameter('2D_Rabi_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.015e9, 0.005e9, 21), element = 'Rabi2')
+#experiment.add_X_parameter('2D_Rabi_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(0.04e9, 0.06e9, 31), element = 'CRot')
 
 #experiment.add_measurement('2D_Rabi_Scan', ['CRot'], [crot], sequence_cfg, sequence_cfg_type)
-#experiment.add_X_parameter('2D_Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 0.6e-6, 21), element = 'Rabi')
 
-#experiment.add_X_parameter(measurement = '2D_Rabi_Scan', parameter = vsg2.frequency, sweep_array = sweep_array(19.666e9, 19.680e9, 15))
+#experiment.add_X_parameter('2D_Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 0.5e-6, 26), element = 'CRot')
+
+#experiment.add_X_parameter(measurement = '2D_Rabi_Scan', parameter = vsg2.frequency, sweep_array = sweep_array(18.385e9, 18.40e9, 16))
 #experiment.add_X_parameter(measurement = '2D_Rabi_Scan', parameter = vsg2.power, sweep_array = sweep_array(1, 1.8, 17))
+
+experiment.add_measurement('Ramsey_Scan', ['Ramsey'], [ramsey,], sequence2_cfg, sequence2_cfg_type)
+experiment.add_X_parameter('Ramsey_Scan', parameter = 'waiting_time', sweep_array = sweep_array(0, 1.2e-6, 13), element = 'Ramsey')
+#experiment.add_Y_parameter(measurement = 'Ramsey_Scan', parameter = vsg2.frequency, sweep_array = sweep_array(19.667e9, 19.687e9, 16))
+
 print('sweep parameter set')
+
 
 experiment.set_sweep(repetition = True, plot_average = False, count = 5)
 
