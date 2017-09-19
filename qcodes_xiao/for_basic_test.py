@@ -210,3 +210,18 @@ def funca(a,**kw):
 def funcb(b, **kw):
     step = funca(a = b, **kw)
     return step
+
+#%%
+
+
+from scipy.optimize import curve_fit
+
+def Func_Sin(x,amp,omega,phase,offset):
+    return amp*np.sin(omega*x+phase)+offset
+
+
+def Func_Gaussian(x, a, x0, sigma):
+    x_new = x/1e6
+    return a*np.exp(-(x_new-x0)**2/(2*sigma**2))
+
+pars, pcov = curve_fit(Func_Sin, x, y,)

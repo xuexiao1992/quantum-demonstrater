@@ -63,14 +63,15 @@ class Ramsey(Manipulation):
 
         super().__init__(name, pulsar, **kw)
         self.refphase = {}
-        self.waiting_time = kw.pop('waiting_time', 0)
+        self.qubit = kw.pop('qubit', 'qubit_2')
         self.qubits = kw.pop('qubits', None)
         if self.qubits is not None:
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = None
         
-        self.amplitude = kw.pop('amplitude', 0)
+        self.waiting_time = kw.pop('waiting_time', 0)
+        self.amplitude = kw.pop('amplitude', 1)
         self.frequency_shift = kw.pop('frequency_shift', 0)
         self.length = kw.pop('duration_time', 125e-9)
 
@@ -85,11 +86,12 @@ class Ramsey(Manipulation):
         self.waiting_time = kw.pop('waiting_time', self.waiting_time)
         self.amplitude = kw.pop('amplitude', self.amplitude)
         self.frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
-        self.length = kw.pop('duration_time', 125e-9)
+        self.length = kw.pop('duration_time', self.length)
         return self
 
-    def make_circuit(self, qubit = 2, **kw):
-        qubit_num = qubit
+    def make_circuit(self, **kw):
+        
+        qubit_num = kw.pop('qubit', int(self.qubit[-1]))
         
         qubit = self.qubits[int(qubit_num-1)]
         
@@ -208,6 +210,99 @@ class CRot(Manipulation):
 
         return self
 
+
+
+AllXY_array = [
+        ['I', 'I'],
+        ['Xpi', 'Xpi'], ['Ypi', 'Ypi'],
+        ['Xpi', 'Ypi'], ['Ypi', 'Xpi'], 
+        ['X', 'I'], ['Y', 'I'],
+        ['X', 'Y'], ['Y', 'X'],
+        ['X', 'Ypi'], ['Y', 'Xpi'],
+        ['Xpi', 'Y'], ['Ypi', 'X'],
+        ['X', 'Xpi'], ['Xpi', 'X'],
+        ['Y', 'Ypi'], ['Ypi', 'Y'],
+        ['Xpi', 'I'], ['Ypi', 'I'],
+        ['X', 'X'], ['Y', 'Y'],
+        ]
+AllXY_array_2 = sorted(AllXY_array*2)
+
+class AllXY(Manipulation):
+
+    def __init__(self, name, pulsar, **kw):
+
+        super().__init__(name, pulsar, **kw)
+        self.refphase = {}
+        self.qubit = kw.pop('qubit', 'qubit_2')
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = None
+        self.amplitude = kw.pop('amplitude', 1)
+        self.frequency_shift = kw.pop('frequency_shift', 0)
+
+    def __call__(self, **kw):
+        self.name = kw.pop('name', self.name)
+        self.qubits = kw.pop('qubits', self.qubits)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = kw.pop('pulsar', self.pulsar)
+        self.amplitude = kw.pop('amplitude', self.amplitude)
+        self.frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
+        return self
+
+    def make_circuit(self, **kw):
+        
+        qubit_num = kw.pop('qubit', int(self.qubit[-1]))
+        
+        qubit = self.qubits[int(qubit_num-1)]
+        
+        length = kw.get('duration_time', self.length)
+        amplitude = kw.get('amplitude', self.amplitude)
+        frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
+        
+        g = int(kw.pop('gate', 1)-1)
+        gate = AllXY_array[g]
+        for i in range(len(gate)):
+            amplitude = 0 if gate[i] == 'I' else 1
+            axis = [1,0,0] if gate[i].startswith('X') else [0,1,0]
+            length = qubit.Pi_pulse_length if gate[i].endswith('pi') else qubit.halfPi_pulse_length
+            
+            name = 'G%d'%(i+1)
+            refgate = None if i == 0 else 'G%d'%i
+            
+            self.add_single_qubit_gate(name = name, refgate = refgate, 
+                                       qubit = qubit, axis = axis,
+                                       amplitude = amplitude, length = length, 
+                                       frequency_shift = frequency_shift)
+            
+        return self
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class Grover(Manipulation):
 
     def __init__(self, name, pulsar, **kw):
@@ -246,105 +341,3 @@ class Grover(Manipulation):
 
 
 
-class new_ex(Manipulation):
-
-    def __init__(self, name,waiting_time, **kw):
-
-        super().__init__(name,)
-
-#        self.refphase = {}
-
-        self.parameter1 = kw.pop('parameter1', 0)
-        self.parameter2 = kw.pop('parameter2', 0)
-#        self.qubits = kw.pop('qubits', None)
-#        if self.qubits is not None:
-#            self.qubits_name = [qubit.name for qubit in self.qubits]
-#            self.refphase = {qubit.name: 0 for qubit in self.qubits}
-#        self.pulsar = kw.pop('pulsar', None)
-
-    def __call__(self, **kw):
-
-#        self.qubits = kw.pop('qubits', None)
-#        if self.qubits is not None:
-#            self.qubits_name = [qubit.name for qubit in self.qubits]
-#            self.refphase = {qubit.name: 0 for qubit in self.qubits}
-#        self.pulsar = kw.pop('pulsar', None)
-        self.parameter1 = kw.pop('parameter1', 0)
-        self.parameter2 = kw.pop('parameter2', 0)
-
-#        if self.pulsar is not None:
-#            self.clock = self.pulsar.clock
-#
-#            for c in self.pulsar.channels:
-#                chan = self.pulsar.channels[c]
-#                delay = chan['delay'] if not(self.ignore_delays) else 0.
-#                self.define_channel(name=c, type=chan['type'],
-#                                    high=chan['high'], low=chan['low'],
-#                                    offset=chan['offset'],
-#                                    delay=delay)
-        return self
-
-    def make_circuit(self,):
-
-        self.add_X(name='X1_Q1', qubit = self.qubits[0],)
-
-        self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = self.parameter1,)
-
-        self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = self.parameter2,)
-
-        self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = self.qubits[0], waiting_time = 1,)
-
-        return self
-
-
-#sweep_x(name = 'X1_Q1', parameter = 'waiting_time')
-#sweep_y
-
-
-#%% by functions
-
-
-#def make_manipulation(manipulation = Manipulation(name = 'Manip'), qubits = [], **kw):
-#
-#    waiting_time = kw.pop('waiting_time', None)
-#    amplitude = kw.pop('amplitude', None)
-#
-#    manip = make_Ramsey(manipulation = manipulation, qubits = qubits, waiting_time = waiting_time)
-#
-#    return manip
-#
-#
-#
-#def make_Ramsey(manipulation = Manipulation(name = 'Manip'), qubits = [], waiting_time = 0, **kw):
-#
-#    qubit_1 = qubits[0]
-#
-#    manipulation.add_X(name='X1_Q1', qubit = qubit_1,)
-#
-#    manipulation.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = qubit_1, waiting_time = waiting_time,)
-#
-#    return manipulation
-#
-#def make_Rabi(manipulation = Manipulation(name = 'Manip'), qubits = [], **kw):
-#
-#    qubit_1 = qubits[0]
-#
-#    duration_time = kw.pop('duration_time', qubit_1.Pi_pulse_length)
-#
-#    manipulation.add_single_qubit_gate(name = 'Rabi')
-#
-#    return manipulation
-#
-#def calibrate_X_Pi(manipulation = Manipulation(name = 'Manip'), qubits = [],**kw):
-#
-#    qubit_1 = qubits[0]
-#
-#    duration_time = kw.pop('duration_time')
-#    repetition = kw.pop('repetitions')
-#
-#    manipulation.add_X(name = 'X1', qubit = qubit_1,)
-#
-#    for i in range(repetition):
-#        manipulation.add_single_qubit_gate(name = 'X_Pi_%d'%(i+1),qubit = qubit_1, length = duration_time)
-#
-#    return manipulation

@@ -190,7 +190,7 @@ readout_time = 700e-6
 #loop_num = 5
 #loop_num = len(sweep_loop1['para1']) if 'para1' in sweep_loop1 else 1
 qubit_num = 1
-repetition = 100
+repetition = 500
 
 seg_size = int(((readout_time*sample_rate+pretrigger) // 16 + 1) * 16)
 #%%

@@ -91,11 +91,11 @@ class Experiment:
         self.seq_repetition = 100
         
         self.formatter = HDF5FormatMetadata()
-        self.data_IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents')
-        self.data_location = time.strftime("%Y-%m-%d/%H-%M-%S") + name + label
+        self.data_IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents\\test_data\\'+self.name)
+        self.data_location = time.strftime("%Y-%m-%d/%H-%M-%S/") + name + label
         self.data_set = None
         self.threshold = 0.025
-        self.probability_data = new_data(location = self.data_location+'_averaged_probability', io = self.data_IO, formatter = self.formatter)
+        self.probability_data = new_data(location = self.data_location+'_probability', io = self.data_IO, formatter = self.formatter)
         
         self.plot = []
         self.average_plot = []
@@ -161,7 +161,15 @@ class Experiment:
         self.digitier_readout_marker = 'ch6_marker1'
         self.occupied_channel1 = 'ch2_marker2'
         self.occupied_channel2 = 'ch5_marker2'
-
+    
+    
+    def reset(self, name = None, label = None, **kw):
+        
+        name = self.name if name is None else name
+        label = self.label if label is None else label
+        
+        self.__init__(name, label, self.qubits, self.awg, self.awg2, self.pulsar, vsg = self.vsg, vsg2=self.vsg2, digitizer = self.digitizer)
+        
     def add_manip_elem(self, name, manip_elem, seq_num):
         
         self.manipulation_elements[name] = manip_elem
@@ -350,7 +358,10 @@ class Experiment:
     def plot_save(self):
         
         for i in range(self.qubit_number):
-            self.plot[i].save
+            self.plot[i].save()
+#            self.plot[i].save('C:/Users/LocalAdmin/Documents/test_data/{}/{}.png'.format(self.name, time.strftime("%H-%M-%S")))
+#            if len(self.average_plot) != 0:
+#                self.average_plot[i].save('C:/Users/LocalAdmin/Documents/test_data/{}/{}.png'.format(self.name, time.strftime("%H-%M-%S")))
         return True
     
     def calculate_average_data(self,):
@@ -456,7 +467,7 @@ class Experiment:
     this function below organizes segments. e.g. self.initialize_segment = {'step1': element1, 'step2': 1D/2D list, 'step3': element3...}
     """
     
-    def first_segment_into_sequence_and_elts(self, segment, repetition, rep_idx = 0,idx_j = 0, idx_i = 0, seq_num = 0):         ## segment = self.initialize_segment
+    def first_segment_into_sequence_and_elts(self, segment, segment_type, repetition, rep_idx = 0,idx_j = 0, idx_i = 0, seq_num = 0):         ## segment = self.initialize_segment
         
         j = idx_j
         
@@ -474,6 +485,8 @@ class Experiment:
                 repe = repetition[step]
                 if i == 0:
                     self.elts.append(element)
+                    if segment_type in self.sequencer[sq].sequence_cfg_type:
+                        self.sequencer[sq].elts.append(element)
             else:
                 jj = 0 if len(segment[step]) == 1 else j
                 ii = 0 if len(segment[step][0]) == 1 else i
@@ -484,8 +497,12 @@ class Experiment:
                 repe = repetition[step][jj][ii]
                 if ii != 0 or i==0:                                                         ## !!!!!!!!! here is a potential BUG!!!!!!
                     self.elts.append(element)
+                    if segment_type in self.sequencer[sq].sequence_cfg_type:
+                        self.sequencer[sq].elts.append(element)
             
             self.sequence.append(name = name, wfname = wfname, trigger_wait = False, repetitions = repe)
+            if segment_type in self.sequencer[sq].sequence_cfg_type:
+                self.sequencer[sq].sequence.append(name = name, wfname = wfname, trigger_wait = False, repetitions = repe)
         
         return True
     
@@ -493,7 +510,7 @@ class Experiment:
     problems below
     """
     
-    def update_segment_into_sequence_and_elts(self, segment, repetition, rep_idx = 0,idx_j = 0, idx_i = 0):         ## segment = self.initialize_segment
+    def update_segment_into_sequence_and_elts(self, segment, segment_type, repetition, rep_idx = 0,idx_j = 0, idx_i = 0):         ## segment = self.initialize_segment
         
         j = idx_j
         
@@ -530,12 +547,12 @@ class Experiment:
         return True
     
     
-    def add_segment(self, segment, repetition, rep_idx = 0, idx_j = 0, idx_i = 0, seq_num = 0):
+    def add_segment(self, segment, segment_type, repetition, rep_idx = 0, idx_j = 0, idx_i = 0, seq_num = 0):
         
         j = idx_j
         
         if j == 0:
-            self.first_segment_into_sequence_and_elts(segment, repetition, idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)
+            self.first_segment_into_sequence_and_elts(segment, segment_type, repetition, idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)
         else:
             self.update_segment_into_sequence_and_elts(segment, repetition, idx_j = idx_j, idx_i = idx_i)
         
@@ -576,9 +593,15 @@ class Experiment:
                                            name='comp%d_c5m2'%(i+1),refpulse = 'compensation1', refpoint = 'start')
         
         self.elts.append(compensation_element)
+        self.sequencer[seq_num].elts.append(compensation_element)
+        
         self.sequence.append(name = 'compensation_%d_%d'%(seq_num, idx_i), 
                              wfname = 'compensation_%d_%d'%(seq_num, idx_i), 
                              trigger_wait = False, repetitions = 3000)
+        self.sequencer[seq_num].sequence.append(name = 'compensation_%d_%d'%(seq_num, idx_i), 
+                                                wfname = 'compensation_%d_%d'%(seq_num, idx_i), 
+                                                trigger_wait = False, repetitions = 3000)
+        
         return True
 
    
@@ -606,7 +629,7 @@ class Experiment:
                 
                 repetition = self.repetition[segment_type]
                 
-            self.add_segment(segment = segment, repetition = repetition, 
+            self.add_segment(segment = segment, segment_type = segment_type, repetition = repetition, 
                              idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)
             i+=1
             
@@ -616,13 +639,16 @@ class Experiment:
  
     def generate_1D_sequence(self, idx_j = 0):
         seq_num = 0
+        
+#        self.set_trigger()
+        
         for sequencer in self.sequencer:
             D1 = sequencer.dimension_1
             for idx_i in range(D1):
                 self.generate_unit_sequence(idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)
             seq_num += 1
-        if idx_j == 0:
-            self.load_sequence()
+#        if idx_j == 0:
+#            self.load_sequence()
 
         return self.sequence
     
@@ -716,12 +742,11 @@ class Experiment:
         
         return True
     
-    def restore_previous_sequence(self, awg, filename = 'setup_0_.AWG'):
+    def restore_previous_sequence(self, filename = 'setup_0_.AWG'):
         
-        awg = awg
+        self.awg.load_awg_file(filename = filename)
         
-        awg.load_awg_file(filename = filename)
-        
+        self.awg2.load_awg_file(filename = filename)
 #        self.awg.write('AWGCONTROL:SRESTORE "{}"'.format(filename))
         
         return True
@@ -732,7 +757,7 @@ class Experiment:
         
         return True
 
-    def set_trigger(self,):
+    def set_trigger(self,sequence, elts):
         
         trigger_element = Element('trigger', self.pulsar)
 
@@ -753,9 +778,9 @@ class Experiment:
         extra_element.add(SquarePulse(name = 'EXT1', channel = 'ch4_marker2', amplitude=2, length=2e-6),
                             name='extra1',)
 
-        self.elts.insert(0,trigger_element)
+        elts.insert(0,trigger_element)
 #        self.elts.append(extra_element)
-        self.sequence.insert_element(name = 'trigger', wfname = 'trigger', pos = 0)
+        sequence.insert_element(name = 'trigger', wfname = 'trigger', pos = 0)
 #        self.sequence.append(name ='extra', wfname = 'extra', trigger_wait = False)
         return True
 
@@ -763,12 +788,10 @@ class Experiment:
         
         print('load sequence')
 #        elts = list(self.element.values())
-        self.awg.delete_all_waveforms_from_list()
-        time.sleep(0.1)
-        self.awg2.delete_all_waveforms_from_list()
-        time.sleep(1)
-        self.set_trigger()
-        time.sleep(1)
+#        self.awg.delete_all_waveforms_from_list()
+#        self.awg2.delete_all_waveforms_from_list()
+#        time.sleep(1)
+        self.set_trigger(self.sequence, self.elts)
         elts = self.elts
         sequence = self.sequence
         self.pulsar.program_awgs(sequence, *elts, AWGs = ['awg','awg2'],)       ## elts should be list(self.element.values)
@@ -778,12 +801,37 @@ class Experiment:
         self.add_marker_into_first_readout(self.awg2)
 #        self.awg2.trigger_level(0.5)
         self.awg2.set_sqel_trigger_wait(element_no = 1, state = 1)
-        time.sleep(1)
+        time.sleep(0.2)
         last_element_num = self.awg2.sequence_length()
         self.awg.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 2)
-        time.sleep(0.2)
         self.awg2.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 2)
 
+        return True
+    
+    def set_calibration_sweep(self, **kw):
+        
+        real_time_calibration = True
+        
+        def switch_sequence(seq_num, x):
+            
+            self.close()
+            
+            self.load_sequence()
+            
+            return True
+        
+        
+        if real_time_calibration is True:
+            count = kw.pop('count', 1)
+#        if self.Loop is None:
+            Count = StandardParameter(name = 'Count', set_cmd = self.function)
+            Sweep_Count = Count[1:count+1:1]
+            if self.Loop is None:
+                self.Loop = Loop(sweep_values = Sweep_Count).each(self.dig)
+            else:
+                LOOP = self.Loop
+                self.Loop = Loop(sweep_values = Sweep_Count).each(LOOP)
+        
         return True
 
 
@@ -793,10 +841,6 @@ class Experiment:
         
         print('run experiment')
 
-#        self.awg2.write('SOUR1:ROSC:SOUR EXT')
-#        self.awg.write('SOUR1:ROSC:SOUR INT')
-#        self.awg.clock_source('EXT')
-#        self.awg.ch3_state.set(1)
         self.awg.all_channels_on()
 #        self.awg.force_trigger()
         self.awg2.all_channels_on()
@@ -804,12 +848,10 @@ class Experiment:
         self.vsg.status('On')
         self.vsg2.status('On')
         time.sleep(0.5)
-#        self.awg2.force_trigger()
-#        self.awg.run()
-#        self.awg2.run()
+
         self.pulsar.start()
         
-        time.sleep(5)
+        time.sleep(2)
         
         if self.Loop is not None:
 #            self.data_set = self.Loop.run(location = self.data_location, loc_record = {'name': self.name, 'label': self.label}, io = self.data_IO,)
@@ -836,7 +878,7 @@ class Experiment:
     def close(self,):
         self.awg.stop()
         self.awg2.stop()
-        time.sleep(0.5)
+#        self.restore_previous_sequence()
         self.vsg.status('Off')
         self.vsg2.status('Off')
         self.awg.delete_all_waveforms_from_list()
