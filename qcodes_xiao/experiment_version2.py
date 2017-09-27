@@ -6,6 +6,8 @@ Created on Wed Jun 14 16:31:17 2017
 """
 
 import numpy as np
+from scipy.optimize import curve_fit
+
 from pycqed.measurement.waveform_control.element import Element
 from pycqed.measurement.waveform_control.sequence import Sequence
 from gate import Single_Qubit_Gate#, Two_Qubit_Gate
@@ -15,7 +17,7 @@ from sequencer import Sequencer
 #from readout import Readout
 from qubit import Qubit
 from pycqed.measurement.waveform_control.pulse import CosPulse, SquarePulse, LinearPulse
-
+from qcodes.instrument.base import Instrument
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.loops import Loop, ActiveLoop
 from qcodes.data.hdf5_format import HDF5Format, HDF5FormatMetadata
@@ -23,6 +25,8 @@ from qcodes.data.gnuplot_format import GNUPlotFormat
 from qcodes.data.io import DiskIO
 from qcodes.data.data_set import new_data, DataSet,load_data
 from qcodes.data.data_array import DataArray
+
+from qcodes.actions import Task
 
 import stationF006
 #from stationF006 import station
@@ -34,6 +38,17 @@ from qcodes.plots.qcmatplotlib import MatPlot
 from qcodes.plots.pyqtgraph import QtPlot
 
 from data_set_plot import convert_to_ordered_data, convert_to_01_state, convert_to_probability, set_digitizer
+
+#%%
+
+def Func_Sin(x,amp,omega,phase,offset):
+    return amp*np.sin(omega*x+phase)+offset
+
+
+def Func_Gaussian(x, a, x0, ):
+#    x_new = x/1e6
+    sigma = 1e6
+    return a*np.exp(-(x-x0)**2/(2*sigma**2))
 
 #%%
 class Experiment:
@@ -85,23 +100,35 @@ class Experiment:
         self.Y_parameter = None
         self.X_parameter_type = None
         self.Y_parameter_type = None
-        self.X_sweep_array = None
-        self.Y_sweep_array = None
+        self.X_sweep_array = np.array([])
+        self.Y_sweep_array = np.array([])
+        
+        self.calibration_qubit = None
         
         self.seq_repetition = 100
         
         self.formatter = HDF5FormatMetadata()
+        
+        self.write_period = None
+        
         self.data_IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents\\test_data\\'+self.name)
         self.data_location = time.strftime("%Y-%m-%d/%H-%M-%S/") + name + label
+        self.calibration_data_location = self.data_location+'_calibration'
+        
         self.data_set = None
+        
+        self.calibration_data_set = None
+        
         self.threshold = 0.025
-        self.probability_data = new_data(location = self.data_location+'_probability', io = self.data_IO, formatter = self.formatter)
+        self.probability_data = new_data(location = self.data_location+'_probability', io = self.data_IO, 
+                                         write_period = self.write_period, formatter = self.formatter)
         
         self.plot = []
         self.average_plot = []
         
         
-        self.averaged_data = new_data(location = self.data_location+'_averaged_data', io = self.data_IO, formatter = self.formatter)
+        self.averaged_data = new_data(location = self.data_location+'_averaged_data', io = self.data_IO, 
+                                      write_period = self.write_period, formatter = self.formatter)
         
         self.plot_average = False
 
@@ -123,9 +150,9 @@ class Experiment:
         
         self.sequencer = []
         
-        self.dimension_1 = 1
-        self.dimension_2 = 1
-
+        self.dimension_1 = 0
+        self.dimension_2 = 0
+        self.Count = 0
 
         self.segment = {
 #                'init': self.initialize_segment,
@@ -211,6 +238,8 @@ class Experiment:
         self.sequencer[i].sequence_cfg_type = seq_cfg_type
         self.seq_cfg.append(seq_cfg)
         self.seq_cfg_type.append(seq_cfg_type)
+        
+        self.digitizer, self.dig = set_digitizer(self.digitizer, 1, self.qubit_number, self.seq_repetition)
 
 #        self.sequencer[i].sweep_loop1 = self.sweep_loop1[i]
 #        self.sequencer[i].sweep_loop2 = self.sweep_loop2[i]
@@ -226,7 +255,7 @@ class Experiment:
         
         sequencer = self.find_sequencer(measurement)
         
-        self.X_sweep_array = sweep_array
+        self.X_sweep_array = np.append(self.X_sweep_array, sweep_array)
         
         element = kw.pop('element', None)
         
@@ -243,9 +272,14 @@ class Experiment:
             self.X_parameter = parameter.full_name
             self.X_parameter_type = 'Out_Sequence'
             
+            sequencer.X_parameter = parameter.full_name
+            sequencer.X_parameter_type = 'Out_Sequence'
+            
         elif type(parameter) is str:
             
-            self.digitizer, self.dig = set_digitizer(self.digitizer, len(sweep_array), self.qubit_number, self.seq_repetition)
+#            sequencer.digitizer, sequencer.dig = set_digitizer(self.digitizer, len(sweep_array), self.qubit_number, self.seq_repetition)
+            
+            self.digitizer, self.dig = set_digitizer(self.digitizer, len(self.X_sweep_array), self.qubit_number, self.seq_repetition)
             
             i = len(sequencer.sweep_loop1)+1
             para = 'para'+str(i)
@@ -259,8 +293,11 @@ class Experiment:
             
             self.X_parameter = parameter
             self.X_parameter_type = 'In_Sequence'
+            
+            sequencer.X_parameter = parameter
+            sequencer.X_parameter_type = 'In_Sequence'
         
-        self.dimension_1 = len(sweep_array)
+        self.dimension_1 += len(sweep_array)
         self.sweep_type = '1D'
         
         return True
@@ -301,14 +338,35 @@ class Experiment:
         return True
     
     def function(self, x):
+        
+        return True
+    
+    def function2(self,):
+        
+        self.load_sequence()
+        
+        set_digitizer(self.digitizer, len(self.X_sweep_array), self.qubit_number, self.seq_repetition)
+        
+        self.pulsar.start()
+        
+        return True
+    
+    def update_calibration(self,):
+        if self.calibration_qubit == 'all' or self.calibration_qubit == 'qubit_1':
+            self.calibrate_by_Ramsey('qubit_1')
+        if self.calibration_qubit == 'all' or self.calibration_qubit == 'qubit_2':
+            self.calibrate_by_Ramsey('qubit_2')
+        
         return True
 
-    def set_sweep(self, repetition = False, plot_average = False, **kw):
+    def set_sweep(self, repetition = False, with_calibration = False, plot_average = False, **kw):
         
         self.plot_average = plot_average
         
         for i in range(self.qubit_number):
             d = i if i == 1 else 2
+            if i >=2:
+                d = i+1
             self.plot.append(QtPlot(window_title = 'raw plotting qubit_%d'%d, remote = False))
 #            self.plot.append(MatPlot(figsize = (8,5)))
             if plot_average:
@@ -322,13 +380,34 @@ class Experiment:
         """
         loop function
         """
+        
         if repetition is True:
             count = kw.pop('count', 1)
-#        if self.Loop is None:
+            self.Count = count
+            
             Count = StandardParameter(name = 'Count', set_cmd = self.function)
+            
+            if with_calibration:
+                calibration = kw.pop('calibration',None)
+                if calibration is not None:
+                    calibrated_parameter = calibration.calibrated_parameter
+                    load_task = Task(func = self.function2)
+                    load_task2 = Task(func = calibration.load_sequence)
+                else:
+                    calibration_task = Task(func = self.update_calibration)
+                Count = StandardParameter(name = 'Count', set_cmd = self.function)
+                
+                
+            
             Sweep_Count = Count[1:count+1:1]
             if self.Loop is None:
-                self.Loop = Loop(sweep_values = Sweep_Count).each(self.dig)
+                if with_calibration:
+                    if calibration is not None:
+                        self.Loop = Loop(sweep_values = Sweep_Count).each(load_task2, calibrated_parameter, load_task, self.dig)
+                    else:
+                        self.Loop = Loop(sweep_values = Sweep_Count).each(self.dig, calibration_task,)
+                else:
+                    self.Loop = Loop(sweep_values = Sweep_Count).each(self.dig)
             else:
                 LOOP = self.Loop
                 self.Loop = Loop(sweep_values = Sweep_Count).each(LOOP)
@@ -336,14 +415,8 @@ class Experiment:
         return True
     
     def live_plotting(self,):
-        loop_num = self.dimension_1 if self.X_parameter_type is 'In_Sequence' else 1
-        probability_dataset = convert_to_probability(data_set = self.data_set, threshold = self.threshold, qubit_num = self.qubit_number, 
-                                                     repetition = self.seq_repetition, name = self.X_parameter, sweep_array = self.X_sweep_array)
-        for parameter in probability_dataset.arrays:
-            if parameter in self.probability_data.arrays:
-                self.probability_data.arrays[parameter].ndarray = probability_dataset.arrays[parameter].ndarray
-            else:
-                self.probability_data.arrays[parameter] = probability_dataset.arrays[parameter]
+#        loop_num = self.dimension_1 if self.X_parameter_type is 'In_Sequence' else 1
+        self.convert_to_probability()
         
         for i in range(self.qubit_number):
             self.plot[i].update()
@@ -364,11 +437,25 @@ class Experiment:
 #                self.average_plot[i].save('C:/Users/LocalAdmin/Documents/test_data/{}/{}.png'.format(self.name, time.strftime("%H-%M-%S")))
         return True
     
-    def calculate_average_data(self,):
+    def convert_to_probability(self,):
+        sweep_array = self.X_sweep_array if len(self.X_sweep_array) != 0 else None
+        name = self.X_parameter if self.X_parameter is not None else self.name
+        probability_dataset = convert_to_probability(data_set = self.data_set, threshold = self.threshold, qubit_num = self.qubit_number, 
+                                                     repetition = self.seq_repetition, name = name, sweep_array = sweep_array)
+        for parameter in probability_dataset.arrays:
+            if parameter in self.probability_data.arrays:
+                self.probability_data.arrays[parameter].ndarray = probability_dataset.arrays[parameter].ndarray
+            else:
+                self.probability_data.arrays[parameter] = probability_dataset.arrays[parameter]
+        return probability_dataset
+    
+    def calculate_average_data(self, measurement = 'self'):
         
         i = 0
         data_array = []
-        
+        sequencer = None if measurement is 'self' else self.find_sequencer(measurement)
+        average_data = self.averaged_data if measurement is 'self' else new_data(io = self.data_IO, formatter = self.formatter)
+#        probability_data = self.probability_data if measurement is 'self' else sequencer.probability_data
         for parameter in self.probability_data.arrays:
             if len(self.probability_data.arrays[parameter].ndarray.shape) == 2:
                 data = deepcopy(self.probability_data.arrays[parameter].ndarray)
@@ -379,20 +466,24 @@ class Experiment:
                 
                 data_array.append(DataArray(preset_data = data, name = name, array_id = array_id, is_setpoint = is_setpoint))
                 if parameter in self.averaged_data.arrays:
-                    self.averaged_data.arrays[parameter].ndarray = data_array[i].ndarray
+                    average_data.arrays[parameter].ndarray = data_array[i].ndarray
                 else:
-                    self.averaged_data.arrays[parameter] = data_array[i]
+                    average_data.arrays[parameter] = data_array[i]
 #                    self.averaged_data.add_array(data_array[i])
                 i+=1
         
 #        self.average_plot.add(self.averaged_data.digitizer,figsize=(1200, 500))
-        return True
+        return average_data
     
     def plot_probability(self):
         for i in range(self.qubit_number):
-            self.plot[i].add(x = self.probability_data.arrays[self.X_parameter+'_set'],
+            name = self.X_parameter if self.X_parameter is not None else self.name
+            n = 1 if i == 1 else 2
+            if i >=2:
+                n = i+1
+            self.plot[i].add(x = self.probability_data.arrays[name+'_set'],
                      y = self.probability_data.arrays['Count_set'] if self.sweep_type is '1D' else self.probability_data.arrays[self.Y_parameter+'_set'],
-                     z = self.probability_data.arrays['digitizerqubit_%d'%(i+1)], figsize=(1200, 500))
+                     z = self.probability_data.arrays['digitizerqubit_%d'%(n)], figsize=(1200, 500))
         return True
     
     def plot_average_probability(self,):
@@ -400,14 +491,21 @@ class Experiment:
             for i in range(self.qubit_number):
                 self.average_plot.append(MatPlot(figsize = (8,5)))
         self.calculate_average_data()
+        
         if self.X_parameter_type is 'In_Sequence':
             for i in range(self.qubit_number):
+                n = 1 if i == 1 else 2
+                if i >=2:
+                    n = i+1
                 self.average_plot[i].add(x=self.averaged_data.arrays[self.X_parameter+'_set'],
-                                 y=self.averaged_data.arrays['digitizerqubit_%d'%(i+1)],)# figsize=(1200, 500))
+                                 y=self.averaged_data.arrays['digitizerqubit_%d'%(n)],)# figsize=(1200, 500))
         else:
             for i in range(self.qubit_number):
+                n = 1 if i == 1 else 2
+                if i >=2:
+                    n = i+1
                 self.average_plot[i].add(x=self.averaged_data.arrays[self.X_parameter+'_set'],
-                                 y=self.averaged_data.arrays['digitizerqubit_%d'%(i+1)],)#figsize=(1200, 500))
+                                 y=self.averaged_data.arrays['digitizerqubit_%d'%(n)],)#figsize=(1200, 500))
         
         return True
     
@@ -647,6 +745,7 @@ class Experiment:
             for idx_i in range(D1):
                 self.generate_unit_sequence(idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)
             seq_num += 1
+        self.sequence, self.elts = self.set_trigger(self.sequence, self.elts)
 #        if idx_j == 0:
 #            self.load_sequence()
 
@@ -698,8 +797,16 @@ class Experiment:
         print('ana', wfs['ch%d'%i], 'm1', wfs['ch%d_marker1'%i], 'm2', wfs['ch%d_marker2'%i])
         awg.send_waveform_to_list(w = wfs['ch%d'%i], m1 = wfs['ch%d_marker1'%i],
                                   m2 = wfs['ch%d_marker2'%i], wfmname = name+'_ch%d'%i)
-        element_no = len(self.segment['init']) + len(self.segment['manip']) + 1 + 1
-        element_no = 7
+        
+        element_no = 0
+        for seg in self.sequencer[0].sequence_cfg_type:
+            if seg.startswith('read'):
+                break
+            else:
+                element_no += len(self.segment[seg])
+        
+#        element_no = len(self.segment['init']) + len(self.segment['manip']) + 1 + 1
+        element_no += 2
         awg.set_sqel_waveform(waveform_name = name+'_ch%d'%i, channel = i,
                               element_no = element_no)
         return first_read
@@ -782,18 +889,27 @@ class Experiment:
 #        self.elts.append(extra_element)
         sequence.insert_element(name = 'trigger', wfname = 'trigger', pos = 0)
 #        self.sequence.append(name ='extra', wfname = 'extra', trigger_wait = False)
-        return True
+        return sequence, elts
 
-    def load_sequence(self,):
+    def load_sequence(self, measurement = 'self',):
         
         print('load sequence')
 #        elts = list(self.element.values())
 #        self.awg.delete_all_waveforms_from_list()
 #        self.awg2.delete_all_waveforms_from_list()
 #        time.sleep(1)
-        self.set_trigger(self.sequence, self.elts)
-        elts = self.elts
-        sequence = self.sequence
+
+        if measurement is 'self':
+            sequence = self.sequence
+            elts = self.elts
+        else:
+            sequencer = self.find_sequencer(measurement)
+            sequence = sequencer.sequence
+            elts = sequencer.elts
+        
+#        sequence, elts = self.set_trigger(sequence, elts)
+#        elts = self.elts
+#        sequence = self.sequence
         self.pulsar.program_awgs(sequence, *elts, AWGs = ['awg','awg2'],)       ## elts should be list(self.element.values)
         
         time.sleep(5)
@@ -808,34 +924,116 @@ class Experiment:
 
         return True
     
-    def set_calibration_sweep(self, **kw):
+    def set_sweep_with_calibration(self, repetition = False, plot_average = False, **kw):
         
-        real_time_calibration = True
+        self.plot_average = plot_average
         
-        def switch_sequence(seq_num, x):
-            
-            self.close()
-            
-            self.load_sequence()
-            
-            return True
+        for i in range(self.qubit_number):
+            d = i if i == 1 else 2
+            self.plot.append(QtPlot(window_title = 'raw plotting qubit_%d'%d, remote = False))
+#            self.plot.append(MatPlot(figsize = (8,5)))
+            if plot_average:
+#                self.average_plot.append(QtPlot(window_title = 'average data qubit_%d'%d, remote = False))
+                self.average_plot.append(MatPlot(figsize = (8,5)))
         
+        for seq in range(len(self.sequencer)):
+            self.sequencer[seq].set_sweep()
+            self.make_all_segment_list(seq)
         
-        if real_time_calibration is True:
+        if repetition is True:
             count = kw.pop('count', 1)
-#        if self.Loop is None:
+
             Count = StandardParameter(name = 'Count', set_cmd = self.function)
-            Sweep_Count = Count[1:count+1:1]
+            Sweep_Count = Count[1:2:1]
+            
+            Loop_Calibration = Loop(sweep_values = Sweep_Count).each(self.dig)
+            
+            
             if self.Loop is None:
-                self.Loop = Loop(sweep_values = Sweep_Count).each(self.dig)
+                self.Loop = Loop(sweep_values = Sweep_Count).each(Loop_Calibration, self.dig)
             else:
-                LOOP = self.Loop
-                self.Loop = Loop(sweep_values = Sweep_Count).each(LOOP)
+                raise TypeError('calibration not set')
+#                LOOP = self.Loop
+#                self.Loop = Loop(sweep_values = Sweep_Count).each(LOOP)
+                
+        return True
+    
+    def calibrate_by_Rabi(self, qubit = 'qubit2'):
+        q = qubit[-1]
+        DS = self.averaged_data
+        x = DS.arrays[self.X_parameter+'_set'].ndarray
+        y = DS.arrays['digitizerqubit_'+q].ndarray
+        
+        try: 
+            pars, pcov = curve_fit(Func_Sin, x, y,)
+            y_new = Func_Sin(x,pars[0],pars[1],pars[2],pars[3])
+            pt = MatPlot()
+            pt.add(x,y_new)
+        except RuntimeError:
+            print('fitting not converging')
         
         return True
-
-
     
+    def calibrate_by_Ramsey(self, qubit = 'qubit1'):
+        q = qubit[-1]
+        DS = self.convert_to_probability()
+        VSG = self.vsg if q == '1' else self.vsg2
+        for i in range(self.Count):
+            a = DS.arrays['digitizerqubit_'+q][i]
+            if np.isnan(a[0]) or a.max() == 0:
+#                x = DS.arrays[self.X_parameter+'_set'][i-1][:11]
+#                y = DS.digitizerqubit_1[i-1][:11]
+                count = i-1
+                break
+            count = i
+        x = DS.arrays[self.X_parameter+'_set'][count][:11]
+        y = DS.arrays['digitizerqubit_'+q][count][:11]
+
+        print('count: ', count)
+        print('x:',x)
+        print('y:',y)
+        
+        try: 
+            pars, pcov = curve_fit(Func_Gaussian, x, y, bounds = ((0, x[0]), (1,x[-1])))
+            frequency_shift = pars[1]
+            
+        except RuntimeError:
+            print('fitting not converging')
+            frequency_shift = 0
+        
+        frequency = VSG.frequency()+frequency_shift/2
+        print('frequency shift: ', frequency_shift)
+        print('update fequency to: ', frequency)
+        VSG.frequency(frequency)
+        return True
+    
+    def draw_allXY(self, qubit = 'qubit2'):
+        q = qubit[-1]
+        
+        DS = self.averaged_data
+        
+        pt = MatPlot()
+        
+        pt.add(x = DS.arrays[self.X_parameter+'_set'][11:], y = DS.arrays['digitizerqubit_'+q][11:])
+        
+        return True
+    
+    def run_experiment_with_calibration(self, calibration, experiment):
+        
+        calibration_sequencer = self.find_sequencer(calibration)
+        
+        measurement_sequencer = self.find_sequencer(experiment)
+        
+        self.load_sequence(calibration)
+        
+        calibration_data = self.calculate_average_data(measurement = 'calibration')
+        
+        self.close()
+        
+        self.load_sequence(experiment)
+        self.close()
+        
+        return True
 
     def run_experiment(self,):
         
@@ -847,31 +1045,36 @@ class Experiment:
         
         self.vsg.status('On')
         self.vsg2.status('On')
-        time.sleep(0.5)
 
         self.pulsar.start()
         
-        time.sleep(2)
+        time.sleep(1)
         
         if self.Loop is not None:
 #            self.data_set = self.Loop.run(location = self.data_location, loc_record = {'name': self.name, 'label': self.label}, io = self.data_IO,)
             self.data_set = self.Loop.get_data_set(location = self.data_location, 
                                                    loc_record = {'name': self.name, 'label': self.label}, 
-                                                   io = self.data_IO,)
-            self.live_plotting()
-#            self.plot = QtPlot()
+                                                   io = self.data_IO, write_period = self.write_period)
+#            self.live_plotting()
 
-            self.plot_probability()
-            if self.plot_average:
-                self.plot_average_probability()
+#            self.plot_probability()
+#            if self.plot_average:
+#                self.plot_average_probability()
             
-            self.Loop.with_bg_task(task = self.live_plotting, bg_final_task = self.plot_save, min_delay = 1.5).run()
-#            self.Loop.with_bg_task(task = self.live_plotting, min_delay = 2).run()
+#            self.Loop.with_bg_task(task = self.live_plotting, bg_final_task = self.plot_save, min_delay = 1.5).run()
+            self.Loop.run()
+#            self.Loop.with_bg_task(task = self.calibrate_by_Ramsey('qubit_2'),).run()
             self.awg.stop()
             self.awg2.stop()
             
             self.vsg.status('Off')
             self.vsg2.status('Off')
+            
+            self.convert_to_probability()
+            self.calculate_average_data()
+            self.plot_probability()
+#            self.plot_average_probability()
+        self.close()
 
         return self.data_set
 

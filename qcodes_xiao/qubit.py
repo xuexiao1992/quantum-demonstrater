@@ -24,7 +24,9 @@ class Qubit(Instrument):
         
         self.Pi_pulse_length = kw.pop('Pi_pulse_length', 250e-9)
         
-        self.halfPi_pulse_length = kw.pop('halfPi_pulse_length', 100e-9)
+        self.halfPi_pulse_length = kw.pop('halfPi_pulse_length', 125e-9)
+        
+        self.CRot_pulse_length = kw.pop('CRot_pulse_length', 286e-9)
         
         self.refphase = 0
         

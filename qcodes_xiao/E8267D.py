@@ -21,7 +21,7 @@ class E8267D(VisaInstrument):
 
         self.add_parameter(name='frequency',
                            label='Frequency',
-                           units='Hz',
+                           unit='Hz',
                            get_cmd='FREQ:CW?',
                            set_cmd='FREQ:CW' + ' {:.4f}',
                            get_parser=float,
@@ -29,21 +29,21 @@ class E8267D(VisaInstrument):
                            vals=vals.Numbers(1e5, 20e9))
         self.add_parameter(name='phase',
                            label='Phase',
-                           units='deg',
+                           unit='deg',
                            get_cmd='PHASE?',
                            set_cmd='PHASE' + ' {:.8f}',
                            get_parser=self.rad_to_deg,
                            set_parser=self.deg_to_rad,
                            vals=vals.Numbers(-180, 180))
-        min_power = -135 if step_attenuator else -20
+        min_power = -130
         self.add_parameter(name='power',
                            label='Power',
-                           units='dBm',
+                           unit='dBm',
                            get_cmd='POW:AMPL?',
                            set_cmd='POW:AMPL' + ' {:.4f}',
                            get_parser=float,
                            set_parser=float,
-                           vals=vals.Numbers(min_power, 20))
+                           vals=vals.Numbers(min_power, 25))
         self.add_parameter('status',
                            get_cmd=':OUTP?',
                            set_cmd='OUTP {}',

@@ -33,6 +33,8 @@ class Sequencer:
         self.vsg2 = kw.pop('vsg2',None)
         self.digitizer = kw.pop('digitizer', None)
         
+        self.dig = None
+        
         self.awg_file = None
 
         self.channel_I = [qubit.microwave_gate['channel_I'] for qubit in qubits]
@@ -59,6 +61,13 @@ class Sequencer:
 
         self.sweep_set = {}         ## {''}
         self.sweep_type = 'NoSweep'
+        
+        self.X_parameter = None
+        self.Y_parameter = None
+        self.X_parameter_type = None
+        self.Y_parameter_type = None
+        self.X_sweep_array = np.array([])
+        self.Y_sweep_array = np.array([])
 
         self.manip_elem = None
 
@@ -203,7 +212,7 @@ class Sequencer:
         print('manip time:', time)
         parameter1 = kw.get('parameter1', None)
         parameter2 = kw.get('parameter2', None)
-        manip_elem = kw.get('manip_elem', None)
+        manip_elem = kw.get('manip_elem', Element(name = name, pulsar = self.pulsar))
         print(name)
         
         
@@ -356,9 +365,6 @@ class Sequencer:
                     specific_parameters.pop('voltage_1')
                     specific_parameters.pop('voltage_2')
                     
-                    parameter1 = step.get('parameter1', None)
-                    parameter2 = step.get('parameter2', None)
-                    manip_elem = step.get('manip_elem', None)
                     element = self.make_element(name = name+'step%d_%d_%d'%(s,j,i), segment = seg, time = step['time'], amplitudes=amplitudes, **specific_parameters)
 #                                                waiting_time = waiting_time, parameter1 = parameter1, parameter2 = parameter2, manip_elem = manip_elem)
                     """
@@ -406,26 +412,6 @@ class Sequencer:
            segment['step%d'%(s+1)], repetition['step%d'%(s+1)] = self.make_segment_step(segment_num = segment_num, step_num = (s+1), name = name)
            
         return segment, repetition
-    
-    def make_all_segment_list(self,):
-        
-        i = 0
-
-        for segment_type in self.sequence_cfg_type:
-
-            if segment_type.startswith('init') and not self.segment[segment_type]:
-                self.segment[segment_type], self.repetition[segment_type] = self.make_initialize_segment_list(segment_num = i, name = segment_type)
-
-            elif segment_type.startswith('manip') and not self.segment[segment_type]:
-                self.segment[segment_type], self.repetition[segment_type] = self.make_manipulation_segment_list(segment_num = i, name = segment_type)
-
-            elif segment_type.startswith('read') and not self.segment[segment_type]:
-                self.segment[segment_type], self.repetition[segment_type] = self.make_readout_segment_list(segment_num = i, name = segment_type)
-
-            i+=1
-
-        return True
-    
     
     """
     this function below organizes segments. e.g. self.initialize_segment = {'step1': element1, 'step2': 1D/2D list, 'step3': element3...}

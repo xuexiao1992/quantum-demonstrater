@@ -5,28 +5,52 @@ Created on Wed Jun 14 13:42:13 2017
 @author: think
 """
 
-import numpy as np
 
-import qcodes.instrument_drivers.Spectrum.M4i as M4i
-from qcodes.instrument_drivers.Spectrum import pyspcm
-from qcodes.instrument.parameter import ArrayParameter, StandardParameter
+import numpy as np
+from scipy.optimize import curve_fit
+
+from pycqed.measurement.waveform_control.element import Element
+from pycqed.measurement.waveform_control.sequence import Sequence
+from gate import Single_Qubit_Gate#, Two_Qubit_Gate
+from manipulation import Manipulation
+from sequencer import Sequencer
+#from initialize import Initialize
+#from readout import Readout
+from qubit import Qubit
+from pycqed.measurement.waveform_control.pulse import CosPulse, SquarePulse, LinearPulse
+
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.loops import Loop, ActiveLoop
 from qcodes.data.hdf5_format import HDF5Format, HDF5FormatMetadata
 from qcodes.data.gnuplot_format import GNUPlotFormat
 from qcodes.data.io import DiskIO
-from qcodes.data.data_set import new_data, DataSet
+from qcodes.data.data_set import new_data, DataSet,load_data
 from qcodes.data.data_array import DataArray
 
-from pycqed.measurement.waveform_control.pulsar import Pulsar
+import stationF006
+#from stationF006 import station
+from copy import deepcopy
+from manipulation_library import Ramsey
+from experiment_version2 import Experiment
+from qcodes.instrument.parameter import ArrayParameter, StandardParameter
+import time
+from qcodes.plots.qcmatplotlib import MatPlot
+from qcodes.plots.pyqtgraph import QtPlot
+from data_set_plot import convert_to_ordered_data, convert_to_01_state, convert_to_probability, set_digitizer
 
-from pycqed.measurement.waveform_control.sequence import Sequence
-from pycqed.measurement.waveform_control.element import Element
-from gate import Single_Qubit_Gate, Two_Qubit_Gate
-from manipulation import Manipulation
-from experiment_version3 import Experiment
-from digitizer_setting import digitizer_param
 
+#%%
+
+def Func_Sin(x,amp,omega,phase,offset):
+    return amp*np.sin(omega*x+phase)+offset
+
+
+def Func_Gaussian(x, a, x0, ):
+#    x_new = x/1e6
+    sigma = 1e6
+    return a*np.exp(-(x-x0)**2/(2*sigma**2))
+
+#%%
 
 
 
@@ -45,14 +69,152 @@ class Calibration(Experiment):
 #        self.calibration_sequence = Sequence()
         self.sweep_inside_sequence = False
         
-        self.formatter = HDF5FormatMetadata()
+#        self.formatter = HDF5FormatMetadata()
         self.data_IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents')
-        self.data_location = '2017-08-18/20-40-19_T1_Vread_sweep'
+        self.calibration_data_location = self.data_location+'_calibration'
         
         self.data_set = None
         
+        self.calibration = 'Ramsey'
+        self.experiment = 'AllXY'
+        
+        self.calibrated_parameter = None
 #        self.dig = digitizer_param(name='digitizer', mV_range = 1000, memsize=4e9, seg_size=seg_size, posttrigger_size=posttrigger_size)
         
+
+    def set_sweep_with_calibration(self, repetition = False, plot_average = False, **kw):
+        
+        self.plot_average = plot_average
+        
+        for i in range(self.qubit_number):
+            d = i if i == 1 else 2
+            self.plot.append(QtPlot(window_title = 'raw plotting qubit_%d'%d, remote = False))
+#            self.plot.append(MatPlot(figsize = (8,5)))
+            if plot_average:
+#                self.average_plot.append(QtPlot(window_title = 'average data qubit_%d'%d, remote = False))
+                self.average_plot.append(MatPlot(figsize = (8,5)))
+        
+        for seq in range(len(self.sequencer)):
+            self.sequencer[seq].set_sweep()
+            self.make_all_segment_list(seq)
+        
+        if repetition is True:
+            count = kw.pop('count', 1)
+
+            Count_Calibration = StandardParameter(name = 'Count', set_cmd = self.function)
+            Sweep_Count_Calibration = Count_Calibration[1:2:1]
+            
+            Count = StandardParameter(name = 'Count', set_cmd = self.delete)
+            Sweep_Count = Count[1:count+1:1]
+            
+            self.digitizer, self.dig = set_digitizer(self.digitizer, len(self.X_sweep_array), self.qubit_number, self.seq_repetition)
+            
+            loop1 = Loop(sweep_values = Sweep_Count_Calibration).each(self.dig)
+            
+            Loop_Calibration = loop1.with_bg_task(bg_final_task = self.update_calibration,)
+            calibrated_parameter = update_calibration
+            if self.Loop is None:
+                self.Loop = Loop(sweep_values = Sweep_Count).each(calibrated_parameter, self.dig)
+            else:
+                raise TypeError('calibration not set')
+                
+        return True
+    
+    def delete(self, x):
+        
+        self.close()
+        
+        return True
+    
+    def switch_sequencer(self, experiment = 'AllXY'):
+        
+        sequencer = self.find_sequencer(experiment)
+        self.load_sequence(experiment)
+        self.digitizer, d = set_digitizer(self.digitizer, sequencer.dimension_1, self.qubit_number, self.seq_repetition)
+        return True
+    
+    def update_calibration(self,):
+        
+#        self.calibrated_parameter = StandardParameter(name = 'Count', get_cmd = self.calibrate_by_ramsey)
+
+        frequency = self.calibrate_by_Ramsey()
+        
+#        self.switch_sequencer(self.experiment)
+        
+        return frequency
+    
+    def set_calibration(self,)
+    def calibrate_by_Ramsey(self,):
+        
+        
+        DS = self.calculate_average_data(measurement = 'calibration')
+
+        x = DS.frequency_shift_set.ndarray
+        y = DS.digitizerqubit_1.ndarray
+        
+        pars, pcov = curve_fit(Func_Gaussian, x, y,)
+        frequency_shift = pars[1]
+        
+        frequency = self.vsg2.frequency()+frequency_shift
+        self.vsg2.frequency(frequency)
+        
+        return frequency
+    
+    def run_experiment_with_calibration(self, calibration, experiment):
+        
+        calibration_sequencer = self.find_sequencer(calibration)
+        
+        measurement_sequencer = self.find_sequencer(experiment)
+        
+        self.load_sequence(calibration)
+        
+        self.close()
+        
+        self.load_sequence(experiment)
+        self.close()
+        
+        return True
+
+
+    def set_calibration_sweep(self, **kw):
+        
+        real_time_calibration = True
+        
+        def update_parameter(seq_num, x):
+            
+            return True
+        
+        def switch_sequence(seq_num, x):
+            
+            self.close()
+            
+            self.load_sequence(measurement = '1')
+            
+            Count = StandardParameter(name = 'Count', set_cmd = self.function)
+            Sweep_Count = Count[1:2:1]
+            Loop = Loop(sweep_values = Sweep_Count).each(self.dig)
+            DS = Loop.run()
+            DSP = convert_to_probability(DS,0.025,self.qubit_number,self.seq_repetition,'cal', sweep_array = self.X_sweep_array)
+            self.close()
+            
+            self.load_sequence(measurement = '2')
+            
+            return True
+        
+        if real_time_calibration is True:
+            count = kw.pop('count', 1)
+#        if self.Loop is None:
+            Count = StandardParameter(name = 'Count', set_cmd = self.function)
+            Sweep_Count = Count[1:count+1:1]
+            if self.Loop is None:
+                self.Loop = Loop(sweep_values = Sweep_Count).each(self.dig)
+            else:
+                LOOP = self.Loop
+                self.Loop = Loop(sweep_values = Sweep_Count).each(LOOP)
+        
+        return True
+
+
     def _QCoDeS_Loop(self, measured_parameter, sweeped_parameter, sweep_value = [0,0,0], **kw):
         
         Sweep_Values = sweeped_parameter[sweep_value[0]:sweep_value[1]:sweep_value[2]]
@@ -68,166 +230,3 @@ class Calibration(Experiment):
         return data_set
     
     
-    def calibrate_qubit_fequency_by_continuous_wave(self, qubit, ):
-        
-        qubit_frequency = 0
-        
-        qubit.frequency = qubit_frequency
-        
-        return qubit_frequency
-    
-    def calibrate_qubit_frequency_by_single_pulse(self, qubit, frequency = [0,0,0], burst_time = [0,0,0]):      ## [start:end:steps]
-        
-        qubit_frequency = qubit.frequency
-        
-        self.sequence = self.generate_1D_sequence()
-        
-        if self.sweep_inside_sequence is False:
-            
-            self.data_set = self._QCoDeS_Loop(self.dig, self.vsg.frequency, sweep_value = frequency)
-        
-        elif self.sweep_inside_sequence is True:
-            
-            qubit_frequency = 0
-        
-        return qubit_frequency
-
-    def calibrate_qubit_frequency_by_Ramsey(self, qubit, frequency = [0,0,0], waiting_time = [0,0,0]):      ## [start:end:steps]
-        
-        qubit_frequency = qubit.frequency
-        
-        if self.sweep_inside_sequence is False:
-            
-            self.data_set = self._QCoDeS_Loop(self.dig, self.vsg.frequency, sweep_value = frequency)
-        
-        elif self.sweep_inside_sequence is True:
-            
-            qubit_frequency = 0
-        
-        return qubit_frequency
-    
-    
-
-    def calibrate_Rabi_frequency(self, qubit, ):
-        
-        Rabi_frequency = 0
-        
-        self.Rabi_element()
-        
-        self.run_all()
-        
-        qubit.Rabi_frequency = Rabi_frequency
-        
-        return Rabi_frequency
-    
-    
-    
-    def run_Ramsey(self, name = 'Ramsey', sweep = 'yes'):
-        
-#        self.experiment['Ramsey'] = self.Ramsey_element()
-#        self.sweep_matrix
-        
-        self.Ramsey_element()
-        
-        self.run_all(name = name)
-        
-#        self.update_calibrated_parameter()
-        
-        return True
-    
-    
-    def run_Chevron(self, name = 'Chevron',):
-        
-        self.Chevron_element()
-        
-        self.run_all(name = name)
-        
-        return True
-    
-    
-    
-    
-    def update_calibrated_parameter(self, ):
-        
-        return True
-    
-    
-    def Chevron_element(self, name = 'Chevron', qubit = None, frequency = 0, length = 5e-7):
-        
-        ## here [frequency] will be the parameter sweeped
-        
-        ## here you need I/Q modulation to tune the frequency
-        
-        for i in range(len(self.sweep_matrix)):
-            
-            frequency = self.sweep_matrix[i]['frequency']
-            
-            chevron = Manipulation(name = 'Manipulation_%d'%i, qubits_name = self.qubits_name, pulsar = self.pulsar)
-            
-            chevron.add_X_Pi(name = name+'X1', length = length, qubit = self.qubit)
-            
-            self.element['Manipulation_%d'%i] = chevron
-            
-        return True
-    
-    
-    
-    def Rabi_element(self, name = 'Rabi', qubit = None, frequency = 0, length = 5e-7):
-        
-        ## here [length] or [power] will be the parameter sweeped
-        ## [power] sweep is done by directly sending commands to Microwave VSG, not here
-        ## [amplitude] is an alternative way to sweep the power, but maybe not used, [power] is more often used
-        ## but if use [amplitude], then use I/Q modulation instead
-        
-        for i in range(len(self.sweep_matrix)):
-            
-            power = self.sweep_matrix[i]['power']
-            
-            length = self.sweep_matrix[i]['length']
-            
-            amplitude = self.sweep_matrix[i]['amplitude']
-        
-            rabi = Manipulation(name = 'Manipulation_%d'%i, qubits_name = self.qubits_name, pulsar = self.pulsar)
-        
-            rabi.add_X_Pi(name = name+'X1', length = length, qubit = self.qubit)
-        
-            self.element['Manipulation_%d'%i] = chevron
-            
-        return True
-        
-    
-    
-    def Ramsey_element(self, name = 'Ramsey', frequency = None, length = 5e-7, waiting_time = 10e-6):
-        
-        ## here [frequency] will be the parameter sweeped
-        
-        ## here you need I/Q modulation to tune the frequency
-        
-        for i in range(len(self.sweep_matrix)):
-            
-            frequency = self.sweep_matrix[i]['frequency']
-        
-            ramsey = Manipulation(name = 'Manipulation_%d'%i, qubits_name = self.qubits_name, pulsar = self.pulsar)
-        
-            ramsey.add_X(name = name+'X1', length = length, qubit = self.qubit)
-        
-            ramsey.add_X(name = name+'X2', length = length, 
-                         qubit = self.qubit, refgate = name+'X1', waiting_time = waiting_time)
-        
-            self.element['Manipulation_%d'%i] = ramsey
-        
-#        self.experiment['Ramsey'] = ramsey
-#        self.element.append(ramsey)
-        
-        return True
-    
-    def qubit_rough_frequency_element(self,):
-        
-        return True
-    
-#    
-#    def Sweep(self, start_value, stop_value, points):
-#        
-#        sweep_array = np.linspace(start_value, stop_value, points)
-#        
-#        return True

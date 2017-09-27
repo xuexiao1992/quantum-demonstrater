@@ -237,9 +237,11 @@ def convert_to_ordered_data(data_set, qubit_num = 1, repetition = 100, name = 'f
                     for q in range(qubit_num):
                         
                         qubit_data[q][k][l] = data_reshape[qubit_num*l+q::dimension_2*qubit_num].reshape(seg_size*repetition,)
-
-                        qubit_data_array.append(DataArray(preset_data = qubit_data[q], name = parameter+'qubit_%d'%(q+1), 
-                                                          array_id = array_id+'qubit_%d'%(q+1), is_setpoint = False))
+                        n = 2 if q == 0 else q
+                        if q>=2:
+                            n = q+1
+                        qubit_data_array.append(DataArray(preset_data = qubit_data[q], name = parameter+'qubit_%d'%(n), 
+                                                          array_id = array_id+'qubit_%d'%(n), is_setpoint = False))
                 
         elif not parameter.endswith('set') and data_array.ndim == 3:
             data_num = int(data_array.shape[-1]/2/(repetition+1) * repetition)
@@ -260,8 +262,9 @@ def convert_to_ordered_data(data_set, qubit_num = 1, repetition = 100, name = 'f
                     for q in range(qubit_num):
                         data_reshape = data.reshape(int(data_num/seg_size), seg_size)
                         qubit_data[q][k][l] = data_reshape[q::qubit_num].reshape(seg_size*repetition,)
-                        qubit_data_array.append(DataArray(preset_data = qubit_data[q], name = parameter+'qubit_%d'%(q+1), 
-                                                          array_id = array_id+'qubit_%d'%(q+1), is_setpoint = False))
+                        n = 2 if q == 0 else q
+                        qubit_data_array.append(DataArray(preset_data = qubit_data[q], name = parameter+'qubit_%d'%(n), 
+                                                          array_id = array_id+'qubit_%d'%(n), is_setpoint = False))
     
     data_set_new = DataSet(location = new_location+'_ordered_raw_data', io = NewIO, formatter = formatter)
     for array in set_array:
@@ -340,7 +343,71 @@ def convert_to_probability(data_set, threshold, qubit_num = 1, repetition = 100,
         data_set_new.add_array(qubit_data_array[q])
     
     return data_set_new
+
+#%%
+
+def majority_vote(data_set, threshold, qubit_num = 1, repetition = 100, name = 'frequency', unit = 'GHz', sweep_array = None, average = False):
     
+    data_set = convert_to_01_state(data_set, threshold, qubit_num, repetition, name, unit, sweep_array)
+    
+    set_array = []
+    
+    for parameter in data_set.arrays:
+        data_array = data_set.arrays[parameter].ndarray
+        dimension_1 = data_array.shape[0]
+        arrayid = data_set.arrays[parameter].array_id
+        if parameter.endswith('set'):     ## or data_set.arrays[parameter].is_setpoint
+            set_array.append(DataArray(preset_data = data_array, name = parameter, 
+                                       array_id = arrayid, is_setpoint = True))
+            
+    dimension_2 = len(sweep_array) if sweep_array is not None else 2
+#    dimension_1 = 5
+    vote_data = np.ndarray(shape = (dimension_1, dimension_2, repetition))
+    average_vote_data = np.ndarray(shape = (dimension_1, dimension_2))
+    name = 'vote'
+    arrayid = 'vote'
+    for k in range(dimension_1):
+        for l in range(dimension_2):
+            for repe in range(repetition):
+                voter = np.array([data_set.digitizerqubit_1[k][l][repe],data_set.digitizerqubit_2[k][l][repe],data_set.digitizerqubit_3[k][l][repe],])
+                
+                vote_data[k][l][repe] =  1 if np.sum(voter) >= 2 else 0 
+    
+            if average:
+                average_vote_data[k][l] = np.average(vote_data[k][l])
+                print('average: ', average_vote_data[k][l])
+        
+    data = vote_data if not average else average_vote_data
+    
+    vote_data_array =DataArray(preset_data = data, name = name, 
+                               array_id = arrayid, is_setpoint = False)
+    
+    
+    data_set_new = DataSet(location = new_location, io = NewIO, formatter = formatter)
+
+    for array in set_array:
+        data_set_new.add_array(array)
+    data_set_new.add_array(vote_data_array)
+        
+    return data_set_new
+#%%
+#def average_vote(data_set, threshold, qubit_num = 1, repetition = 100, name = 'frequency', unit = 'GHz', sweep_array = None):
+#    
+#    data_set = majority_vote(data_set, threshold, qubit_num, repetition, name, unit, sweep_array)
+#    
+#    for parameter in data_set.arrays:
+#        data_array = data_set.arrays[parameter].ndarray
+#        dimension_1 = data_array.shape[0]
+#    dimension_2 = len(sweep_array) if sweep_array is not None else 2
+#    
+#    sweep_data_array =DataArray(preset_data = np.array([0,1]), name = parameter, 
+#                               array_id = arrayid, is_setpoint = False)
+#    
+#    province = np.ndarray(shape = (dimension_2, repetition))
+#    for k in range(dimension_1):
+#        for l in range(dimension_2):
+#            
+#    
 
 #%% plot
 def data_set_plot(data_set, data_location):
@@ -413,8 +480,8 @@ def set_digitizer(digitizer, sweep_num, qubit_num, repetition):
     seg_size = ((readout_time*sample_rate+pretrigger) // 16 + 1) * 16
     
     sweep_num = sweep_num#len(sweep_loop1['para1']) if 'para1' in sweep_loop1 else 1
-    import data_set_plot
-    data_set_plot.loop_num = sweep_num
+#    import data_set_plot
+#    data_set_plot.loop_num = sweep_num
     
     repetition = repetition
     

@@ -15,9 +15,12 @@ from qcodes.data.io import DiskIO
 from qcodes.instrument.parameter import ManualParameter, StandardParameter, ArrayParameter
 from qcodes.utils.validators import Numbers
 from functools import partial
+
+from qcodes.actions import Task
 #%%
 aa = 5
 aaa=4
+b = 0
 def Pfunction(a):
     global aaa
     
@@ -36,8 +39,15 @@ def Ffunction():
 def QFunction():
     a = F.get_latest() - 15
     return a
+def Print():
+    global b
+    print('b',b)
+    print('123')
+    print('345')
+    b+=1
+    return True
 
-
+TP = Task(func = Print)
 
 P = StandardParameter(name = 'Para1', set_cmd = Pfunction)
 
@@ -50,10 +60,15 @@ E = StandardParameter(name = 'Fixed2', get_cmd = QFunction)
 Sweep_Value = P[1:5.5:0.5]
 
 Sweep_2 = Q[2:10:1]
+LP1 = Loop(sweep_values = Sweep_2).each(F)
 
-LP = Loop(sweep_values = Sweep_Value).loop(sweep_values = Sweep_2).each(F, E)
+#LP = Loop(sweep_values = Sweep_Value).each(LP1, TP,  E)
+LP = Loop(sweep_values = Sweep_Value).each(F,E)
 
-#LP = Loop(sweep_values = Sweep_Value).each(F)
+#%%
+#LP.with_bg_task(task = Print,bg_final_task = None,min_delay=1).run()
+
+#LP = Loop(sweep_values = Sweep_Value,).each(F)
 
 print('loop.data_set: %s' % LP.data_set)
 
@@ -68,8 +83,8 @@ data = LP.get_data_set(location=None, loc_record = {'name':'T1', 'label':'Vread_
 #data = LP.get_data_set(data_manager=False, location=None, loc_record = {'name':'T1', 'label':'T_load_sweep'})
 print('loop.data_set: %s' % LP.data_set)
 
+#%%
 DS = new_data(location = 'aaaaaaaaaa',io = NewIO)
-
 def live_plotting():
     for para in data.arrays:
         DS.arrays[para] = data.arrays[para]
