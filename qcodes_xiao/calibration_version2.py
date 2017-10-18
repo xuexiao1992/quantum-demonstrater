@@ -36,7 +36,7 @@ from qcodes.instrument.parameter import ArrayParameter, StandardParameter
 import time
 from qcodes.plots.qcmatplotlib import MatPlot
 from qcodes.plots.pyqtgraph import QtPlot
-from data_set_plot import convert_to_ordered_data, convert_to_01_state, convert_to_probability, set_digitizer
+from data_set_plot import set_digitizer
 
 
 #%%
@@ -78,7 +78,7 @@ class Calibration(Experiment):
     def switch_sequence(self,):
 #        self.close()
 #        self.load_sequence()
-        self.digitizer, self.dig = set_digitizer(self.digitizer, self.dimension_1, self.qubit_number, self.seq_repetition)
+        self.digitizer, self.dig = set_digitizer(self.digitizer, self.dimension_1, self.qubit_number, self.seq_repetition,self.X_sweep_array)
         
         return True
     

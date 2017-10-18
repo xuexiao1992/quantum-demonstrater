@@ -6,12 +6,12 @@ Created on Sat Aug 19 17:38:33 2017
 """
 #%% import module
 import numpy as np
-
+from copy import deepcopy
 import matplotlib.pyplot as plt
 import matplotlib.widgets as widgets
 #import qcodes.instrument_drivers.Spectrum.M4i as M4i
 #from qcodes.instrument_drivers.Spectrum import pyspcm
-from qcodes.instrument.parameter import ArrayParameter, StandardParameter
+from qcodes.instrument.parameter import ArrayParameter, StandardParameter, MultiParameter
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.loops import Loop, ActiveLoop
 from qcodes.data.hdf5_format import HDF5Format, HDF5FormatMetadata
@@ -189,10 +189,97 @@ pretrigger = 16
 readout_time = 700e-6
 #loop_num = 5
 #loop_num = len(sweep_loop1['para1']) if 'para1' in sweep_loop1 else 1
-qubit_num = 1
-repetition = 500
+#qubit_num = 1
+#repetition = 500
 
 seg_size = int(((readout_time*sample_rate+pretrigger) // 16 + 1) * 16)
+
+
+#%% new functions for single line np_arrays to be passed onto the data_set function
+
+def  organise(data, qubit_num = 2, repetition = 100, seg_size = 64):
+    seg_size = int(seg_size)
+    qubit_num = qubit_num
+    repetition = repetition
+    # takes raw digitizer signal and organises it into the right readout positions along the pulse train....
+    # it will return an array of (a,b,c,d) where a is the qubit readout number, b is the sweep number , c is the repetition number,
+    # and d is the raw readout traces. 
+
+    dimension_2 = int(data.shape[0]/2/(repetition+1)/seg_size/qubit_num) # number of steps in sweep
+
+    data_num = int(data.shape[0]/2/(repetition+1) * repetition) #total length of usable raw data
+    qubit_data_num = int(data_num/qubit_num)
+    qubit_data = np.zeros(shape = (qubit_num, dimension_2, repetition, int(qubit_data_num/dimension_2/repetition)))
+
+    # every even point in data corresponds to the raw data of ch0 (readout signal) and
+    # every odd point in data corresponds to the raw data of ch1 (marker signal). 
+    raw_data = data[::2] 
+    raw_marker = data[1::2]
+
+    #find the position of the first marker (where the useful data stars from)
+    for seg in range(seg_size*qubit_num*dimension_2):
+        if raw_marker[seg] > 0.2:           ##  a better threshold ???
+            break                
+    #trim the data before the first marker and after the last marker 
+    
+    data_trimmed = raw_data[seg:data_num+seg]
+    data_reshape = data_trimmed.reshape(int(data_num/seg_size), seg_size)
+
+    for l in range(dimension_2):
+        for q in range(qubit_num):
+                
+            qubit_data[q][l] = data_reshape[qubit_num*l+q::dimension_2*qubit_num]
+
+    return qubit_data
+
+def convert_to_01_state2(data_set, threshold):
+    # takes raw readout data and assigns a 1 if the measure signal is below the defined threshold and 0 otherwise.
+            
+    data_set_new = np.zeros(shape= (data_set.shape[0],data_set.shape[1],data_set.shape[2])) 
+    for k1 in range(data_set.shape[0]):
+        for k2 in range(data_set.shape[1]):
+            for k3 in range(data_set.shape[2]):
+                data_set_new[k1][k2][k3] = 1 if np.min(data_set[k1][k2][k3]) <= threshold else 0
+
+    
+    return data_set_new
+
+def  convert_to_probability2(data_set):
+    
+    probability_data = np.zeros(shape = (data_set.shape[0], data_set.shape[1]))
+    
+    for k in range(data_set.shape[0]):
+        for l in range(data_set.shape[1]):
+            probability_data[k][l] = np.average(data_set[k][l])
+            
+    return probability_data
+    
+
+#%% 
+def seperate_data(data_set, location, NewIO, formatter, qubit_num = 1, repetition = 100, sweep_arrays = None, sweep_names = None):
+    #this function will seperate the raw data for each experiment (appended to the same seqeunce)
+    #into different data files. This will make plotting and data handling easier. 
+    start = 0
+    end = 0
+    seperated_data = []
+    for count, array in enumerate(sweep_arrays):
+ 
+        end = start+ len(sweep_arrays[count]) -1
+        seperated_data.append(DataSet(location = location+'_'+sweep_names[count]+'_set', io = NewIO, formatter = formatter))
+        for parameter in data_set.arrays:
+            if parameter.endswith('set') and data_set.arrays[parameter].ndarray.ndim >1:
+                name = sweep_names[count]+'_set'
+            else:
+                name = parameter
+            if data_set.arrays[parameter].ndarray.ndim >1:
+                seperated_data[count].add_array(DataArray(preset_data = data_set.arrays[parameter][:,start:end], name = name, array_id = name, is_setpoint = True))
+            else:
+                seperated_data[count].add_array(DataArray(preset_data = data_set.arrays[parameter], name = name, array_id = name, is_setpoint = True)) 
+        start = end+1
+        
+        
+    return seperated_data 
+
 #%%
 def convert_to_ordered_data(data_set, qubit_num = 1, repetition = 100, name = 'frequency', unit = 'GHz', sweep_array = None):
 
@@ -204,7 +291,7 @@ def convert_to_ordered_data(data_set, qubit_num = 1, repetition = 100, name = 'f
         dimension_1 = data_array.shape[0]
         array_name = parameter
         array_id = data_set.arrays[parameter].array_id
-
+        
         if parameter.endswith('set'):
             if data_array.ndim == 2 and parameter.startswith('index'):
                 dimension_2 = int(data_array.shape[-1]/2/(repetition+1)/seg_size/qubit_num)
@@ -276,8 +363,8 @@ def convert_to_ordered_data(data_set, qubit_num = 1, repetition = 100, name = 'f
 
 #%%
 
-def convert_to_01_state(data_set, threshold, qubit_num = 1, repetition = 100, name = 'frequency', unit = 'GHz', sweep_array = None):
-    data_set = convert_to_ordered_data(data_set, qubit_num, repetition, name, unit, sweep_array)
+def convert_to_01_state(data_set, threshold, qubit_num = 1, repetition = 100):
+    #data_set = convert_to_ordered_data(data_set, qubit_num, repetition, name, unit, sweep_array)
     
     qubit_data_array = []
     set_array = []
@@ -310,9 +397,12 @@ def convert_to_01_state(data_set, threshold, qubit_num = 1, repetition = 100, na
     
     return data_set_new
 #%%
-def convert_to_probability(data_set, threshold, qubit_num = 1, repetition = 100, name = 'frequency', unit = 'GHz', sweep_array = None):
-    
-    data_set = convert_to_01_state(data_set, threshold, qubit_num, repetition, name, unit, sweep_array)
+def convert_to_probability(data_set, location, NewIO, formatter,  threshold, qubit_num = 1, repetition = 100,):
+    for parameter in data_set.arrays:
+        if len(data_set.arrays[parameter].ndarray.shape) == 2 and parameter.endswith('set'):
+            data_set_new = DataSet(location = location+'_average_probability_'+parameter, io = NewIO, formatter = formatter)    
+        
+#    data_set = convert_to_01_state(data_set, threshold, qubit_num, repetition, name, unit, sweep_array)
     qubit_data_array = []
     set_array = []
     for parameter in data_set.arrays:
@@ -335,7 +425,6 @@ def convert_to_probability(data_set, threshold, qubit_num = 1, repetition = 100,
             qubit_data_array.append(DataArray(preset_data = probability_data, name = parameter, 
                                               array_id = arrayid, is_setpoint = False))
           
-    data_set_new = DataSet(location = new_location+'_average_probability', io = NewIO, formatter = formatter)
 
     for array in set_array:
         data_set_new.add_array(array)
@@ -343,6 +432,25 @@ def convert_to_probability(data_set, threshold, qubit_num = 1, repetition = 100,
         data_set_new.add_array(qubit_data_array[q])
     
     return data_set_new
+
+def average_probability(data_set, location, NewIO, formatter,  qubit_num =1):
+
+    
+    for parameter in data_set.arrays:
+        if len(data_set.arrays[parameter].ndarray.shape) == 2 and parameter.endswith('set'):
+            data_set_new = DataSet(location = location+'_average_probability_data_'+parameter, io = NewIO, formatter = formatter)    
+
+    for parameter in data_set.arrays:
+        if len(data_set.arrays[parameter].ndarray.shape) == 2:
+            data = deepcopy(data_set.arrays[parameter].ndarray)
+            data = np.average(data, axis = 0)
+            is_setpoint = data_set.arrays[parameter].is_setpoint
+            name = data_set.arrays[parameter].name
+            array_id = data_set.arrays[parameter].array_id
+            data_set_new.add_array(DataArray(preset_data = data, name = name, array_id = array_id, is_setpoint = is_setpoint))
+    return data_set_new
+#        self.average_plot.add(self.averaged_data.digitizer,figsize=(1200, 500))
+    
 
 #%%
 
@@ -454,6 +562,7 @@ class digitizer_param(ArrayParameter):
 #        res = digitizer.single_software_trigger_acquisition(self.mV_range,self.memsize,self.posttrigger_size)
         print(res.shape)
         return res
+
         
     def __getitem__(self, keys):
         """
@@ -462,11 +571,69 @@ class digitizer_param(ArrayParameter):
         """
         return SweepFixedValues(self, keys)
 
+class digitizer_multiparam(MultiParameter):
+    
+    def __init__(self,  mV_range, memsize, seg_size, posttrigger_size,
+                 digitizer, threshold, qubit_num, repetition, sweep_num, X_sweep_array, saveraw, label=None, unit=None, instrument=None, **kwargs):
+        
+#        global digitizer
+        self.digitizer = digitizer
+        channel_amount = bin(self.digitizer.enable_channels()).count('1')
+        
+        if saveraw == True:
+            names= ('raw_data', 'probability_data', 'sweep_data')
+            labels= ('raw_data', 'probability_data','sweep_data')
+            shapes= ((qubit_num,sweep_num,repetition,int(seg_size)),(qubit_num,sweep_num),(qubit_num,sweep_num))
+        else:
+            names= ('probability_data', 'sweep_data')
+            labels= ('probability_data','sweep_data')
+            shapes= ((qubit_num,sweep_num),(qubit_num,sweep_num))
+        
+        
+        super().__init__('readout', names= names, labels= labels, shapes=shapes, instrument=instrument, **kwargs)
+#        super().__init__('readout', names= ('raw_data', 'data'), labels= ('raw_data', 'data'), shapes=((qubit_num,sweep_num,repetition,int(seg_size)), (1,)) , instrument=instrument, **kwargs)
+        self.saveraw = saveraw 
+        self.threshold = threshold
+        self.qubit_num = qubit_num
+        self.repetition = repetition
+        self.mV_range = mV_range
+        self.memsize = memsize
+        self.seg_size =seg_size
+        self.posttrigger_size = posttrigger_size
+        self.X_sweep_array = X_sweep_array
+        
+    def get(self):
+#        res = digitizer.single_trigger_acquisition(self.mV_range,self.memsize,self.posttrigger_size)
+        time.sleep(0.2)
+        res = self.digitizer.multiple_trigger_acquisition(self.mV_range,self.memsize,self.seg_size,self.posttrigger_size)
+        
+        ordered_data = organise(res, qubit_num = self.qubit_num, repetition = self.repetition, seg_size  = self.seg_size)
+        thresholded_data = convert_to_01_state2(ordered_data, threshold = self.threshold)
+        probability_data = convert_to_probability2(thresholded_data)
+        
+        ##not sure why i cant just pass X_sweep_array...
+        sweep_data = deepcopy(probability_data)
+        for i in range(self.qubit_num):
+            sweep_data[i,:] = self.X_sweep_array
+        
+
+        if self.saveraw == True:
+            return (ordered_data, probability_data,sweep_data )
+        else: 
+            return (probability_data,sweep_data )
+
+        
+    def __getitem__(self, keys):
+        """
+        Slice a Parameter to get a SweepValues object
+        to iterate over during a sweep
+        """
+
 #%%
-def set_digitizer(digitizer, sweep_num, qubit_num, repetition):
+def set_digitizer(digitizer, sweep_num, qubit_num, repetition, threshold, X_sweep_array, saveraw):
     pretrigger=16
     mV_range=1000
-    
+    threshold = threshold
     sample_rate = int(np.floor(61035/1))
     
     digitizer.sample_rate(sample_rate)
@@ -511,6 +678,7 @@ def set_digitizer(digitizer, sweep_num, qubit_num, repetition):
     
     digitizer.set_ext0_OR_trigger_settings(trig_mode = trig_mode, termination = 0, coupling = 0, level0 = 800, level1 = 900)
     
-    dig = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size, digitizer = digitizer)
+#    dig = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size, digitizer = digitizer)
+    dig = digitizer_multiparam(mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size, digitizer = digitizer, threshold = threshold, qubit_num =qubit_num , repetition =repetition, sweep_num =sweep_num, X_sweep_array =X_sweep_array, saveraw = saveraw)
 
     return digitizer, dig

@@ -51,8 +51,8 @@ class Single_Qubit_Gate(Gate):
         self.Pi_pulse_length = qubit.Pi_pulse_length
         self.halfPi_pulse_length = qubit.halfPi_pulse_length
 
-        self.PM_before = 50e-9
-        self.PM_after = 50e-9
+        self.PM_before = 40e-9
+        self.PM_after = 2e-9
 
         self.voltage_pulse_length = 0
 

@@ -11,6 +11,11 @@ import numpy as np
 import qcodes.instrument_drivers.tektronix.AWG5014 as AWG5014
 #import qcodes.instrument_drivers.QuTech.IVVI as IVVI
 import qcodes.instrument_drivers.tektronix.AWG5200 as AWG5200
+import qcodes.instrument_drivers.QuTech.IVVI as IVVI
+
+from qtt.instrument_drivers.gates import virtual_IVVI
+
+import qcodes.instrument_drivers.tektronix.Keithley_2700 as keith2700
 
 import qcodes.instrument_drivers.Spectrum.M4i as M4i
 from qubit import Qubit 
@@ -35,28 +40,65 @@ GenInfo = {
 
 # Format (instrument_index, query, multiplier)
 gate_map = {
-    # bias dacs
-    'G1': (0,'dac1'),
-    'G2': (0,'dac2'),
-    'G3': (0,'dac3'),
-    'ST': (0,'dac4'),
-    'LB': (0,'dac5'),
-    'RB': (0,'dac6'),
-    'C': (0,'dac7'),
-    'R': (0,'dac8'),
-    'NA9': (0,'dac9'),
-    'NA10': (0,'dac10'),
-    'NA11': (0,'dac11'),
-    'NA12': (0,'dac12'),
-    'Vsd': (0,'dac13'),
-    'NA14': (0,'dac14'),
-    'NA15': (0,'dac15'),
-    'NA16': (0,'dac16'),
+    'VI1': (0, 1), 
+    'VI2': (0, 2),
+    'acQD': (0, 4), 
+    'acres': (0, 16),
     
-    'Vsd_AC': (2,'amplitude'),
+    'RS': (0, 5),
+    'RD': (0, 6),
+    'LP': (0, 9), 
+    'LPF': (0, 10),
+    'RP': (0, 11), 
+    'RPF': (0, 12),
+
+    'LS': (0, 13),
+    'T': (0, 15),
     
-    'Vgate_AC': (1, 'amplitude')
+    'LD': (1, 1),
+    'B': (1, 11),
+    
+    'SQD1': (0, 7),
+    'SQD2': (1, 4),
+    'SQD3': (0, 8),
+    'RQPC': (0, 14),
+
 }
+
+def twodotboundaries():
+    global ivvi1
+    gate_boundaries = dict({
+            'VI1': (-600, 600), 
+            'VI2': (-600, 600),
+            'acQD': (-300, 300), 
+            'acres': (-300, 300),
+            
+            'RS': (-1000, 200),
+            'RD': (-1500, 200),
+            'LP': (-1000, 200), 
+            'LPF': (-100, 100),
+            'RP': (-1500, 200), 
+            'RPF': (-100, 100),
+            
+            'LS': (-1000, 200),
+            'T': (-1000, 200),
+        
+            'LD': (-1000, 200),
+            'B': (-1000, 200),
+            
+            'SQD1': (-1000, 200),
+            'SQD2': (-1000, 200),
+            'SQD3': (-1000, 200),
+            'RQPC': (-1000, 200),
+        })
+
+    if ivvi1 is not None:
+        # update boundaries to resolution of the dac        
+        for k in gate_boundaries:
+            bb=gate_boundaries[k]
+            bb=(ivvi1.round_dac(bb[0]), ivvi1.round_dac(bb[1]) )
+            gate_boundaries[k] =bb
+    return gate_boundaries
 
 output_map = None
 
@@ -103,7 +145,7 @@ def close(verbose=1):
 
 #%%
 def initialize(reinit=False, server_name=None):
-    global ivvi, digitizer, lockin1, lockin2, awg, awg2, vsg, vsg2, magnet, sig_gen, keithley, gate_map, station, mwindows, output_map, qubit_1, qubit_2
+    global ivvi1, ivvi2, gates, digitizer, lockin1, lockin2, awg, awg2, vsg, vsg2, magnet, sig_gen, keithley, gate_map, station, mwindows, output_map, qubit_1, qubit_2
     
     #qcodes.installZMQlogger()
     logging.info('LD400: initialize')
@@ -112,6 +154,10 @@ def initialize(reinit=False, server_name=None):
     if _initialized and not reinit:
         return station
     
+    if server_name is None:
+        server_name_virtual = None
+    else:
+        server_name_virtual = server_name + '_virtualgates'
     
     # initialize qubit object
     
@@ -129,18 +175,64 @@ def initialize(reinit=False, server_name=None):
 #
     qubit_2.define_gate(gate_name = 'LP', gate_number = 5, gate_function = 'plunger', channel_VP = 'ch6')
     
-    qubit_1.define_neighbor(neighbor_qubit = 'qubit_2', pulse_delay = 10e-9)
+    qubit_1.define_neighbor(neighbor_qubit = 'qubit_2', pulse_delay = 0e-9)
 
-    qubit_2.define_neighbor(neighbor_qubit = 'qubit_2', pulse_delay = 0)
+    qubit_2.define_neighbor(neighbor_qubit = 'qubit_2', pulse_delay = 10e-9)
     
+    # Loading IVVI
+    logging.info('LD400: load IVVI driver')
+    ivvi1 = IVVI.IVVI(name='ivvi1', dac_step=10, dac_delay=0.025, address='COM5', server_name=server_name, 
+                     numdacs=16, use_locks=True)
+    print('')
+    ivvi2 = IVVI.IVVI(name='ivvi2', dac_step=10, dac_delay=0.025, address='COM6', server_name=server_name, 
+                     numdacs=16, use_locks=True)
+#    
+
+#    def twodotboundaries():
+#        global ivvi1
+#        gate_boundaries = dict({
+#                'VI1': (-600, 600), 
+#                'VI2': (-600, 600),
+#                'acQD': (-300, 300), 
+#                'acres': (-300, 300),
+#                
+#                'RS': (-1000, 200),
+#                'RD': (-1500, 200),
+#                'LP': (-1000, 200), 
+#                'LPF': (-100, 100),
+#                'RP': (-1500, 200), 
+#                'RPF': (-100, 100),
+#                
+#                'LS': (-1000, 200),
+#                'T': (-1000, 200),
+#            
+#                'LD': (-1000, 200),
+#                'B': (-1000, 200),
+#            
+#                'SQD1': (-1000, 200),
+#                'SQD2': (-1000, 200),
+#                'SQD3': (-1000, 200),
+#                'RQPC': (-1000, 200),
+#            })
+#
+#        if ivvi1 is not None:
+#        # update boundaries to resolution of the dac        
+#            for k in gate_boundaries:
+#                bb=gate_boundaries[k]
+#                bb=(ivvi1.round_dac(bb[0]), ivvi1.round_dac(bb[1]) )
+#                gate_boundaries[k] =bb
+#        return gate_boundaries
+
+#    boundaries = twodotboundaries()
+
+
+    gates = virtual_IVVI(name='gates', gate_map=gate_map, server_name=server_name_virtual, instruments=[ivvi1,ivvi2])
+    
+    gate_boundaries = twodotboundaries()
+    gates.set_boundaries(gate_boundaries)
+    
+    logging.info('boundaries set to gates')
     # Loading AWG
-#    logging.info('LD400: load AWG driver')
-#    awg = AWG5014.Tektronix_AWG5014(name='awg', address='TCPIP0::169.254.141.235::inst0::INSTR', server_name=server_name)
-#    print('awg loaded')
-    
-#    logging.info('LD400: load AWG driver')
-#    awg2 = AWG5014.Tektronix_AWG5014(name='awg2', address='TCPIP0::169.254.110.163::inst0::INSTR', server_name=server_name)
-#    print('awg2 loaded')
     
     logging.info('LD400: load AWG driver')
     awg2 = AWG5014.Tektronix_AWG5014(name='awg2', address='TCPIP0::192.168.0.6::inst0::INSTR', server_name=server_name)
@@ -165,6 +257,8 @@ def initialize(reinit=False, server_name=None):
     logging.info('Keysight signal generator driver')
     vsg2 = E8267D.E8267D(name='vsg2',address='TCPIP::192.168.0.12::INSTR',server_name=server_name)
     print('VSG2 loaded')
+    
+    
 
 
     """
@@ -174,7 +268,7 @@ def initialize(reinit=False, server_name=None):
     """
 
 #    #load keithley driver
-#    keithley = Keithley_2700.Keithley_2700(name='keithley', address='GPIB0::15::INSTR', server_name=server_name)
+    keithley = keith2700.Keithley_2700(name='keithley', address='GPIB0::15::INSTR', server_name=server_name)
 #    
 
 #     Loading digitizer
@@ -204,7 +298,7 @@ def initialize(reinit=False, server_name=None):
     #station = qcodes.Station(ivvi, awg, lockin1, lockin2, digitizer, gates)
 #    station = qcodes.Station(ivvi, lockin1, lockin2, digitizer, gates)
 #    station = qcodes.Station(awg, awg2, vsg, vsg2, digitizer, qubit_1, qubit_2)
-    components = [awg, awg2, vsg, vsg2, digitizer, qubit_1, qubit_2]
+    components = [awg, awg2, vsg, vsg2, digitizer, qubit_1, qubit_2, gates, keithley]
     station = Station(*components, update_snapshot=True)
     print('station initialized')
     logging.info('Initialized LDHe station')
