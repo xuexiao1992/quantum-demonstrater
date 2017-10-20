@@ -119,7 +119,7 @@ class Experiment:
         
         self.write_period = None
         
-        self.data_IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents\\test_data\\'+self.name)
+        self.data_IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents\\'+self.name)
         self.data_location = time.strftime("%Y-%m-%d/%H-%M-%S/") + name + label
         self.calibration_data_location = self.data_location+'_calibration'
         
@@ -374,9 +374,9 @@ class Experiment:
     
     def update_calibration(self,):
         if self.calibration_qubit == 'all' or self.calibration_qubit == 'qubit_1':
-            self.calibrate_by_Ramsey(0)
-        if self.calibration_qubit == 'all' or self.calibration_qubit == 'qubit_2':
             self.calibrate_by_Ramsey(1)
+        if self.calibration_qubit == 'all' or self.calibration_qubit == 'qubit_2':
+            self.calibrate_by_Ramsey(0)
         self.current_yvalue = self.current_yvalue+1
         return True
 
@@ -562,10 +562,10 @@ class Experiment:
             
         if self.X_parameter_type == 'Out_Sequence':
             x1 = self.data_set.arrays[self.X_parameter+'_set'].mean(axis = 0)
-            x = x1[0,:]
+#            x = x1[0,:]
             y = self.data_set.arrays['probability_data'].mean(axis = 0)
             for i in range(self.qubit_number):           
-                self.average_plot[i].add(x, y[:,i,0])   
+                self.average_plot[i].add(x1, y[:,i,0])   
         else:
             for measurement in measurements:
                 pos = self.X_all_measurements.index(measurement)

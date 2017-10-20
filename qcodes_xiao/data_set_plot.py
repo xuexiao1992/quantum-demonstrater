@@ -556,10 +556,10 @@ class digitizer_param(ArrayParameter):
     def get(self):
 #        res = digitizer.single_trigger_acquisition(self.mV_range,self.memsize,self.posttrigger_size)
         time.sleep(0.2)
-        res = self.digitizer.multiple_trigger_acquisition(self.mV_range,self.memsize,self.seg_size,self.posttrigger_size)
+#        res = self.digitizer.multiple_trigger_acquisition(self.mV_range,self.memsize,self.seg_size,self.posttrigger_size)
         
 #        res = multiple_trigger_acquisition(digitizer, self.mV_range,self.memsize,self.seg_size,self.posttrigger_size)
-#        res = digitizer.single_software_trigger_acquisition(self.mV_range,self.memsize,self.posttrigger_size)
+        res = self.digitizer.single_software_trigger_acquisition(self.mV_range,self.memsize,self.posttrigger_size)
         print(res.shape)
         return res
 

@@ -36,7 +36,7 @@ from qcodes.instrument.parameter import ArrayParameter, StandardParameter
 import time
 from qcodes.plots.qcmatplotlib import MatPlot
 from qcodes.plots.pyqtgraph import QtPlot
-from data_set_plot import set_digitizer
+from data_set_plot import convert_to_ordered_data, convert_to_01_state, convert_to_probability, set_digitizer
 
 
 #%%
