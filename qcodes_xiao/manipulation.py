@@ -6,7 +6,7 @@ Created on Thu Jun  1 16:55:59 2017
 """
 
 import numpy as np
-
+import time
 from pycqed.measurement.waveform_control.element import Element
 from pycqed.measurement.waveform_control.pulse import SquarePulse
 from gate import Single_Qubit_Gate, Two_Qubit_Gate, CPhase_Gate, CNot_Gate, CRotation_Gate
@@ -60,16 +60,24 @@ class Manipulation(Element):
                               refgate = None, refpoint = 'end', waiting_time = 0, refpoint_new = 'start'):
         # no idea yet  perhaps call the element.add() function but just to add the first pulse
         # and record the information of the last pulse
+        t0 = time.time()
         if name in self.operations.keys():
             raise NameError('Name already used')            ## need to stop the program or maybe randomly give a name
-        tvals, wfs = self.waveforms()   ## 960?
-        channel_id = qubit.microwave_gate['channel_I']
-        time = len(tvals[channel_id])*10e-9
-        IQ_phase = 2*np.pi*time/frequency_shift if frequency_shift != 0 else 0
+            
+        if frequency_shift != 0 and not name.startswith('off'):
+            tvals, wfs = self.waveforms()   ## 960?
+            channel_id = qubit.microwave_gate['channel_I']
+            Time = len(tvals[channel_id])*10e-9
+            IQ_phase = 2*np.pi*Time/frequency_shift #if frequency_shift != 0 else 0
+        else:
+            IQ_phase =0
+        refphase = self.refphase[qubit.name]
+        
+        t1 = time.time()
         single_qubit_gate = Single_Qubit_Gate(name = name, qubit = qubit, rotating_axis = axis,
                                               frequency_shift = frequency_shift, amplitude = amplitude, refphase = refphase,
                                               IQ_phase = IQ_phase)
-
+        
         if axis[0]!=0 or axis[1]!=0:
             if axis[2]!=0:
                 raise ValueError('should be either in X-Y plane or Z axis')
@@ -83,10 +91,10 @@ class Manipulation(Element):
             else:
 #               single_qubit_gate.Z_rotation(degree = 90)
                 self.refphase[qubit.name] += degree                     ## Z rotation equals to change of refphase
-
+#        t2 = time.time()
         self._add_all_pulses_of_qubit_gate(name = name, qubit_gate = single_qubit_gate)
-
-
+#        t3 = time.time()
+        print('time: ', (t1-t0))
         return True
 
 

@@ -64,7 +64,7 @@ gate_map = {
     'RQPC': (0, 14),
 
 }
-
+#
 def twodotboundaries():
     global ivvi1
     gate_boundaries = dict({
@@ -91,6 +91,33 @@ def twodotboundaries():
             'SQD3': (-1000, 200),
             'RQPC': (-1000, 200),
         })
+
+#def twodotboundaries():
+#    global ivvi1
+#    gate_boundaries = dict({
+#            'VI1': (-600, 600), 
+#            'VI2': (-600, 1600),
+#            'acQD': (-1300, 1300), 
+#            'acres': (-2000, 1300),
+#            
+#            'RS': (-1500, 1200),
+#            'RD': (-1500, 1500),
+#            'LP': (-1500, 1500), 
+#            'LPF': (-2000, 1500),
+#            'RP': (-1500, 1500), 
+#            'RPF': (-1700, 1500),
+#            
+#            'LS': (-1500, 1500),
+#            'T': (-1900, 1500),
+#        
+#            'LD': (-1500, 1500),
+#            'B': (-1500, 1500),
+#            
+#            'SQD1': (-1500, 1500),
+#            'SQD2': (-1500, 1900),
+#            'SQD3': (-1500, 1500),
+#            'RQPC': (-1500, 1500),
+#        })
 
     if ivvi1 is not None:
         # update boundaries to resolution of the dac        

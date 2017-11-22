@@ -73,6 +73,7 @@ class Experiment:
         self.channel_PM = [qubit.microwave_gate['channel_PM'] for qubit in qubits]
 
         self.qubit_number = len(qubits)
+        self.readnames = []
 
         self.sequence = Sequence(name = name)
 
@@ -286,7 +287,7 @@ class Experiment:
             
             Sweep_Value = parameter[sweep_array[0]:sweep_array[-1]+step:step]
     
-            self.Loop = Loop(sweep_values = Sweep_Value, delay = 5).each(self.dig)
+            self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(self.dig)
             
             self.X_parameter = parameter.full_name
             self.X_parameter_type = 'Out_Sequence'
@@ -323,11 +324,17 @@ class Experiment:
         
         return True
     
-    def add_Y_parameter(self, measurement, parameter, sweep_array):
+    def add_Y_parameter(self, measurement, parameter, sweep_array, **kw):
+        
+        with_calibration = kw.pop('with_calibration', False)
+        if with_calibration:
+            calibration_task = Task(func = self.update_calibration)
         
         sequencer = self.find_sequencer(measurement)
         
         self.Y_sweep_array = sweep_array
+        
+        element = kw.pop('element', None)
         
         if type(parameter) is StandardParameter:
             
@@ -336,10 +343,14 @@ class Experiment:
             Sweep_Value = parameter[sweep_array[0]:sweep_array[-1]+step:step]
             
             if self.Loop is None:
-                self.Loop = Loop(sweep_values = Sweep_Value, delay = 5).each(self.dig)
+#                calibration = calibration_task if parameter
+                if with_calibration:
+                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(self.dig, calibration_task)
+                else:
+                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(self.dig)
             else:
                 LOOP = self.Loop
-                self.Loop = Loop(sweep_values = Sweep_Value, delay = 5).each(LOOP)
+                self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(LOOP)
             
             self.Y_parameter = parameter.full_name
             self.Y_parameter_type = 'Out_Sequence'
@@ -347,11 +358,33 @@ class Experiment:
             for para in sequencer.sweep_loop2:
                 if len(sequencer.sweep_loop2[para]) == 0:
                     break
-            parameter = 'loop2_'+para
+            i = len(sequencer.sweep_loop2)+1
+            para = 'para'+str(i)
+            loop = 'loop2_'+para
             sequencer.sweep_loop2[para] = sweep_array
+
+            for seg in range(len(sequencer.sequence_cfg_type)):
+                if sequencer.sequence_cfg_type[seg].startswith('manip'):
+                    if sequencer.sequence_cfg[seg]['step1']['manip_elem'] == element:
+                        sequencer.sequence_cfg[seg]['step1'].update({parameter: loop})
             
             self.Y_parameter = parameter
             self.Y_parameter_type = 'In_Sequence'
+            
+            Y = StandardParameter(name = self.Y_parameter, set_cmd = self.update_Y_parameter)
+            Sweep_Value = Y[0:len(self.Y_sweep_array):1]
+            
+            if self.Loop is None:
+                if with_calibration:
+                    print('calibration')
+                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(self.dig, calibration_task)
+#                self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(self.dig)
+            else:
+                print('no calibration')
+                LOOP = self.Loop
+                self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(LOOP)
+            
+            
         
         self.dimension_2 = len(sweep_array)
         self.sweep_type = '2D'
@@ -371,6 +404,28 @@ class Experiment:
         self.pulsar.start()
         
         return True
+    
+    def update_Y_parameter(self, idx_j):
+        
+        self.pulsar.stop()
+        self.sequence = Sequence(name = self.name)
+        self.elts = []
+        for sequencer in self.sequencer:
+            sequencer.elts = []
+            sequencer.sequence = Sequence(name = sequencer.name)
+        self.generate_1D_sequence(idx_j = idx_j)
+        self.load_sequence()
+        self.awg.all_channels_on()
+        self.awg2.all_channels_on()
+        
+        self.vsg.status('On')
+        self.vsg2.status('On')
+
+        self.pulsar.start()
+        
+        time.sleep(2)
+
+        return
     
     def update_calibration(self,):
         if self.calibration_qubit == 'all' or self.calibration_qubit == 'qubit_1':
@@ -764,7 +819,8 @@ class Experiment:
         if j == 0:
             self.first_segment_into_sequence_and_elts(segment, segment_type, repetition, idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)
         else:
-            self.update_segment_into_sequence_and_elts(segment, repetition, idx_j = idx_j, idx_i = idx_i)
+            self.first_segment_into_sequence_and_elts(segment, segment_type, repetition, idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)
+#            self.update_segment_into_sequence_and_elts(segment, repetition, idx_j = idx_j, idx_i = idx_i)
         
         return True
     
@@ -1164,7 +1220,7 @@ class Experiment:
 
         self.pulsar.start()
         
-        time.sleep(1)
+        time.sleep(2)
         
         if self.Loop is not None:
 #            self.data_set = self.Loop.run(location = self.data_location, loc_record = {'name': self.name, 'label': self.label}, io = self.data_IO,)
@@ -1176,6 +1232,17 @@ class Experiment:
             self.data_set = self.Loop.get_data_set(location = self.data_location, 
                                                    loc_record = {'name': self.name, 'label': self.label}, 
                                                    io = self.data_IO, write_period = self.write_period, formatter = self.formatter)
+#            
+            self.data_set.add_metadata({'qubit_number': self.qubit_number})
+            self.data_set.add_metadata({'X_all_measurements': self.X_all_measurements})
+            self.data_set.add_metadata({'readnames': self.readnames})
+            self.data_set.add_metadata({'X_parameter_type': self.X_parameter_type})
+            self.data_set.add_metadata({'X_sweep_points': self.X_sweep_points})
+            self.data_set.add_metadata({'X_parameter':self.X_parameter})
+            self.data_set.add_metadata({'Y_parameter':self.Y_parameter})
+
+
+
 #            self.data_set = self.Loop.get_data_set(location = self.data_location, 
 #                                                   loc_record = {'name': self.name, 'label': self.label}, 
 #                                                   io = self.data_IO, write_period = self.write_period)

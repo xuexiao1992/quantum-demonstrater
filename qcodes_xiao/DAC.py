@@ -33,6 +33,9 @@ digitizer = station.digitizer
 
 T = G.T
 LP = G.LP
+SQD3 = G.SQD3
+SQD1 = G.SQD1
+RP = G.RP
 
 AMP = keithley.amplitude
 #%%
@@ -89,22 +92,55 @@ DIG = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, se
 
 
 #%%
-Sweep_Value1 = T[-17:-21:0.1]
-#Sweep_Value1 = T[0:-75:1]
+#Sweep_Value1 = T[-14:-20:0.1]
+Sweep_Value1 = T[0:-75:1]
 Sweep_Value2 = LP[-320:-400:1]
 
-#LOOP = Loop(sweep_values = Sweep_Value2).loop(sweep_values = Sweep_Value1).each(AMP)
+#Sweep_Value1 = RP[-1025:-950:1]
+#Sweep_Value2 = T[-25:-10:1]
+#
+#Sweep_Value1 = SQD1[0:-100:2]
+#Sweep_Value2 = SQD3[-200:-300:2]
 
-LOOP = Loop(sweep_values = Sweep_Value1).each(DIG)
 
-NewIO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents\\BillCoish_experiment')
+LOOP = Loop(sweep_values = Sweep_Value2).loop(sweep_values = Sweep_Value1).each(AMP)
+
+#LOOP = Loop(sweep_values = Sweep_Value1).each(DIG)
+
+NewIO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents\\RB_experiment')
 formatter = HDF5FormatMetadata()
 
 ## get_data_set should contain parameter like io, location, formatter and others
 data = LOOP.get_data_set(location=None, loc_record = {'name':'DAC', 'label':'V_sweep'}, 
                        io = NewIO,)
 print('loop.data_set: %s' % LOOP.data_set)
+'''
+pt = MatPlot()
+pt.add(x = data.gates_T_set, y = data.gates_LP_set, z = data.keithley_amplitude)
 
-#pt = MatPlot()
-#pt.add(x = data.gates_T_set, y = data.gates_LP_set, z = data.keithley_amplitude)
+pt = MatPlot()
+pt.add(x = data.gates_SQD1_set, y = data.gates_SQD3_set, z = data.keithley_amplitude)
+
 #T(-17.792019531548021)
+
+
+
+G.B(-315)
+G.LD(-240)
+G.LP(-351)
+G.LPF(0)
+G.LS(26)
+G.RD(-1000)
+G.RP(-1000)
+G.RPF(0)
+G.RQPC(0)
+G.RS(-400)
+G.SQD1(-27)
+G.SQD2(0)
+G.SQD3(-251)
+G.T(-13.2)
+G.VI1(0)
+G.VI2(120)
+G.acQD(77)
+G.acres(160)
+'''

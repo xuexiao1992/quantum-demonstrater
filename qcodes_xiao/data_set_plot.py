@@ -206,6 +206,8 @@ def  organise(data, qubit_num = 2, repetition = 100, seg_size = 64):
     # and d is the raw readout traces. 
 
     dimension_2 = int(data.shape[0]/2/(repetition+1)/seg_size/qubit_num) # number of steps in sweep
+    
+    print('dimension2',dimension_2)
 
     data_num = int(data.shape[0]/2/(repetition+1) * repetition) #total length of usable raw data
     qubit_data_num = int(data_num/qubit_num)
@@ -616,7 +618,7 @@ class digitizer_multiparam(MultiParameter):
         for i in range(self.qubit_num):
             sweep_data[i,:] = self.X_sweep_array
         
-
+        print(probability_data)
         if self.saveraw == True:
             return (ordered_data, probability_data,sweep_data )
         else: 
@@ -640,11 +642,12 @@ def set_digitizer(digitizer, sweep_num, qubit_num, repetition, threshold, X_swee
     
     sample_rate = digitizer.sample_rate()
     
-    readout_time = 0.7e-3
+    readout_time = 0.6e-3
     
     qubit_num = qubit_num
     
-    seg_size = ((readout_time*sample_rate+pretrigger) // 16 + 1) * 16
+#    seg_size = ((readout_time*sample_rate+pretrigger) // 16 + 1) * 16
+    seg_size = ((readout_time*sample_rate) // 16 + 1) * 16
     
     sweep_num = sweep_num#len(sweep_loop1['para1']) if 'para1' in sweep_loop1 else 1
 #    import data_set_plot

@@ -53,13 +53,24 @@ class Single_Qubit_Gate(Gate):
 
         self.PM_before = 40e-9
         self.PM_after = 2e-9
+        '''
+        for cbox testing
+        '''
+#        self.PM_before = 500e-9
+#        self.PM_after = 500e-9
+        '''
+        end
+        '''
 
         self.voltage_pulse_length = 0
 
         self.refphase = refphase*C.pi/180
         self.IQ_phase = IQ_phase
         self.axis = np.array(rotating_axis)
-        self.axis_angle = np.arctan(self.axis[1]/self.axis[0]) if self.axis[0]!=0 else C.pi/2
+#        if self.axis[0]!= 0:
+#            self.axis_angle = np.arctan(self.axis[1]/self.axis[0]) 
+#        else :
+        self.axis_angle = np.arctan2(self.axis[1],self.axis[0])
 
 
         self.pulses = [None, None, None, None]            ## [microwave1_I, microwave1_Q, voltage, microwave2_I, microwave2_Q]

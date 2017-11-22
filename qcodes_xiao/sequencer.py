@@ -260,7 +260,7 @@ class Sequencer:
         elif segment[:5] == 'manip':
             element = self._manipulation_element(name, time = time, amplitudes = amplitudes, **kw)
         elif segment[:4] == 'read':
-            trigger = True if name.find('step1')>=0 else False
+            trigger = True if name.find('step2')>=0 else False
             element = self._readout_element(name, amplitudes = amplitudes, trigger_digitizer = trigger)
         else:
             element = None

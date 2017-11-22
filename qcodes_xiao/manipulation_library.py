@@ -160,6 +160,9 @@ class Rabi(Manipulation):
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = kw.pop('pulsar', None)
+        self.amplitude = kw.pop('amplitude', self.amplitude)
+        self.frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
+        self.length = kw.pop('duration_time', self.length)
         return self
 
     def make_circuit(self, **kw):
@@ -192,6 +195,7 @@ class CRot(Manipulation):
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = None
         self.amplitude = kw.pop('amplitude', 0)
+        self.amplitudepi = kw.pop('amplitudepi', 1)
         self.frequency_shift = kw.pop('frequency_shift', 0)
         self.length = kw.pop('duration_time', 275e-9)
     def __call__(self, **kw):
@@ -212,16 +216,62 @@ class CRot(Manipulation):
         
         length = kw.get('duration_time', self.length)
         amplitude = kw.get('amplitude', self.amplitude)
+        amplitudepi = kw.get('amplitudepi', self.amplitudepi)
         frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
 
         self.add_CPhase(name = 'CP_Q12', control_qubit = self.qubits[0], target_qubit = self.qubits[1],
                         amplitude_control = amplitude, amplitude_target = 0, length = length+150e-9)
         
         self.add_single_qubit_gate(name='CRot', refgate = 'CP_Q12', qubit = self.qubits[1], 
-                                   refpoint = 'start', waiting_time = 100e-9, amplitude = 1, 
+                                   refpoint = 'start', waiting_time = 100e-9, amplitude = amplitudepi, 
                                    length = length, frequency_shift = frequency_shift,)
 
         return self
+    
+class Rabi_detuning(Manipulation):
+
+    def __init__(self, name, pulsar, **kw):
+
+        super().__init__(name, pulsar, **kw)
+        self.refphase = {}
+        self.qubit = kw.pop('qubit', 'qubit_1')
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = None
+        self.amplitude = kw.pop('amplitude', 0)
+        self.frequency_shift = kw.pop('frequency_shift', 0)
+        self.length = kw.pop('duration_time', 275e-9)
+    def __call__(self, **kw):
+        self.name = kw.pop('name', self.name)
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = kw.pop('pulsar', None)
+        return self
+
+    def make_circuit(self, **kw):
+        qubit_name = kw.pop('qubit', self.qubit)
+        
+        qubit = Instrument.find_instrument(qubit_name)
+        
+        length = kw.get('duration_time', qubit.Pi_pulse_length)
+        
+        length = kw.get('duration_time', self.length)
+        amplitude = kw.get('amplitude', self.amplitude)
+        frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
+
+        self.add_CPhase(name = 'CP_Q12', control_qubit = self.qubits[0], target_qubit = self.qubits[1],
+                        amplitude_control = 0, amplitude_target = amplitude, length = length+150e-9)
+        
+        self.add_single_qubit_gate(name='Q1', refgate = 'CP_Q12', qubit = qubit, 
+                                   refpoint = 'start', waiting_time = 100e-9, amplitude = 1, 
+                                   length = length, frequency_shift = frequency_shift,)
+
+
+        return self    
 
 class Pi_CRot(Manipulation):
 
@@ -337,6 +387,85 @@ class AllXY(Manipulation):
                                        frequency_shift = frequency_shift)
             
         return self
+    
+#%% 
+#from RB_test import convert_clifford_to_sequence, clifford_sets
+
+class RB(Manipulation):
+
+    def __init__(self, name, pulsar, **kw):
+
+        super().__init__(name, pulsar, **kw)
+        self.refphase = {}
+        self.qubit = kw.pop('qubit', 'qubit_2')
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = None
+        self.clifford_number = kw.pop('clifford_number', 0)
+        self.sequence_number = kw.pop('sequence_number', 0)
+
+    def __call__(self, **kw):
+        self.name = kw.pop('name', self.name)
+        self.qubits = kw.pop('qubits', self.qubits)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = kw.pop('pulsar', self.pulsar)
+        self.clifford_number = kw.pop('clifford_number', self.clifford_number)
+        self.sequence_number = kw.pop('sequence_number', self.sequence_number)
+
+        return self
+
+    def make_circuit(self, **kw):
+        
+        qubit_name = kw.pop('qubit', self.qubit)
+        
+        qubit = Instrument.find_instrument(qubit_name)
+        
+        self.sequence_number = int(kw.pop('sequence_number', self.sequence_number))
+        self.clifford_number = int(kw.pop('clifford_number', self.clifford_number))
+        
+#        clifford_index = list((np.random.rand(self.clifford_number)*24).astype(int))
+
+#        clifford_gates = convert_clifford_to_sequence(clifford_index)
+
+        clifford_gates = clifford_sets[self.sequence_number][self.clifford_number]
+        
+        print(clifford_gates)
+        
+        name = 'prepare_state'
+        self.add_single_qubit_gate(name = name, qubit = qubit, amplitude = 1, 
+                                   length = qubit.Pi_pulse_length,)
+
+        for i in range(len(clifford_gates)):
+            print('go to next clifford : ', i)
+            for j in range(len(clifford_gates[i])):
+                gate = clifford_gates[i][j]
+                amplitude = 0 if gate == 'I' else 1
+                if gate.startswith('X'):
+                    axis = [1,0,0]
+                elif gate.startswith('mX'):
+                    axis = [-1,0,0]
+                elif gate.startswith('Y'):
+                    axis = [0,1,0]
+                else:
+                    axis = [0,-1,0]
+                    
+                length = qubit.Pi_pulse_length if gate.endswith('p') else qubit.halfPi_pulse_length
+            
+#                refgate = None if i+j == 0 else name
+                refgate = name
+                name = 'C%d%d'%((i+1),(j+1))+gate
+                self.add_single_qubit_gate(name = name, refgate = refgate, 
+                                       qubit = qubit, axis = axis,
+                                       amplitude = amplitude, length = length,)
+            
+        print('clifford_gates finished')
+        
+        return self
+
 
 class CPhase_Calibrate(Manipulation):
     def __init__(self, name, pulsar, **kw):
@@ -350,11 +479,13 @@ class CPhase_Calibrate(Manipulation):
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = None
         self.detuning_amplitude = kw.pop('detuning_amplitude', 30*0.5*-0.030)
+        self.detuning_amplitude2 = kw.pop('detuning_amplitude2', 30*0.5*-0.00)
         self.Pi_amplitude = kw.pop('Pi_amplitude', 0)
         self.frequency_shift = kw.pop('frequency_shift', 0)
         self.detuning_time = kw.pop('detuning_time', 0)
         self.phase = kw.pop('phase', 0)
-        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude',1)
+        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude',1.15)
+        self.control_qubit = kw.pop('control_qubit', 'qubit_2')
 
     def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
@@ -364,11 +495,13 @@ class CPhase_Calibrate(Manipulation):
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = kw.pop('pulsar', self.pulsar)
         self.detuning_amplitude = kw.pop('detuning_amplitude', self.detuning_amplitude)
+        self.detuning_amplitude2 = kw.get('detuning_amplitude2', self.detuning_amplitude2)
         self.Pi_amplitude = kw.pop('Pi_amplitude', self.Pi_amplitude)
         self.frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
         self.detuning_time = kw.pop('detuning_time', self.detuning_time)
         self.phase = kw.pop('phase', self.phase)
         self.off_resonance_amplitude = kw.pop('off_resonance_amplitude',self.off_resonance_amplitude)
+        self.control_qubit = kw.pop('control_qubit', self.control_qubit)
         return self
 
     def make_circuit(self, **kw):
@@ -376,35 +509,63 @@ class CPhase_Calibrate(Manipulation):
         phase = kw.pop('phase', self.phase)
         detuning_time = kw.pop('detuning_time', self.detuning_time)
         detuning_amplitude = kw.get('detuning_amplitude', self.detuning_amplitude)
+        detuning_amplitude2 = kw.get('detuning_amplitude2', self.detuning_amplitude2)
         Pi_amplitude = kw.get('Pi_amplitude', self.Pi_amplitude)
         frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
+        
+        control_qubit = kw.pop('control_qubit', self.control_qubit)
+        target_qubit = 'qubit_1' if control_qubit == 'qubit_2' else 'qubit_2'
+        C = int(control_qubit[-1])-1
+        T = int(target_qubit[-1])-1
+        
         off_resonance_amplitude = kw.pop('off_resonance_amplitude',self.off_resonance_amplitude)
         
-        self.add_single_qubit_gate(name='X_Pi_Q1', qubit = self.qubits[0], amplitude = Pi_amplitude, 
+        self.add_single_qubit_gate(name='X_Pi_Q2', qubit = self.qubits[C], amplitude = Pi_amplitude, 
                                    length = self.qubits[0].Pi_pulse_length, frequency_shift = 0)
         
-        self.add_X(name='X1_Q2', refgate = 'X_Pi_Q1', qubit = self.qubits[1], 
+        if control_qubit == 'qubit_2':
+        
+            self.add_single_qubit_gate(name='off_resonance1_Q1', refgate = 'X_Pi_Q2', refpoint = 'start',
+                                       qubit = self.qubits[T], amplitude = off_resonance_amplitude, 
+                                       length = self.qubits[0].Pi_pulse_length, frequency_shift = frequency_shift-30e6)
+        
+        self.add_X(name='X1_Q2', refgate = 'X_Pi_Q2', qubit = self.qubits[T],  
                    amplitude = 1, length = self.qubits[1].halfPi_pulse_length, 
                    frequency_shift = frequency_shift,)
         
-        self.add_single_qubit_gate(name='off_resonance1_Q1', refgate = 'X1_Q2', refpoint = 'start',
-                                   qubit = self.qubits[0], amplitude = off_resonance_amplitude, 
-                                   length = self.qubits[1].halfPi_pulse_length, frequency_shift = frequency_shift-30e6)
-
-        self.add_CPhase(name = 'CP_Q12', refgate = 'X1_Q2',
+        if target_qubit  == 'qubit_2':
+        
+            self.add_X(name='off_resonance2_Q2', refgate = 'X1_Q2', refpoint = 'start', qubit = self.qubits[C],  
+                   amplitude = off_resonance_amplitude, length = self.qubits[1].halfPi_pulse_length, 
+                   frequency_shift = frequency_shift-30e6,)
+        
+        
+        self.add_CPhase(name = 'CP_wait1', refgate = 'X1_Q2',
                         control_qubit = self.qubits[0], target_qubit = self.qubits[1],
-                        amplitude_control = detuning_amplitude, amplitude_target = 0, 
+                        amplitude_control = 0, amplitude_target = 0, 
+                        length = 10e-9)
+        
+        self.add_CPhase(name = 'CP_Q12', refgate = 'CP_wait1',
+                        control_qubit = self.qubits[0], target_qubit = self.qubits[1],
+                        amplitude_control = detuning_amplitude, amplitude_target = detuning_amplitude2, 
                         length = detuning_time)
         
-        self.add_Z(name='Z1_Q1', qubit = self.qubits[1], degree = phase)
+        self.add_CPhase(name = 'CP_wait2', refgate = 'CP_Q12',
+                        control_qubit = self.qubits[0], target_qubit = self.qubits[1],
+                        amplitude_control = 0, amplitude_target = 0, 
+                        length = 10e-9)
         
-        self.add_X(name='X2_Q2', refgate = 'CP_Q12', qubit = self.qubits[1], 
-                   amplitude = 1, length = self.qubits[1].halfPi_pulse_length, 
+        self.add_Z(name='Z1_Q1', qubit = self.qubits[T], degree = phase)
+        
+        self.add_X(name='X2_Q2', refgate = 'CP_wait2', 
+                   waiting_time = 0, qubit = self.qubits[T], 
+                   amplitude = 1, length = self.qubits[0].halfPi_pulse_length, 
                    frequency_shift = frequency_shift,)
         
-        self.add_single_qubit_gate(name='off_resonance2_Q1', refgate = 'X2_Q2', refpoint = 'start',
-                                   qubit = self.qubits[0], amplitude = off_resonance_amplitude, 
-                                   length = self.qubits[1].halfPi_pulse_length, frequency_shift = frequency_shift-30e6)
+        if target_qubit  == 'qubit_2':
+            self.add_single_qubit_gate(name='off_resonance3_Q1', refgate = 'X2_Q2', refpoint = 'start',
+                                       qubit = self.qubits[C], amplitude = off_resonance_amplitude, 
+                                       length = self.qubits[0].halfPi_pulse_length, frequency_shift = frequency_shift-30e6)
 
 
         return self
@@ -499,7 +660,7 @@ class DCZ(Manipulation):
         self.frequency_shift = kw.pop('frequency_shift', 0)
         self.detuning_time = kw.pop('detuning_time', 0)
         self.phase = kw.pop('phase', 0)
-        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude',1)
+        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude',1.25)
 
     def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
@@ -526,18 +687,23 @@ class DCZ(Manipulation):
         Pi_amplitude = kw.get('Pi_amplitude', self.Pi_amplitude)
         frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
         off_resonance_amplitude = kw.pop('off_resonance_amplitude',self.off_resonance_amplitude)
-        te = 50e-9
-        self.add_single_qubit_gate(name='XPi_Q1', qubit = self.qubits[0], amplitude = Pi_amplitude, 
+        te = 20e-9
+        # first pi pulse
+        self.add_single_qubit_gate(name='XPi_Q1', qubit = self.qubits[1], amplitude = Pi_amplitude, 
                                    length = self.qubits[0].Pi_pulse_length, frequency_shift = 0)
         
-        self.add_X(name='X1_Q2',refgate ='XPi_Q1', qubit = self.qubits[1], 
-                   amplitude = 1, length = self.qubits[1].halfPi_pulse_length, 
-                   frequency_shift = frequency_shift,)
+        # pi/2 pulse
         
-        self.add_single_qubit_gate(name='off_resonance1_Q1', refgate = 'X1_Q2', refpoint = 'start',
+        self.add_single_qubit_gate(name='off_resonance1_Q1', refgate = 'XPi_Q1', refpoint = 'start',
                                    qubit = self.qubits[0], amplitude = off_resonance_amplitude, 
                                    length = self.qubits[1].halfPi_pulse_length, frequency_shift = frequency_shift-30e6)
 
+        
+        self.add_X(name='X1_Q2',refgate ='off_resonance1_Q1', qubit = self.qubits[0], 
+                   amplitude = 1, length = self.qubits[1].halfPi_pulse_length, 
+                   frequency_shift = frequency_shift,)
+        
+        
 
         self.add_CPhase(name = 'wait1', refgate = 'X1_Q2',
                         control_qubit = self.qubits[0], target_qubit = self.qubits[1],
@@ -578,15 +744,15 @@ class DCZ(Manipulation):
                         amplitude_control = 0, amplitude_target = 0, 
                         length = te)
         
-        self.add_Z(name='Z2_Q2', qubit = self.qubits[1], degree = phase)
+        self.add_Z(name='Z2_Q2', qubit = self.qubits[0], degree = phase)
         
-        self.add_X(name='X2_Q2', refgate = 'wait4', qubit = self.qubits[1], 
-                   amplitude = 1, length = self.qubits[1].halfPi_pulse_length, 
+        self.add_X(name='X2_Q2', refgate = 'wait4', qubit = self.qubits[0], 
+                   amplitude = 1, length = self.qubits[0].halfPi_pulse_length, 
                    frequency_shift = frequency_shift,)
         
-        self.add_single_qubit_gate(name='off_resonance2_Q1', refgate = 'X2_Q2', refpoint = 'start',
-                                   qubit = self.qubits[0], amplitude = off_resonance_amplitude, 
-                                   length = self.qubits[1].halfPi_pulse_length, frequency_shift = frequency_shift-30e6)
+#        self.add_single_qubit_gate(name='off_resonance2_Q1', refgate = 'X2_Q2', refpoint = 'start',
+#                                   qubit = self.qubits[0], amplitude = off_resonance_amplitude, 
+#                                   length = self.qubits[1].halfPi_pulse_length, frequency_shift = frequency_shift-30e6)
 
         return self
     
@@ -793,7 +959,7 @@ class Charge_Noise(Manipulation):
 #%%
 
 class Ramsey_00_11_basis(Manipulation):    
-#%%    
+
     def __init__(self, name, pulsar, **kw):
 
         super().__init__(name, pulsar, **kw)
@@ -1032,6 +1198,269 @@ class Rabi_all(Manipulation):
         return self
 
 
+#from RB_test import convert_clifford_to_sequence, clifford_sets
+
+class RB_all(Manipulation):
+
+    def __init__(self, name, pulsar, **kw):
+
+        super().__init__(name, pulsar, **kw)
+        self.refphase = {}
+        self.qubit = kw.pop('qubit', 'qubit_2')
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = None
+        self.clifford_number = kw.pop('clifford_number', 0)
+        self.sequence_number = kw.pop('sequence_number', 0)
+
+    def __call__(self, **kw):
+        self.name = kw.pop('name', self.name)
+        self.qubits = kw.pop('qubits', self.qubits)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = kw.pop('pulsar', self.pulsar)
+        self.clifford_number = kw.pop('clifford_number', self.clifford_number)
+        self.sequence_number = kw.pop('sequence_number', self.sequence_number)
+
+        return self
+
+    def make_circuit(self, **kw):
+        
+        qubit_name = kw.pop('qubit', self.qubit)
+        
+        qubit_1 = Instrument.find_instrument('qubit_1')
+        qubit_2 = Instrument.find_instrument('qubit_2')
+        
+        self.sequence_number = int(kw.pop('sequence_number', self.sequence_number))
+        self.clifford_number = int(kw.pop('clifford_number', self.clifford_number))
+        
+#        clifford_index = list((np.random.rand(self.clifford_number)*24).astype(int))
+
+#        clifford_gates = convert_clifford_to_sequence(clifford_index)
+
+        clifford_gates = clifford_sets[self.sequence_number][self.clifford_number]
+#        clifford_gates2 = clifford_sets2[self.sequence_number][self.clifford_number]
+        print(clifford_gates)
+        
+        name = 'prepare_state'
+        self.add_single_qubit_gate(name = name, qubit = qubit_1, amplitude = 1, 
+                                   length = qubit_1.Pi_pulse_length,)
+        self.add_single_qubit_gate(name = name+'Q2', qubit = qubit_2, amplitude = 1, 
+                                   length = qubit_2.Pi_pulse_length,)
+
+        for i in range(len(clifford_gates)):
+            print('go to next clifford : ', i)
+            for j in range(len(clifford_gates[i])):
+                gate = clifford_gates[i][j]
+                amplitude = 0 if gate == 'I' else 1
+                if gate.startswith('X'):
+                    axis = [1,0,0]
+                elif gate.startswith('mX'):
+                    axis = [-1,0,0]
+                elif gate.startswith('Y'):
+                    axis = [0,1,0]
+                else:
+                    axis = [0,-1,0]
+                    
+                length = qubit_1.Pi_pulse_length if gate.endswith('p') else qubit_1.halfPi_pulse_length
+            
+#                refgate = None if i+j == 0 else name
+                refgate = name
+                name = 'C%d%d'%((i+1),(j+1))+gate
+                
+                amplitude_1 = amplitude if gate != 'I' else 1.2
+                freq_shift = 0 if gate!='I' else -30e6
+                amplitude_2 = amplitude
+                
+                self.add_single_qubit_gate(name = name, refgate = refgate, 
+                                       qubit = qubit_1, axis = axis,
+                                       amplitude = amplitude_1, length = length, frequency_shift = freq_shift)
+                self.add_single_qubit_gate(name = name+'Q2', refgate = refgate, #refpoint = 'start',
+                                       qubit = qubit_2, axis = axis,
+                                       amplitude = amplitude_2, length = length,)
+            
+        print('clifford_gates finished')
+        
+        return self
+
+#from RB_two_qubit import convert_clifford_to_sequence, clifford_sets
+#
+class RB_Marcus(Manipulation):
+
+    def __init__(self, name, pulsar, **kw):
+
+        super().__init__(name, pulsar, **kw)
+        self.refphase = {}
+        self.qubit = kw.pop('qubit', 'qubit_2')
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = None
+        self.clifford_number = kw.pop('clifford_number', 0)
+        self.sequence_number = kw.pop('sequence_number', 0)
+        self.detuning_time = kw.pop('detuning_time', 80e-9)
+        self.phase_1 = kw.pop('phase_1', 116)
+        self.phase_2 = kw.pop('phase_2', 175)
+        self.Pi_amplitude = kw.pop('Pi_amplitude', 1)
+
+    def __call__(self, **kw):
+        self.name = kw.pop('name', self.name)
+        self.qubits = kw.pop('qubits', self.qubits)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = kw.pop('pulsar', self.pulsar)
+        self.clifford_number = kw.pop('clifford_number', self.clifford_number)
+        self.sequence_number = kw.pop('sequence_number', self.sequence_number)
+        self.detuning_time = kw.pop('detuning_time', self.detuning_time)
+        self.phase_1 = kw.pop('phase_1', self.phase_1)
+        self.phase_2 = kw.pop('phase_2', self.phase_2)
+        self.Pi_amplitude = kw.pop('Pi_amplitude', self.Pi_amplitude)
+        return self
+
+    def make_circuit(self, **kw):
+        
+        qubit_name = kw.pop('qubit', self.qubit)
+        
+        qubit_1 = Instrument.find_instrument('qubit_1')
+        qubit_2 = Instrument.find_instrument('qubit_2')
+        
+        self.sequence_number = int(kw.pop('sequence_number', self.sequence_number))
+        self.clifford_number = int(kw.pop('clifford_number', self.clifford_number))
+        self.detuning_time = kw.pop('detuning_time', self.detuning_time)
+        self.phase_1 = kw.pop('phase_1', self.phase_1)
+        self.phase_2 = kw.pop('phase_2', self.phase_2)
+        self.Pi_amplitude = kw.pop('Pi_amplitude', self.Pi_amplitude)
+#        clifford_index = list((np.random.rand(self.clifford_number)*24).astype(int))
+
+#        clifford_gates = convert_clifford_to_sequence(clifford_index)
+
+        clifford_gates = clifford_sets[self.sequence_number][self.clifford_number]
+#        clifford_gates2 = clifford_sets2[self.sequence_number][self.clifford_number]
+        print(clifford_gates)
+        
+        name = 'prepare_state'
+        
+        if self.Pi_amplitude == 0:
+            length_1 = 10e-9
+        else:
+            length_1 = qubit_2.Pi_pulse_length
+        self.add_single_qubit_gate(name = name, qubit = qubit_2, amplitude = self.Pi_amplitude, 
+                                   length = length_1,)
+        self.add_single_qubit_gate(name = name+'X2', refgate = name, refpoint = 'start',
+                                   qubit = qubit_1, amplitude = self.Pi_amplitude, 
+                                   length = length_1)
+#        self.add_single_qubit_gate(name = 'off_resonance1', refgate = name, refpoint = 'start',
+#                                   qubit = qubit_1, amplitude = 1.2, 
+#                                   length = qubit_1.Pi_pulse_length, frequency_shift = -30e6)
+
+        for i in range(len(clifford_gates)):
+            print('go to next clifford : ', i)
+            for j in range(len(clifford_gates[i])):
+                gate = clifford_gates[i][j]
+                
+                if gate == 'I':
+                    continue
+                
+                refgate = name
+                name = 'C%d%d'%((i+1),(j+1))+gate
+                
+                if 'Z' not in gate:
+                    amplitude = 0 if gate == 'I' else 1
+                    if gate.startswith('X'):
+                        axis = [1,0,0]
+                    elif gate.startswith('mX'):
+                        axis = [-1,0,0]
+                    elif gate.startswith('Y'):
+                        axis = [0,1,0]
+                    else:
+                        axis = [0,-1,0]
+                    
+                    length = qubit_1.Pi_pulse_length if gate.endswith('p') else qubit_1.halfPi_pulse_length
+                    
+                    amplitude_1 = 1 if gate != 'I' else 1.2
+                    freq_shift = 0 if gate!='I' else -30e6
+                    amplitude_2 = 1 if gate != 'I' else 0
+                    name = name if gate != 'I' else 'off_resonance0'+name
+
+            
+#                    refgate = None if i+j == 0 else name
+                    self.add_single_qubit_gate(name = name, refgate = refgate, 
+                                               qubit = qubit_1, axis = axis,
+                                               amplitude = amplitude_1, length = length, frequency_shift = freq_shift)
+
+
+                    self.add_single_qubit_gate(name = name+'Q2', refgate = refgate,
+                                               qubit = qubit_2, axis = axis,
+                                               amplitude = amplitude_2, length = length,)
+#                    
+#                    self.add_single_qubit_gate(name = 'off_resonance2'+name, refgate = name,
+#                                               qubit = qubit_1, amplitude = 1.2, 
+#                                               length = length, frequency_shift = -30e6)
+#                    name = name +'Q2'
+#                    if (i+1) != len(clifford_gates) and clifford_gates[i+1][0] == 'Zp' and (j+1) == len(clifford_gates[i]):
+#                        self.add_single_qubit_gate(name = 'X1'+name, refgate = name,
+#                                                   qubit = qubit_2, amplitude = 1, 
+#                                                   length = qubit_2.Pi_pulse_length, )
+#                        self.add_single_qubit_gate(name = 'off_resonance3'+name, refgate = name,
+#                                                   qubit = qubit_1, amplitude = 1.2, 
+#                                                   length = qubit_1.Pi_pulse_length, frequency_shift = -30e6)
+#                        name = 'X1'+name
+
+#                    
+                elif 'Z' in gate:
+                    
+                    self.add_CPhase(name = name+'1', refgate = refgate, waiting_time = 10e-9,
+                                    control_qubit = self.qubits[0], target_qubit = self.qubits[1],
+                                    amplitude_control = 30*0.5*-0.0270, amplitude_target = 30*0.5*0.04, 
+                                    length = self.detuning_time)
+                    self.add_Z(name='Z1_Q1', qubit = self.qubits[0], degree = self.phase_1)
+                    self.add_Z(name='Z1_Q2', qubit = self.qubits[1], degree = self.phase_2)
+#                    self.add_single_qubit_gate(name=name+'Pi_Q1', refgate = name+'1', waiting_time = 20e-9,
+#                                               qubit = self.qubits[0], amplitude = 1, 
+#                                               length = self.qubits[0].Pi_pulse_length, frequency_shift = 0)
+#        
+#                    self.add_single_qubit_gate(name=name+'Pi_Q2', refgate = name+'1', waiting_time = 20e-9,
+#                                               qubit = self.qubits[1], amplitude = 1, 
+#                                               length = self.qubits[1].Pi_pulse_length, frequency_shift = 0)
+#                    
+#                    self.add_CPhase(name = name+'2', refgate = name+'Pi_Q2', waiting_time = 20e-9,
+#                                    control_qubit = self.qubits[0], target_qubit = self.qubits[1],
+#                                    amplitude_control = 30*0.5*-0.0273, amplitude_target = 30*0.5*0.01, 
+#                                    length = self.detuning_time/2)
+                    
+                    self.add_CPhase(name = name+'2', refgate = name+'1', 
+                                    control_qubit = self.qubits[0], target_qubit = self.qubits[1],
+                                    amplitude_control = 0, amplitude_target = 0, 
+                                    length = 10e-9)
+                    name = name+'2'
+#                    if gate == 'Zp':
+#                        self.add_single_qubit_gate(name = 'X2'+name, refgate = name, waiting_time = 10e-9,
+#                                                   qubit = qubit_2, amplitude = 1, 
+#                                                   length = qubit_2.Pi_pulse_length, )
+#                        self.add_single_qubit_gate(name = 'off_resonance4'+name, refgate = name, waiting_time = 10e-9,
+#                                                   qubit = qubit_1, amplitude = 1.2, 
+#                                                   length = qubit_1.Pi_pulse_length, frequency_shift = -30e6)
+#                        name = 'X2'+name
+                else:
+                    raise NameError('Gate name not correct')
+                    
+#        self.add_single_qubit_gate(name = 'X2_F', refgate = name, qubit = qubit_2, amplitude = self.Pi_amplitude, 
+#                                   length = qubit_2.Pi_pulse_length,)
+#        self.add_single_qubit_gate(name = 'X2_F2', refgate = 'X2_F', qubit = qubit_1, amplitude = self.Pi_amplitude, 
+#                                   length = qubit_2.Pi_pulse_length,)
+#        self.add_single_qubit_gate(name = 'off_resonance2', refgate = 'X2_F', refpoint = 'start',
+#                                   qubit = qubit_1, amplitude = 1.25, 
+#                                   length = qubit_1.Pi_pulse_length, frequency_shift = -30e6)
+                    
+        print('clifford_gates finished')
+        
+        return self
+
 class Wait(Manipulation):
 
     def __init__(self, name, pulsar, **kw):
@@ -1088,7 +1517,7 @@ class Ramsey_all(Manipulation):
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = None
-        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude',1)
+        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude',1.2)
         self.waiting_time = kw.pop('waiting_time', 0)
         self.amplitude = kw.pop('amplitude', 1)
         self.frequency_shift = kw.pop('frequency_shift', 0)
@@ -1126,7 +1555,7 @@ class Ramsey_all(Manipulation):
         
         self.add_single_qubit_gate(name='off_resonance_Q1', refgate = 'X1_Q1',
                                    qubit = qubit_1, amplitude = off_resonance_amplitude, 
-                                   length = waiting_time, frequency_shift = frequency_shift-30e6)
+                                   length = waiting_time, frequency_shift = -30e6)
 
         self.add_X(name='X2_Q1', refgate = 'off_resonance_Q1', 
                    qubit = qubit_1, waiting_time = 0,
@@ -1196,9 +1625,6 @@ class AllXY_all(Manipulation):
                                        frequency_shift = frequency_shift)
             
         return self
-
-
-
 
 
 
