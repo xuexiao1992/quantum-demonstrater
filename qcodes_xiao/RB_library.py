@@ -94,6 +94,7 @@ class RB_Martinis(Manipulation):
                 
                 refgate = name
                 name = 'C%d%d'%((i+1),(j+1))+gate
+                amplitude = 1
                 
                 if 'X' in gate or 'Y' in gate:
 
@@ -127,7 +128,7 @@ class RB_Martinis(Manipulation):
                     
                     self.add_CPhase(name = name+'1', refgate = refgate, waiting_time = 10e-9,
                                     control_qubit = self.qubits[0], target_qubit = self.qubits[1],
-                                    amplitude_control = 30*0.5*-0.0270, amplitude_target = 30*0.5*0.04, 
+                                    amplitude_control = 30*0.5*-0.0254, amplitude_target = 30*0.5*0.04, 
                                     length = self.detuning_time)
                     self.add_Z(name='Z1_Q1', qubit = self.qubits[0], degree = self.phase_1)
                     self.add_Z(name='Z1_Q2', qubit = self.qubits[1], degree = self.phase_2)
@@ -139,35 +140,127 @@ class RB_Martinis(Manipulation):
                     name = name+'2'
                                 
                 elif gate == 'iSWAP_1':
-                    pass
+                    self.add_single_qubit_gate(name = name, refgate = refgate, 
+                                               qubit = qubit_1, axis = [0,1,0],
+                                               amplitude = amplitude, length = qubit_1.halfPi_pulse_length,)
+                        
+                    self.add_single_qubit_gate(name = name+'Q2_1', refgate = name, refpoint = 'start',
+                                               qubit = qubit_2, axis = [-1,0,0],
+                                               amplitude = amplitude, length = qubit_2.halfPi_pulse_length,)
                 
                 elif gate.startswith('iSWAP'):
                     
                     if gate.endswith('S0'):
-                        pass
+                        self.add_single_qubit_gate(name = name, refgate = refgate, 
+                                                   qubit = qubit_1, axis = [0,1,0],
+                                                   amplitude = amplitude, length = qubit_1.halfPi_pulse_length,)
+                        
+                        self.add_single_qubit_gate(name = name+'Q2_1', refgate = name, refpoint = 'start',
+                                                   qubit = qubit_2, axis = [1,0,0],
+                                                   amplitude = amplitude, length = qubit_2.halfPi_pulse_length,)
                     elif gate.endswith('S1'):
-                        pass
+                        self.add_single_qubit_gate(name = name+'Q1_1', refgate = refgate, 
+                                                   qubit = qubit_1, axis = [0,1,0],
+                                                   amplitude = amplitude, length = qubit_1.Pi_pulse_length,)
+                        
+                        self.add_single_qubit_gate(name = name+'Q1_2', refgate = name+'Q1_1', 
+                                                   qubit = qubit_1, axis = [1,0,0],
+                                                   amplitude = amplitude, length = qubit_1.halfPi_pulse_length,)
+
+                        self.add_single_qubit_gate(name = name+'Q2_1', refgate = name+'Q1_1', refpoint = 'start',
+                                                   qubit = qubit_2, axis = [1,0,0],
+                                                   amplitude = amplitude, length = qubit_2.halfPi_pulse_length,)
+                        self.add_single_qubit_gate(name = name+'Q2_2', refgate = name+'Q2_1',
+                                                   qubit = qubit_2, axis = [0,1,0],
+                                                   amplitude = amplitude, length = qubit_2.halfPi_pulse_length,)
+                        self.add_single_qubit_gate(name = name+'Q2_3', refgate = name+'Q2_2',
+                                                   qubit = qubit_2, axis = [1,0,0],
+                                                   amplitude = amplitude, length = qubit_2.halfPi_pulse_length,)
+                        name = name +'Q1_2'
+                        
                     elif gate.endswith('S2'):
-                        pass
+                        self.add_single_qubit_gate(name = name+'Q1_1', refgate = refgate, 
+                                                   qubit = qubit_1, axis = [-1,0,0],
+                                                   amplitude = amplitude, length = qubit_1.halfPi_pulse_length,)
+                        
+                        self.add_single_qubit_gate(name = name+'Q1_2', refgate = name+'Q1_1', 
+                                                   qubit = qubit_1, axis = [0,-1,0],
+                                                   amplitude = amplitude, length = qubit_1.halfPi_pulse_length,)
+                        self.add_single_qubit_gate(name = name+'Q1_3', refgate = name+'Q1_2', 
+                                                   qubit = qubit_1, axis = [1,0,0],
+                                                   amplitude = amplitude, length = qubit_1.halfPi_pulse_length,)
+
+                        self.add_single_qubit_gate(name = name+'Q2_1', refgate = name+'Q1_1', refpoint = 'start',
+                                                   qubit = qubit_2, axis = [0,-1,0],
+                                                   amplitude = amplitude, length = qubit_2.halfPi_pulse_length,)
+                        
+                        name = name +'Q1_3'
                     
                 elif gate.startswith('CNOT'):
                     
                     if gate.endswith('S0'):
-                        pass
+                        self.add_single_qubit_gate(name = name, refgate = refgate, 
+                                                   qubit = qubit_1, axis = [0,1,0],
+                                                   amplitude = amplitude, length = qubit_1.halfPi_pulse_length,)
+
                     elif gate.endswith('S1'):
-                        pass
+                        self.add_single_qubit_gate(name = name+'Q1_1', refgate = refgate, 
+                                                   qubit = qubit_1, axis = [0,1,0],
+                                                   amplitude = amplitude, length = qubit_1.Pi_pulse_length,)
+                        
+                        self.add_single_qubit_gate(name = name+'Q1_2', refgate = name+'Q1_1', 
+                                                   qubit = qubit_1, axis = [1,0,0],
+                                                   amplitude = amplitude, length = qubit_1.halfPi_pulse_length,)
+
+                        self.add_single_qubit_gate(name = name+'Q2_1', refgate = name+'Q1_1', refpoint = 'start',
+                                                   qubit = qubit_2, axis = [0,1,0],
+                                                   amplitude = amplitude, length = qubit_2.halfPi_pulse_length,)
+                        self.add_single_qubit_gate(name = name+'Q2_2', refgate = name+'Q2_1',
+                                                   qubit = qubit_2, axis = [1,0,0],
+                                                   amplitude = amplitude, length = qubit_2.halfPi_pulse_length,)
+                        name = name +'Q1_2'
+                        
                     elif gate.endswith('S2'):
-                        pass
+                        self.add_single_qubit_gate(name = name+'Q1_1', refgate = refgate, 
+                                                   qubit = qubit_1, axis = [-1,0,0],
+                                                   amplitude = amplitude, length = qubit_1.halfPi_pulse_length,)
+                        
+                        self.add_single_qubit_gate(name = name+'Q1_2', refgate = name+'Q1_1', 
+                                                   qubit = qubit_1, axis = [0,-1,0],
+                                                   amplitude = amplitude, length = qubit_1.halfPi_pulse_length,)
+                        self.add_single_qubit_gate(name = name+'Q1_3', refgate = name+'Q1_2', 
+                                                   qubit = qubit_1, axis = [1,0,0],
+                                                   amplitude = amplitude, length = qubit_1.halfPi_pulse_length,)
+
+                        self.add_single_qubit_gate(name = name+'Q2_1', refgate = name+'Q1_1', refpoint = 'start',
+                                                   qubit = qubit_2, axis = [-1,0,0],
+                                                   amplitude = amplitude, length = qubit_2.halfPi_pulse_length,)
+                        self.add_single_qubit_gate(name = name+'Q2_2', refgate = name+'Q2_1',
+                                                   qubit = qubit_2, axis = [0,-1,0],
+                                                   amplitude = amplitude, length = qubit_2.halfPi_pulse_length,)
+                        name = name +'Q1_3'
                 
                 elif gate == 'SWAP_1':
-                    pass
-                
+                    self.add_single_qubit_gate(name = name, refgate = refgate, 
+                                               qubit = qubit_1, axis = [0,1,0],
+                                               amplitude = amplitude, length = qubit_1.halfPi_pulse_length,)
+                        
+                    self.add_single_qubit_gate(name = name+'Q2_1', refgate = name, refpoint = 'start',
+                                               qubit = qubit_2, axis = [0,-1,0],
+                                               amplitude = amplitude, length = qubit_2.halfPi_pulse_length,)
                 elif gate == 'SWAP_2':
-                    pass
+                    self.add_single_qubit_gate(name = name, refgate = refgate, 
+                                               qubit = qubit_1, axis = [0,-1,0],
+                                               amplitude = amplitude, length = qubit_1.halfPi_pulse_length,)
+                        
+                    self.add_single_qubit_gate(name = name+'Q2_1', refgate = name, refpoint = 'start',
+                                               qubit = qubit_2, axis = [0,1,0],
+                                               amplitude = amplitude, length = qubit_2.halfPi_pulse_length,)
                 
                 elif gate == 'SWAP_3':
-                    pass
-                
+                    self.add_single_qubit_gate(name = name, refgate = refgate, 
+                                               qubit = qubit_1, axis = [0,1,0],
+                                               amplitude = amplitude, length = qubit_1.halfPi_pulse_length,)
                 else:
                     raise NameError('Gate name not correct')
                     

@@ -5,7 +5,7 @@ Created on Tue Oct 24 16:31:43 2017
 @author: X.X
 """
 import numpy as np
-from pycqed.measurement.randomized_benchmarking.clifford_group import (clifford_lookuptable)
+#from pycqed.measurement.randomized_benchmarking.clifford_group import (clifford_lookuptable)
 
 
 #%%
@@ -192,7 +192,24 @@ def generate_randomized_clifford_sequence(interleave = None):
 
 #clifford_sets = generate_randomized_clifford_sequence(interleave = 'Zp')
 
-clifford_sets = generate_randomized_clifford_sequence()
+#clifford_sets = generate_randomized_clifford_sequence()
+
+#%%
+
+S1_group = [{}]*(9)
+
+S1_group[0] = Clifford_group[0]
+S1_group[1] = Clifford_group[8]
+S1_group[2] = Clifford_group[7]
+
+S1_group[3] = Clifford_group[12]
+S1_group[4] = Clifford_group[22]
+S1_group[5] = Clifford_group[15]
+
+S1_group[6] = Clifford_group[14]
+S1_group[7] = Clifford_group[20]
+S1_group[8] = Clifford_group[17]
+
 #%%
 '''
 pt = MatPlot()

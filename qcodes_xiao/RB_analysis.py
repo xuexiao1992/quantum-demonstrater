@@ -118,14 +118,19 @@ location_5 = '2017-11-16/20-22-33/RB_experimentAllXY_sequence'  #82.15 Q2   8705
 
 location_6 = '2017-11-16/22-52-43/RB_experimentAllXY_sequence'  #82.6 Q2   865 Q1
 
-DS = load_data(location = location_1, io = IO, formatter = formatter)
+
+#%%
+
+location_x = '2017-11-23/00-45-24/RB_experimentAllXY_sequence'
+
+DS = load_data(location = location_x, io = IO, formatter = formatter)
 #%%
 
 ds = DS
-Qubit = 1
+Qubit = 2
 i = 0 if Qubit == 2 else 1
 
-fitting_point = 18
+fitting_point = 14
 
 x = np.array([len(clifford_sets[0][i]) for i in range(fitting_point)])
 y = ds.probability_data[:,i,11:11+fitting_point].mean(axis = 0)
@@ -145,9 +150,10 @@ fidelity = 1-(1-pars[0])/2
 print('fidelity is: ', fidelity)
 
 #%%
-
+'''
 pt = MatPlot()
 y = ds.probability_data[:,i,11:11+fitting_point].
+'''
 #%% load data
 #data_set_2 = DataSet(location = test_location, io = NewIO,)
 #data_set_2.read()

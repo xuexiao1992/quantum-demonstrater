@@ -229,7 +229,7 @@ Clifford_group[22] = np.linalg.multi_dot([X9, Y9, X9][::-1])
 Clifford_group[23] = np.linalg.multi_dot([mX9, Y9, mX9][::-1])
 
 #%%
-
+'''
 S1_group = [{}]*(9)
 
 S1_group[0] = Clifford_group[0]
@@ -243,8 +243,27 @@ S1_group[5] = Clifford_group[15]
 S1_group[6] = Clifford_group[14]
 S1_group[7] = Clifford_group[20]
 S1_group[8] = Clifford_group[17]
+'''
+from RB_test import S1_group
 #%%
 
+ip = 1/np.sqrt(2)*np.array([[1, 0,],
+                            [0, 1,],], dtype=complex)
+
+x9 = 1/np.sqrt(2)*np.array([[1, -1j,],
+                            [-1j, 1,],], dtype=complex)
+
+y9 = 1/np.sqrt(2)*np.array([[1, -1,],
+                            [1, 1,],], dtype=complex)
+
+mx9 = 1/np.sqrt(2)*np.array([[1, 1j,],
+                             [1j, 1,],], dtype=complex)
+
+my9 = 1/np.sqrt(2)*np.array([[1, 1,],
+                             [-1, 1,],], dtype=complex)
+
+
+#%%
 CNOT_group = [{}]*(72)
 CNOT_gates = [{}]*(72)
 
@@ -264,7 +283,7 @@ iSWAP_gates = [{}]*(72)
 for j in range(3):
     for i in range(24):
         iSWAP_group[j*24+i] = np.linalg.multi_dot([Clifford_group[i], CZ, 
-                                                  np.kron(Y9, mX9), CZ, 
+                                                  np.kron(y9, mx9), CZ, 
                                                   np.kron(S1_group[j+6], S1_group[j+3])][::-1])
         iSWAP_gates[j*24+i] = Clifford_gates[i] + ['CZ'] + ['iSWAP_1'] + ['CZ'] + ['iSWAP_S{}'.format(j)]
 
@@ -275,11 +294,15 @@ SWAP_gates = [{}]*(24)
 
 for i in range(24):
     SWAP_group[i] = np.linalg.multi_dot([Clifford_group[i], CZ, 
-                                        np.kron(Y9, mY9), CZ, 
-                                        np.kron(mY9, Y9), CZ,
-                                        np.kron(Y9, I)][::-1])
+                                        np.kron(y9, my9), CZ, 
+                                        np.kron(my9, y9), CZ,
+                                        np.kron(y9, ip)][::-1])
     SWAP_gates[i] = Clifford_gates[i] + ['CZ'] + ['SWAP_1'] + ['CZ'] + ['SWAP_2'] + ['CZ'] + ['SWAP_3']
 
+
+#%%
+Clifford2_group = Clifford_group + CNOT_group + iSWAP_group + SWAP_group
+Clifford2_gates = Clifford_gates + CNOT_gates + iSWAP_gates + SWAP_gates
 #%%     convert to sequence
 
 clifford_index = [6,3,0]
@@ -291,8 +314,8 @@ def convert_clifford_to_sequence(clifford_index, interleave = None):
     
     if len(clifford_index) != 0:
         for i in clifford_index:
-            clifford_groups.append(Clifford_group[i])
-            clifford_gates.append(Clifford_gates[i])
+            clifford_groups.append(Clifford2_group[i])
+            clifford_gates.append(Clifford2_gates[i])
 #        for gate in Clifford_gates[i]:
 #            clifford_gates.append(gate)
             if interleave is not None:
@@ -310,19 +333,19 @@ def convert_clifford_to_sequence(clifford_index, interleave = None):
 #    return clifford_gates, total_matrix
 #def calculate_recovery_clifford(total_matrix):
     m = 0
-    for i in range(len(Clifford_group)):
-        mat = np.linalg.multi_dot([total_matrix, Clifford_group[i]][::-1])
-        mat2 = np.linalg.multi_dot([total_matrix, CZ, Clifford_group[i]][::-1])
+    for i in range(len(Clifford2_group)):
+        mat = np.linalg.multi_dot([total_matrix, Clifford2_group[i]][::-1])
+#        mat2 = np.linalg.multi_dot([total_matrix, CZ, Clifford2_group[i]][::-1])
 #        mat3 = np.linalg.multi_dot([total_matrix, CZ, Clifford_group[i]][::-1])
         if abs(np.sum(abs(mat))-np.sum(abs(np.diag(mat)))) < 1e-5:
             m = 1
-            clifford_gates.append(Clifford_gates[i])
+            clifford_gates.append(Clifford2_gates[i])
             return clifford_gates
-        elif abs(np.sum(abs(mat2))-np.sum(abs(np.diag(mat2)))) < 1e-5:
-            m = 2
-            ii = i
+#        elif abs(np.sum(abs(mat2))-np.sum(abs(np.diag(mat2)))) < 1e-5:
+#            m = 2
+#            ii = i
 #            break
-        elif i == 23:
+        elif i == 191:
             if m == 2:
                 clifford_gates.append(['CZ'])
                 clifford_gates.append(Clifford_gates[ii])
@@ -342,7 +365,7 @@ def generate_randomized_clifford_sequence(interleave = None):
     
     clifford_sets = []
     
-    sequence_length = 50
+    sequence_length = 15
     
     sequence_number = 50
     
@@ -359,13 +382,13 @@ def generate_randomized_clifford_sequence(interleave = None):
             
             clifford_gates = 0
             while clifford_gates == 0:
-                clifford_index = list((np.random.rand(i)*24).astype(int))
+                clifford_index = list((np.random.rand(i)*192).astype(int))
                 
                 clifford_gates = convert_clifford_to_sequence(clifford_index, interleave)
             print('i=', i)
 #            if clifford_gates == 0:
 #                continue
-#            print(clifford_gates)
+            print(clifford_gates)
             
             clifford_sets[j].append(clifford_gates)
             
