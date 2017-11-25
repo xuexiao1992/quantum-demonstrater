@@ -72,10 +72,17 @@ location9 = '2017-11-03/16-40-00/RB_experimentAllXY_sequence'
 
 location10 = '2017-11-03/20-35-34/RB_experimentAllXY_sequence'
 location11 = '2017-11-04/03-58-33/RB_experimentAllXY_sequence'
+
+
 location12 = '2017-11-07/00-58-57/RB_experimentAllXY_sequence'
+location12 = '2017-11-07/21-21-27/RB_experimentAllXY_sequence'
+
 location13 = '2017-11-08/12-29-49/RB_experimentAllXY_sequence'
 location14 = '2017-11-08/13-30-25/RB_experimentAllXY_sequence'
 location15 = '2017-11-08/17-51-57/RB_experimentAllXY_sequence'
+
+
+
 location16 = '2017-11-09/10-30-58/RB_experimentAllXY_sequence'
 location16 = '2017-11-09/14-50-11/RB_experimentAllXY_sequence'
 location17 = '2017-11-09/16-02-47/RB_experimentAllXY_sequence'
@@ -83,6 +90,8 @@ location18 = '2017-11-09/17-35-19/RB_experimentAllXY_sequence'
 location19 = '2017-11-09/19-37-27/RB_experimentAllXY_sequence'
 
 location20 = '2017-11-09/22-27-11/RB_experimentAllXY_sequence'
+
+
 location21 = '2017-11-10/00-09-24/RB_experimentAllXY_sequence'
 location22 = '2017-11-10/01-53-00/RB_experimentAllXY_sequence'
 location23 = '2017-11-10/11-45-13/RB_experimentAllXY_sequence'
@@ -122,15 +131,23 @@ location_6 = '2017-11-16/22-52-43/RB_experimentAllXY_sequence'  #82.6 Q2   865 Q
 #%%
 
 location_x = '2017-11-23/00-45-24/RB_experimentAllXY_sequence'
+location_y = '2017-11-23/10-00-08/RB_experimentAllXY_sequence'
+location_z = '2017-11-25/10-26-51/RB_experimentAllXY_sequence' #80%
 
-DS = load_data(location = location_x, io = IO, formatter = formatter)
+location_xx = '2017-11-25/11-30-33/RB_experimentAllXY_sequence' #81%
+location_xy = '2017-11-25/16-07-59/RB_experimentAllXY_sequence' #80%
+location_xz = '2017-11-25/17-14-58/RB_experimentAllXY_sequence' #80%
+
+location_xz = '2017-11-25/23-01-05/RB_experimentAllXY_sequence' #80%
+
+DS = load_data(location = location_xz, io = IO, formatter = formatter)
 #%%
 
 ds = DS
-Qubit = 2
+Qubit = 1
 i = 0 if Qubit == 2 else 1
 
-fitting_point = 14
+fitting_point = 8
 
 x = np.array([len(clifford_sets[0][i]) for i in range(fitting_point)])
 y = ds.probability_data[:,i,11:11+fitting_point].mean(axis = 0)
@@ -159,3 +176,30 @@ y = ds.probability_data[:,i,11:11+fitting_point].
 #data_set_2.read()
 
 #raw_data_set = load_data(location = new_location, io = NewIO,)
+#%%
+
+
+def average_two_qubit(ds):
+    seq_num = len(ds.singleshot_data)
+    fitting_num = 8
+#    clifford_num = len(ds.singleshot_data[0][0])
+    data = np.ndarray(shape = (50, fitting_num, 100,))
+    for seq in range(seq_num):
+        for i in range(11,11+fitting_num):
+            for j in range(100):
+                if ds.singleshot_data[seq][0][i][j] == 1 and ds.singleshot_data[seq][1][i][j] == 1:
+                    data[seq][i-11][j] = 1
+                else:
+                    data[seq][i-11][j] = 0
+    
+    average = data.mean(axis = 2)
+    average_11 = average.mean(axis = 0)
+    return average_11
+
+average = average_two_qubit(ds)
+pars, pcov = curve_fit(RB_Fidelity, x, average,)
+fidelity = 1-(1-pars[0])/2
+print('fidelity is: ', fidelity)
+pt = MatPlot()
+pt.add(x = x, y = average)
+pt.add(x = x, y = RB_Fidelity(x,pars[0],pars[1],pars[2]))

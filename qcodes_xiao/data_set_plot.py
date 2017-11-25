@@ -583,9 +583,9 @@ class digitizer_multiparam(MultiParameter):
         channel_amount = bin(self.digitizer.enable_channels()).count('1')
         
         if saveraw == True:
-            names= ('raw_data', 'probability_data', 'sweep_data')
-            labels= ('raw_data', 'probability_data','sweep_data')
-            shapes= ((qubit_num,sweep_num,repetition,int(seg_size)),(qubit_num,sweep_num),(qubit_num,sweep_num))
+            names= ('raw_data', 'singleshot_data', 'probability_data', 'sweep_data')
+            labels= ('raw_data', 'singleshot_data', 'probability_data','sweep_data')
+            shapes= ((qubit_num,sweep_num,repetition,int(seg_size)),(qubit_num,sweep_num,repetition),(qubit_num,sweep_num),(qubit_num,sweep_num))
         else:
             names= ('probability_data', 'sweep_data')
             labels= ('probability_data','sweep_data')
@@ -620,7 +620,7 @@ class digitizer_multiparam(MultiParameter):
         
         print(probability_data)
         if self.saveraw == True:
-            return (ordered_data, probability_data,sweep_data )
+            return (ordered_data, thresholded_data, probability_data, sweep_data)
         else: 
             return (probability_data,sweep_data )
 

@@ -11,164 +11,55 @@ import numpy as np
 #%%
 
 # Clifford group decomposition maps
-I = np.array([[1, 0, 0, 0],
-              [0, 1, 0, 0],
-              [0, 0, 1, 0],
-              [0, 0, 0, 1]], dtype=complex)
-# Pauli group
-Pauli_ex = np.array([[0, 1, 0, 0],
-                     [1, 0, 0, 0],
-                     [0, 0, 0, 1],
-                     [0, 0, 1, 0]], dtype=complex)
-Pauli_ey = np.array([[0, -1j, 0, 0],
-                     [1j, 0, 0, 0],
-                     [0, 0, 0, -1j],
-                     [0, 0, 1j, 0]], dtype=complex)
-Pauli_ez = np.array([[1, 0, 0, 0], 
-                     [0, -1, 0, 0], 
-                     [0, 0, 1, 0],
-                     [0, 0, 0, -1]], dtype=complex)
 
-Pauli_xe = np.array([[0, 0, 1, 0],
-                     [0, 0, 0, 1],
-                     [1, 0, 0, 0],
-                     [0, 1, 0, 0]], dtype=complex)
-Pauli_xx = np.array([[0, 0, 0, 1],
-                     [0, 0, 1, 0],
-                     [0, 1, 0, 0],
-                     [1, 0, 0, 0]], dtype=complex)
-Pauli_xy = np.array([[0, 0, 0, -1j],
-                     [0, 0, 1j, 0],
-                     [0, -1j, 0, 0],
-                     [1j, 0, 0, 0]], dtype=complex)
-Pauli_xz = np.array([[0, 0, 1, 0],
-                     [0, 0, 0, -1],
-                     [1, 0, 0, 0],
-                     [0, -1, 0, 0]], dtype=complex)
-
-Pauli_ye = np.array([[0, 0, -1j, 0],
-                     [0, 0, 0, -1j],
-                     [1j, 0, 0, 0],
-                     [0, 1j, 0, 0]], dtype=complex)
-Pauli_yx = np.array([[0, 0, 0, -1j],
-                     [0, 0, -1j, 0],
-                     [0, 1j, 0, 0],
-                     [1j, 0, 0, 0]], dtype=complex)
-Pauli_yy = np.array([[0, 0, 0, -1],
-                     [0, 0, 1, 0],
-                     [0, 1, 0, 0],
-                     [-1, 0, 0, 0]], dtype=complex)
-Pauli_yz = np.array([[0, 0, -1j, 0],
-                     [0, 0, 0, 1j],
-                     [1j, 0, 0, 0],
-                     [0, -1j, 0, 0]], dtype=complex)
-
-Pauli_ze = np.array([[1, 0, 0, 0],
-                     [0, 1, 0, 0],
-                     [0, 0, -1, 0],
-                     [0, 0, 0, -1]], dtype=complex)
-Pauli_zx = np.array([[0, 1, 0, 0],
-                     [1, 0, 0, 0],
-                     [0, 0, 0, -1],
-                     [0, 0, -1, 0]], dtype=complex)
-Pauli_zy = np.array([[0, -1j, 0, 0],
-                     [1j, 0, 0, 0],
-                     [0, 0, 0, 1j],
-                     [0, 0, -1j, 0]], dtype=complex)
-Pauli_zz = np.array([[1, 0, 0, 0],
-                     [0, -1, 0, 0],
-                     [0, 0, -1, 0],
-                     [0, 0, 0, 1]], dtype=complex)
+I = np.array([[1, 0,],
+              [0, 1,],], dtype=complex)
 
 
+Pauli_X = np.array([[0, 1,],
+                    [1, 0,],], dtype=complex)
 
-#e = Pauli_ee
+Pauli_Y = np.array([[0, -1j,],
+                    [1j, 0,],], dtype=complex)
 
-Xp1 = np.exp(-1j*np.pi*Pauli_xe/2)
-Xp2 = np.exp(-1j*np.pi*Pauli_ex/2)
-mXp1 = np.conj(Xp1)
-mXp2 = np.conj(Xp2)
-
-Yp1 = np.exp(-1j*np.pi*Pauli_ye/2)
-Yp2 = np.exp(-1j*np.pi*Pauli_ey/2)
-mYp1 = np.conj(Yp1)
-mYp2 = np.conj(Yp2)
-
-Zp1 = np.exp(-1j*np.pi*Pauli_ze/2)
-Zp2 = np.exp(-1j*np.pi*Pauli_ez/2)
-mZp1 = np.conj(Zp1)
-mZp2 = np.conj(Zp2)
-
-X91 = np.exp(-1j*np.pi/2*Pauli_xe/2)
-X92 = np.exp(-1j*np.pi/2*Pauli_ex/2)
-mX91 = np.conj(X91)
-mX92 = np.conj(X92)
-
-Y91 = np.exp(-1j*np.pi/2*Pauli_ye/2)
-Y92 = np.exp(-1j*np.pi/2*Pauli_ey/2)
-mY91 = np.conj(Y91)
-mY92 = np.conj(Y92)
-
-Z91 = np.exp(-1j*np.pi/2*Pauli_ze/2)
-Z92 = np.exp(-1j*np.pi/2*Pauli_ez/2)
-mZ91 = np.conj(Z91)
-mZ92 = np.conj(Z92)
+Pauli_Z = np.array([[1, 0,],
+                    [0, -1,],], dtype=complex)
 
 
-Xp = -1j*Pauli_xx
-Yp = -1j*Pauli_yy
-Zp = -1j*Pauli_zz
+Xp = -1j*Pauli_X
+Yp = -1j*Pauli_Y
+Zp = -1j*Pauli_Z
 
 mXp = -Xp
 mYp = -Yp
 mZp = -Zp
 
-X9 = 1/2*np.array([[1, -1j, -1j, -1],
-                   [-1j, 1, -1, -1j],
-                   [-1j, -1, 1, -1j],
-                   [-1, -1j, -1j, 1]], dtype = complex)
+X9 = 1/np.sqrt(2)*np.array([[1, -1j,],
+                            [-1j, 1,],], dtype=complex)
 
-Y9 = 1/2*np.array([[1, -1, -1, 1],
-                   [1, 1, -1, -1],
-                   [1, -1, 1, -1],
-                   [1, 1, 1, 1]], dtype = complex)
+Y9 = 1/np.sqrt(2)*np.array([[1, -1,],
+                            [1, 1,],], dtype=complex)
 
-Z9 = 1/2*np.array([[1, 0, 0, 0],
-                   [0, 1j, 0, 0],
-                   [0, 0, 1j, 0],
-                   [0, 0, 0, -1]], dtype = complex)
+#Z9 = 1/np.sqrt(2)*np.array([[1-1j, 0,],
+#                            [0, 1+1j,],], dtype=complex)
 
-mX9 = 1/2*np.array([[1, 1j, 1j, -1],
-                    [1j, 1, -1, 1j],
-                    [1j, -1, 1, 1j],
-                    [-1, 1j, 1j, 1]], dtype = complex)
+Z9 = 1/np.sqrt(2)*np.array([[1, 0,],
+                            [0, 1j,],], dtype=complex)
 
-mY9 = 1/2*np.array([[1, 1, 1, 1],
-                    [-1, 1, -1, 1],
-                    [-1, -1, 1, 1],
-                    [1, -1, -1, 1]], dtype = complex)
+mX9 = 1/np.sqrt(2)*np.array([[1, 1j,],
+                             [1j, 1,],], dtype=complex)
 
-mZ9 = 1/2*np.array([[1, 0, 0, 0],
-                   [0, -1j, 0, 0],
-                   [0, 0, -1j, 0],
-                   [0, 0, 0, -1]], dtype = complex)
+mY9 = 1/np.sqrt(2)*np.array([[1, 1,],
+                             [-1, 1,],], dtype=complex)
 
+mZ9 = 1/np.sqrt(2)*np.array([[1, 0,],
+                             [0, -1j,],], dtype=complex)
 
-#CZ = np.array([[1, 0, 0, 0],
-#               [0, -1j, 0, 0],
-#               [0, 0, -1j, 0],
-#               [0, 0, 0, 1]], dtype=complex)
 
 CZ = np.array([[1, 0, 0, 0],
-               [0, 1, 0, 0],
-               [0, 0, -1, 0],
+               [0, -1, 0, 0],
+               [0, 0, 1, 0],
                [0, 0, 0, 1]], dtype=complex)
-
-
-
-
-
-import random
 
 gates = {
         'I': I,
@@ -182,19 +73,16 @@ gates = {
         'mY9': mY9,
         'Zp': Zp,
         'mZp': mZp,
-        'ZpI': I,
         'Z9': Z9,
-        'mZ9': mZ9,
-        'CZ': CZ,
-#        'ZorI': random.choice(['Zp','ZpI']) 
+        'mZ9': mZ9
         }
 
 Clifford_gates = [
         ['I'], ['Xp'], ['Yp'], ['Yp', 'Xp'],
         ['X9', 'Y9'], ['X9', 'mY9'], ['mX9', 'Y9'], ['mX9', 'mY9'], ['Y9', 'X9'], ['Y9', 'mX9'], ['mY9', 'X9'], ['mY9', 'mX9'],
         ['X9'], ['mX9'], ['Y9'], ['mY9'], ['mX9', 'Y9', 'X9'], ['mX9', 'mY9', 'X9'],
-        ['Xp', 'Y9'], ['Xp', 'mY9'], ['Yp', 'X9'], ['Yp', 'mX9'], ['X9', 'Y9', 'X9'], ['mX9', 'Y9', 'mX9']
-        ]
+        ['Xp', 'Y9'], ['Xp', 'mY9'], ['Yp', 'X9'], ['Yp', 'mX9'], ['X9', 'Y9', 'X9'], ['mX9', 'Y9', 'mX9']]
+
 #%%     generate Clifford group for 1 Qubit
 
 #Clifford_group = [np.empty([2, 2])]*(24)
@@ -229,8 +117,8 @@ Clifford_group[22] = np.linalg.multi_dot([X9, Y9, X9][::-1])
 Clifford_group[23] = np.linalg.multi_dot([mX9, Y9, mX9][::-1])
 
 #%%
-'''
 S1_group = [{}]*(9)
+S1_gates = [{}]*(9)
 
 S1_group[0] = Clifford_group[0]
 S1_group[1] = Clifford_group[8]
@@ -243,66 +131,80 @@ S1_group[5] = Clifford_group[15]
 S1_group[6] = Clifford_group[14]
 S1_group[7] = Clifford_group[20]
 S1_group[8] = Clifford_group[17]
-'''
-from RB_test import S1_group
-#%%
-
-ip = 1/np.sqrt(2)*np.array([[1, 0,],
-                            [0, 1,],], dtype=complex)
-
-x9 = 1/np.sqrt(2)*np.array([[1, -1j,],
-                            [-1j, 1,],], dtype=complex)
-
-y9 = 1/np.sqrt(2)*np.array([[1, -1,],
-                            [1, 1,],], dtype=complex)
-
-mx9 = 1/np.sqrt(2)*np.array([[1, 1j,],
-                             [1j, 1,],], dtype=complex)
-
-my9 = 1/np.sqrt(2)*np.array([[1, 1,],
-                             [-1, 1,],], dtype=complex)
 
 
-#%%
-CNOT_group = [{}]*(72)
-CNOT_gates = [{}]*(72)
+S1_gates[0] = Clifford_gates[0] 
+S1_gates[1] = Clifford_gates[8]
+S1_gates[2] = Clifford_gates[7]
 
-for j in range(3):
-    for i in range(24):
-        CNOT_group[j*24+i] = np.linalg.multi_dot([Clifford_group[i], CZ, 
-                                                 np.kron(S1_group[j+6], S1_group[j])][::-1])
-        CNOT_gates[j*24+i] = Clifford_gates[i] + ['CZ'] + ['CNOT_S{}'.format(j)]
+S1_gates[3] = Clifford_gates[12]
+S1_gates[4] = Clifford_gates[22]
+S1_gates[5] = Clifford_gates[15]
 
-
+S1_gates[6] = Clifford_gates[14]
+S1_gates[7] = Clifford_gates[20]
+S1_gates[8] = Clifford_gates[17]
 
 #%%
 
-iSWAP_group = [{}]*(72)
-iSWAP_gates = [{}]*(72)
+C1_group = [{}]*(576)
+C1_gates = [{}]*(576)
 
-for j in range(3):
-    for i in range(24):
-        iSWAP_group[j*24+i] = np.linalg.multi_dot([Clifford_group[i], CZ, 
-                                                  np.kron(y9, mx9), CZ, 
-                                                  np.kron(S1_group[j+6], S1_group[j+3])][::-1])
-        iSWAP_gates[j*24+i] = Clifford_gates[i] + ['CZ'] + ['iSWAP_1'] + ['CZ'] + ['iSWAP_S{}'.format(j)]
-
-#%%
-
-SWAP_group = [{}]*(24)
-SWAP_gates = [{}]*(24)
-
+count = 0
 for i in range(24):
-    SWAP_group[i] = np.linalg.multi_dot([Clifford_group[i], CZ, 
-                                        np.kron(y9, my9), CZ, 
-                                        np.kron(my9, y9), CZ,
-                                        np.kron(y9, ip)][::-1])
-    SWAP_gates[i] = Clifford_gates[i] + ['CZ'] + ['SWAP_1'] + ['CZ'] + ['SWAP_2'] + ['CZ'] + ['SWAP_3']
-
+    for j in range(24):
+        C1_group[count] = np.kron(Clifford_group[i], Clifford_group[j])
+        C1_gates[count] = ['Clifford_{}/{}'.format(i,j)]
+        count+=1
 
 #%%
-Clifford2_group = Clifford_group[:16] + CNOT_group + iSWAP_group + SWAP_group
-Clifford2_gates = Clifford_gates[:16] + CNOT_gates + iSWAP_gates + SWAP_gates
+CNOT_group = [{}]*(5184)
+CNOT_gates = [{}]*(5184)
+
+count = 0
+for i in range(24):
+    for j in range(24):
+        for m in range(6,9):
+            for n in range(3):
+                CNOT_group[count] = np.linalg.multi_dot([np.kron(Clifford_group[i], Clifford_group[j]), CZ, 
+                                                         np.kron(S1_group[m], S1_group[n])][::-1])
+                CNOT_gates[count] = ['Clifford_{}/{}'.format(i,j)] + ['CZ'] + ['S1_{}/{}'.format(m,n)]
+                count+=1
+
+#%%
+
+iSWAP_group = [{}]*(5184)
+iSWAP_gates = [{}]*(5184)
+
+count = 0
+for i in range(24):
+    for j in range(24):
+        for m in range(6,9):
+            for n in range(3,6):
+                iSWAP_group[count] = np.linalg.multi_dot([np.kron(Clifford_group[i], Clifford_group[j]), CZ, 
+                                                          np.kron(Y9, mX9), CZ, 
+                                                          np.kron(S1_group[m], S1_group[n])][::-1])
+                iSWAP_gates[count] = ['Clifford_{}/{}'.format(i,j)] + ['CZ'] + ['Clifford_14/13'] + ['CZ'] + ['S1_{}/{}'.format(m,n)]
+                count+=1
+
+#%%
+
+SWAP_group = [{}]*(576)
+SWAP_gates = [{}]*(576)
+
+count = 0
+for i in range(24):
+    for j in range(24):
+        SWAP_group[count] = np.linalg.multi_dot([np.kron(Clifford_group[i], Clifford_group[j]), CZ, 
+                                            np.kron(Y9, mY9), CZ, 
+                                            np.kron(mY9, Y9), CZ,
+                                            np.kron(Y9, I)][::-1])
+        SWAP_gates[count] = ['Clifford_{}/{}'.format(i,j)] + ['CZ'] + ['Clifford_14/15'] + ['CZ'] + ['Clifford_15/14'] + ['CZ'] + ['Clifford_14/0']
+        count+=1
+
+#%%
+Clifford2_group = C1_group + CNOT_group + iSWAP_group + SWAP_group
+Clifford2_gates = C1_gates + CNOT_gates + iSWAP_gates + SWAP_gates
 #%%     convert to sequence
 
 clifford_index = [6,3,0]
@@ -324,7 +226,7 @@ def convert_clifford_to_sequence(clifford_index, interleave = None):
                 clifford_gates.append([interleaved_gate])
     
     if len(clifford_groups) == 0:
-        total_matrix = I
+        total_matrix = np.kron(I,I)
     elif len(clifford_groups) == 1:
         total_matrix = clifford_groups[0]
     else:
@@ -345,7 +247,7 @@ def convert_clifford_to_sequence(clifford_index, interleave = None):
 #            m = 2
 #            ii = i
 #            break
-        elif i == 191-8:
+        elif i == 11519:
             if m == 2:
                 clifford_gates.append(['CZ'])
                 clifford_gates.append(Clifford_gates[ii])
@@ -365,7 +267,7 @@ def generate_randomized_clifford_sequence(interleave = None):
     
     clifford_sets = []
     
-    sequence_length = 16
+    sequence_length = 12
     
     sequence_number = 60
     
@@ -382,7 +284,7 @@ def generate_randomized_clifford_sequence(interleave = None):
             
             clifford_gates = 0
             while clifford_gates == 0:
-                clifford_index = list((np.random.rand(i)*168).astype(int))
+                clifford_index = list((np.random.rand(i)*11520).astype(int))
                 
                 clifford_gates = convert_clifford_to_sequence(clifford_index, interleave)
             print('i=', i)
