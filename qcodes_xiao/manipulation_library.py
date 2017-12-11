@@ -1160,6 +1160,7 @@ class Rabi_all(Manipulation):
         self.amplitude = kw.pop('amplitude', 1)
         self.frequency_shift = kw.pop('frequency_shift', 0)
         self.length = kw.pop('duration_time', 250e-9)
+        self.T_amplitude = kw.get('T_amplitude', 0)
 
     def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
@@ -1173,12 +1174,14 @@ class Rabi_all(Manipulation):
         self.amplitude = kw.pop('amplitude', self.amplitude)
         self.frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
         self.length = kw.pop('duration_time', self.length)
+        self.T_amplitude = kw.get('T_amplitude', self.T_amplitude)
         return self
 
     def make_circuit(self, **kw):
         
         waiting_time = kw.pop('waiting_time', self.waiting_time)
         amplitude = kw.get('amplitude', self.amplitude)
+        T_amplitude = kw.get('T_amplitude', self.T_amplitude)
         frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
         off_resonance_amplitude = kw.pop('off_resonance_amplitude',self.off_resonance_amplitude)
 #        qubit_name = kw.pop('qubit', self.qubit)
@@ -1194,7 +1197,10 @@ class Rabi_all(Manipulation):
         self.add_X(name='X1_Q2', qubit = qubit_2, refgate = 'X1_Q1', refpoint = 'start',
                    amplitude = amplitude, length = length, frequency_shift = frequency_shift)
 
-        
+        self.add_CPhase(name = 'CP_Q12', control_qubit = qubit_1, target_qubit = qubit_2,
+                        refgate = 'X1_Q2', refpoint = 'start', waiting_time = -100e-9,
+                        amplitude_control = 0, amplitude_target = T_amplitude, length = length+150e-9)
+
         return self
 
 

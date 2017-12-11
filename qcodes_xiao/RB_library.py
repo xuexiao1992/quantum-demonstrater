@@ -128,7 +128,7 @@ class RB_Martinis(Manipulation):
                     
                     self.add_CPhase(name = name+'1', refgate = refgate, waiting_time = 10e-9,
                                     control_qubit = self.qubits[0], target_qubit = self.qubits[1],
-                                    amplitude_control = 30*0.5*-0.0265, amplitude_target = 30*0.5*0.04, 
+                                    amplitude_control = 30*0.5*-0.0262, amplitude_target = 30*0.5*0.04, 
                                     length = self.detuning_time)
                     self.add_Z(name='Z1_Q1', qubit = self.qubits[0], degree = self.phase_1)
                     self.add_Z(name='Z1_Q2', qubit = self.qubits[1], degree = self.phase_2)

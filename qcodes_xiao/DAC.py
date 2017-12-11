@@ -5,6 +5,7 @@ Created on Tue Oct 17 17:46:55 2017
 @author: X.X
 """
 import numpy as np
+from qcodes import combine
 from qcodes.loops import Loop, ActiveLoop
 from qcodes.instrument.sweep_values import SweepFixedValues
 import stationF006
@@ -28,7 +29,7 @@ from data_set_plot import digitizer_param, convert_to_ordered_data, convert_to_0
 #station = stationF006.initialize()
 G = station.gates
 keithley = station.keithley
-
+keithley.nplc(1)
 digitizer = station.digitizer
 
 T = G.T
@@ -48,7 +49,7 @@ digitizer.sample_rate(sample_rate)
 
 sample_rate = digitizer.sample_rate()
 
-readout_time = 10
+readout_time = 1
 
 qubit_num = 1
 
@@ -92,23 +93,47 @@ DIG = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, se
 
 
 #%%
-#Sweep_Value1 = T[-14:-20:0.1]
+#
+#Sweep_Value1 = T[-16:-24:0.1]
+#Tvals = np.linspace(-14,-24, 81);
+#LPvals = np.linspace(-355,-350, 81)
+
+#vsd = 40
+'''
+Tvals = np.linspace(-13,-19, 81);
+LPvals = np.linspace(-358.5,-356.5, 81)
+
+array = np.zeros([81,2])
+array[:,0] = Tvals
+array[:,1] = LPvals
+combined = combine(T, LP, name = "T_and_LP")
+#LOOP = Loop(combined.sweep(array), delay = 0.1).each(DIG)
+
+#
+keithley.nplc(10)
+LOOP = Loop(combined.sweep(array), delay = 0.1).each(AMP)
+'''
+
+##
+#Sweep_Value1 = T[-5:-25:0.5]
+#Sweep_Value2 = LP[-350:-370:0.5]
+
 Sweep_Value1 = T[0:-75:1]
 Sweep_Value2 = LP[-320:-400:1]
 
 #Sweep_Value1 = RP[-1025:-950:1]
 #Sweep_Value2 = T[-25:-10:1]
-#
+##
 #Sweep_Value1 = SQD1[0:-100:2]
 #Sweep_Value2 = SQD3[-200:-300:2]
-
-
+#
+##
 LOOP = Loop(sweep_values = Sweep_Value2).loop(sweep_values = Sweep_Value1).each(AMP)
 
 #LOOP = Loop(sweep_values = Sweep_Value1).each(DIG)
 
 NewIO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents\\RB_experiment')
-formatter = HDF5FormatMetadata()
+
 
 ## get_data_set should contain parameter like io, location, formatter and others
 data = LOOP.get_data_set(location=None, loc_record = {'name':'DAC', 'label':'V_sweep'}, 
@@ -121,7 +146,14 @@ pt.add(x = data.gates_T_set, y = data.gates_LP_set, z = data.keithley_amplitude)
 pt = MatPlot()
 pt.add(x = data.gates_SQD1_set, y = data.gates_SQD3_set, z = data.keithley_amplitude)
 
+pt = MatPlot()
+pt.add(x = data.gates_T, y =data.keithley_amplitude)
+
+
 #T(-17.792019531548021)
+
+data.formatter = formatter
+data.write()
 
 
 

@@ -396,10 +396,10 @@ def generate_randomized_clifford_sequence(interleave = None):
 
 #clifford_sets = generate_randomized_clifford_sequence(interleave = 'Zp')
 
-#clifford_sets = generate_randomized_clifford_sequence(interleave = 'CZ')
+clifford_sets = generate_randomized_clifford_sequence(interleave = 'CZ')
 
 
-clifford_sets = generate_randomized_clifford_sequence()
+#clifford_sets = generate_randomized_clifford_sequence()
 #
 
 

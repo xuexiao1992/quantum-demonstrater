@@ -249,7 +249,6 @@ def initialize(reinit=False, server_name=None):
 #                bb=(ivvi1.round_dac(bb[0]), ivvi1.round_dac(bb[1]) )
 #                gate_boundaries[k] =bb
 #        return gate_boundaries
-
 #    boundaries = twodotboundaries()
 
 
@@ -262,7 +261,7 @@ def initialize(reinit=False, server_name=None):
     # Loading AWG
     
     logging.info('LD400: load AWG driver')
-    awg2 = AWG5014.Tektronix_AWG5014(name='awg2', address='TCPIP0::192.168.0.6::inst0::INSTR', server_name=server_name)
+    awg2 = AWG5014.Tektronix_AWG5014(name='awg2', address='TCPIP0::192.168.0.7::inst0::INSTR', server_name=server_name)
     print('awg2 loaded')
     
     logging.info('LD400: load AWG driver')

@@ -36,7 +36,63 @@ def make_pcolor_array(array):
     arraynew2 =np.append(arraynew,arraynew[-1]+interval )
 
     return arraynew2
+# plot stability_diagram
 
+def plot2Ddata(data_set):
+    """ Plot 2D data from a genereric Qcodes loop, with a singlular measurment
+    Input
+    ----
+    data_set : qcodes data set
+    """ 
+    for array in data_set.arrays:
+        if array.endswith('set'):
+            if np.ndim(data_set.arrays[array]) ==2:
+                x= data_set.arrays[array]
+                xlabel = array
+            if np.ndim(data_set.arrays[array]) ==1:
+                y= data_set.arrays[array]
+                ylabel = array 
+        else:
+            z = data_set.arrays[array]
+            zlabel = array
+    plt.figure(21, figsize=(12, 8))
+    plt.clf() 
+    plt.pcolormesh(x[0,:], y, z)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.colorbar()
+    
+    callback = Index(data_set, plt.figure(21))
+    ppt = plt.axes([0.81, 0.05, 0.1, 0.075])
+    bppt = Button(ppt, 'ppt')
+    bppt.on_clicked(callback.ppt) 
+    ppt._button = bppt
+
+def plot1Ddata(data_set, paramname = 'keithley_amplitude'):
+    """ Plot 1D data from a genereric Qcodes loop, with a singlular measurment.
+    Input
+    ----
+    data_set : qcodes data set
+    """     
+    for array in data_set.arrays:
+        if array.endswith('set'):
+            x= data_set.arrays[array]
+            xlabel = array
+
+    y = data_set.arrays[paramname]
+    ylabel = paramname
+    plt.figure(22, figsize=(8, 8))
+    plt.clf() 
+    plt.plot(x, y)
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    
+    callback = Index(data_set, plt.figure(22))
+    ppt = plt.axes([0.81, 0.05, 0.1, 0.075])
+    bppt = Button(ppt, 'ppt')
+    bppt.on_clicked(callback.ppt) 
+    ppt._button = bppt
+        
 # plot 1D
 def plot1D(data_set, measurements = 'All', xaxis = True, sameaxis = False):
     """ Plot 1D data from a qubit experiment
@@ -185,6 +241,7 @@ def plot2D(data_set, measurements = 'All', xaxis = True):
                         plt.subplot(qubit_number,numberofmeasurements,j)
                         plt.pcolormesh(make_pcolor_array(x), make_pcolor_array(y), z[:, i,x_start:x_end], vmin=z[:,i,:].min(), vmax=z[:,i,:].max())
                         plt.xlabel(measurement)
+                        plt.colorbar()
     
 
                     else:

@@ -250,6 +250,12 @@ class Sequencer:
                            name='manip%d_c1m2'%(i+1),refpulse = 'manip1', refpoint = 'start')
         manipulation.add(SquarePulse(name='manip_c5m2', channel=self.occupied_channel2, amplitude=2, length=time),
                            name='manip%d_c5m2'%(i+1),refpulse = 'manip1', refpoint = 'start')
+        
+
+        manipulation.add(SquarePulse(name='manip_c1m2', channel='ch8_marker1', amplitude=2, length=time),
+                           name='mmanip%d_c1m2'%(i+1),refpulse = 'manip1', refpoint = 'start')
+        manipulation.add(SquarePulse(name='manip_c5m2', channel='ch8_marker2', amplitude=2, length=time),
+                           name='mmanip%d_c5m2'%(i+1),refpulse = 'manip1', refpoint = 'start')
 
         return manipulation
 
