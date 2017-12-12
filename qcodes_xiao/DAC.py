@@ -49,7 +49,7 @@ digitizer.sample_rate(sample_rate)
 
 sample_rate = digitizer.sample_rate()
 
-readout_time = 1
+readout_time = 0.5
 
 qubit_num = 1
 
@@ -90,7 +90,11 @@ digitizer.set_ext0_OR_trigger_settings(trig_mode = trig_mode, termination = 0, c
 
 DIG = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, seg_size=seg_size, 
                       posttrigger_size=posttrigger_size, digitizer = digitizer)
+#%%
+def Counts(x):
+    return True
 
+Count = StandardParameter(name = 'Count', set_cmd = Counts)
 
 #%%
 #
@@ -99,27 +103,34 @@ DIG = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, se
 #LPvals = np.linspace(-355,-350, 81)
 
 #vsd = 40
-'''
+
+#LP()
+#Out[246]: -356.17608911268803
+#
+#T()
+#Out[247]: -14.618142977035177
+
 Tvals = np.linspace(-13,-19, 81);
-LPvals = np.linspace(-358.5,-356.5, 81)
+LPvals = np.linspace(-355.6,-353.6, 81)
+Sweep_Value2 = Count[0:10:1]
 
 array = np.zeros([81,2])
 array[:,0] = Tvals
 array[:,1] = LPvals
 combined = combine(T, LP, name = "T_and_LP")
-#LOOP = Loop(combined.sweep(array), delay = 0.1).each(DIG)
+LOOP = Loop(sweep_values = Sweep_Value2).loop(combined.sweep(array), delay = 0.1).each(DIG)
 
 #
-keithley.nplc(10)
-LOOP = Loop(combined.sweep(array), delay = 0.1).each(AMP)
-'''
+#keithley.nplc(10)
+#LOOP = Loop(sweep_values = Sweep_Value2).loop(combined.sweep(array), delay = 0.1).each(AMP)
+#
 
 ##
 #Sweep_Value1 = T[-5:-25:0.5]
 #Sweep_Value2 = LP[-350:-370:0.5]
 
-Sweep_Value1 = T[0:-75:1]
-Sweep_Value2 = LP[-320:-400:1]
+#Sweep_Value1 = T[0:-75:1]
+#Sweep_Value2 = LP[-320:-400:1]
 
 #Sweep_Value1 = RP[-1025:-950:1]
 #Sweep_Value2 = T[-25:-10:1]
@@ -128,7 +139,7 @@ Sweep_Value2 = LP[-320:-400:1]
 #Sweep_Value2 = SQD3[-200:-300:2]
 #
 ##
-LOOP = Loop(sweep_values = Sweep_Value2).loop(sweep_values = Sweep_Value1).each(AMP)
+#LOOP = Loop(sweep_values = Sweep_Value2).loop(sweep_values = Sweep_Value1).each(AMP)
 
 #LOOP = Loop(sweep_values = Sweep_Value1).each(DIG)
 
@@ -151,7 +162,7 @@ pt.add(x = data.gates_T, y =data.keithley_amplitude)
 
 
 #T(-17.792019531548021)
-
+formatter = HDF5FormatMetadata()
 data.formatter = formatter
 data.write()
 

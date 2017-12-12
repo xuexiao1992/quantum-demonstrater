@@ -1173,7 +1173,7 @@ class Experiment:
             print('fitting not converging')
             frequency_shift = 0
         
-        frequency = VSG.frequency()+frequency_shift*0.35
+        frequency = VSG.frequency()+frequency_shift*0.30
         print('frequency shift: ', frequency_shift)
         print('update fequency to: ', frequency)
         VSG.frequency(frequency)

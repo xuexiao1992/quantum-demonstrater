@@ -642,7 +642,7 @@ def set_digitizer(digitizer, sweep_num, qubit_num, repetition, threshold, X_swee
     
     sample_rate = digitizer.sample_rate()
     
-    readout_time = 0.6e-3
+    readout_time = 2e-3
     
     qubit_num = qubit_num
     

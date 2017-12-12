@@ -151,13 +151,13 @@ vsg2 = station.vsg2
 
 Count = StandardParameter(name = 'Count', set_cmd = Counts)
 
-#vsg.frequency(18.3854e9)
-#vsg.frequency(18.41e9)
+vsg.frequency(18.3854e9)
+
 vsg2.frequency(19.6605e9)
 
 #vsg.power(20)
-vsg.power(17.2)
-vsg2.power(4.1)
+vsg.power(17.8)
+vsg2.power(4.8)
 
 #vsg.power(6)
 #vsg2.power(4.0)
@@ -204,7 +204,7 @@ LP_factor = 1
 init_cfg = {
         'step1' : set_step(time = 1.5e-3, qubits = qubits, voltages = [T_factor*30*0.5*0.004, LP_factor*30*0.5*-0.001]),
         'step2' : set_step(time = 1.5e-3, qubits = qubits, voltages = [T_factor*30*0.5*-0.004, LP_factor*30*0.5*0]),
-        'step3' : set_step(time = 0.1e-3, qubits = qubits, voltages = [T_factor*30*0.5*-0.011, LP_factor*30*0.5*0]),
+        'step3' : set_step(time = 0.1e-3, qubits = qubits, voltages = [T_factor*30*0.5*-0.0110, LP_factor*30*0.5*0]),
         'step4' : set_step(time = 4e-3, qubits = qubits, voltages = [T_factor*30*0.5*0, LP_factor*30*0.5*0]),
         'step5' : set_step(time = 0.1e-3, qubits = qubits, voltages = [T_factor*30*0.5*0.002, LP_factor*30*0.5*0.000]),
 #        'step6' : set_step(time = 0.1e-3, qubits = qubits, voltages = [T_factor*30*0.5*0.00, LP_factor*30*0.5*0.01]),
@@ -337,8 +337,8 @@ sequenceBill2_cfg_type = ['init', 'manip2','read',]
 
 qubit_1.Pi_pulse_length = 250e-9
 qubit_2.Pi_pulse_length = 250e-9
-qubit_1.halfPi_pulse_length = 150e-9
-qubit_2.halfPi_pulse_length = 150e-9
+qubit_1.halfPi_pulse_length = 125e-9
+qubit_2.halfPi_pulse_length = 125e-9
 qubit_2.CRot_pulse_length = 300e-9
 def reset_experiment():
     experiment.reset()
@@ -369,9 +369,9 @@ print('experiment initialized')
 experiment.qubit_number = 2
 experiment.readnames = ['Qubit2', 'Qubit1']
 experiment.threshold = 0.020
-experiment.threshold = 0.009
-experiment.threshold = 0.0065
-experiment.threshold = 0.0045
+experiment.threshold = 0.006
+
+#experiment.threshold = 0.0045
 experiment.seq_repetition = 100
 experiment.saveraw = False
 
@@ -409,7 +409,7 @@ rabi = Rabi(name = 'Rabi', pulsar = pulsar)
 wait = Wait(name = 'Wait', pulsar = pulsar)
 
 crot = CRot(name = 'CRot', pulsar = pulsar, amplitude = 30*0.5*-0.0265*T_factor, amplitudepi = 1.2, 
-            frequency_shift = 0.055e9, duration_time = 306e-9)
+            frequency_shift = 0.0557e9, duration_time = 300e-9)
 
 
 rabi2 = Rabi(name = 'Rabi2', pulsar = pulsar, amplitude = 1, qubit = 'qubit_1',)
@@ -426,7 +426,7 @@ crot_freq = 0.05815e9
 #q2f = vsg2.frequency()
 
 #%% calibrate readout Q2
-'''
+
 #experiment.threshold = 0.029
 experiment.saveraw = True
 
@@ -445,7 +445,7 @@ print('loading sequence')
 experiment.generate_1D_sequence()
 experiment.load_sequence()
 print('sequence loaded')
-'''
+
 
 '''
 ds = experiment.data_set
@@ -479,7 +479,7 @@ experiment.load_sequence()
 print('sequence loaded')
 '''
 
-#%%
+#%% Bill Coish exp 2
 '''
 experiment.qubit_number = 1
 #experiment.threshold = 0.021
@@ -488,7 +488,7 @@ experiment.seq_repetition = 100
 experiment.calibration_qubit = 'qubit_2'
 
 #experiment.add_measurement('Ramsey_Scan', ['Ramsey'], [ramsey,], sequence3_cfg, sequence3_cfg_type)
-#experiment.add_X_parameter('Ramsey_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.004e9, 0.004e9, 41), element = 'Ramsey')
+#experiment.add_X_parameter('Ramsey_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.001e9, 0.001e9, 21), element = 'Ramsey')
 
 experiment.saveraw = True
 experiment.add_measurement('Rabi_Scan', ['Rabi3'], [rabi3,], sequenceBill2_cfg, sequenceBill2_cfg_type)
@@ -497,15 +497,21 @@ experiment.add_X_parameter('Rabi_Scan', parameter = 'duration_time',
 
 print('sweep parameter set')
 
-#experiment.set_sweep(repetition = True, with_calibration = True, plot_average = False, count = 5)
-experiment.set_sweep(repetition = True, plot_average = False, count = 100)
+experiment.add_Y_parameter('Rabi_Scan', parameter = Count, sweep_array = sweep_array(1, 101, 100))
+experiment.set_sweep(repetition = False, plot_average = False, count = 1)
+
 print('loading sequence')
 experiment.generate_1D_sequence()
 experiment.load_sequence()
 
 print('sequence loaded')
 '''
-#%%     Bill Coish
+
+
+
+
+
+#%%     Bill Coish exp 3
 '''
 experiment.qubit_number = 15
 experiment.seq_repetition = 100
@@ -526,7 +532,9 @@ experiment.add_X_parameter('Bill_Coish', parameter = 'amplitude', sweep_array = 
 print('sweep parameter set')
 
 #experiment.set_sweep(repetition = True, with_calibration = True, plot_average = False, count = 10)
-experiment.set_sweep(repetition = True, plot_average = False, count = 100)
+experiment.add_Y_parameter('Rabi_Scan', parameter = Count, sweep_array = sweep_array(1, 101, 100))
+experiment.set_sweep(repetition = False, plot_average = False, count = 1)
+
 
 print('loading sequence')
 experiment.generate_1D_sequence()
@@ -971,7 +979,7 @@ time.sleep(0.5)
 
 
 #%%     Ramsey and AllXY Q1
-
+'''
 #experiment.add_measurement('Rabi_Scan', ['Rabi2','CRot'], [rabi2, crot], sequence_cfg, sequence_cfg_type)
 #experiment.add_X_parameter('Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 0.6e-6, 31), element = 'Rabi2')
 #experiment.add_X_parameter('Rabi_Scan', parameter = vsg.frequency, sweep_array = sweep_array(18.388e9, 18.398e9, 51))
@@ -982,7 +990,7 @@ time.sleep(0.5)
 experiment.calibration_qubit = 'qubit_1'
 #
 experiment.add_measurement('Ramsey_Scan', ['Ramsey2','CRot'], [ramsey2, crot], sequence_cfg, sequence_cfg_type)
-experiment.add_X_parameter('Ramsey_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.001e9, 0.001e9, 11), element = 'Ramsey2')
+experiment.add_X_parameter('Ramsey_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.001e9, 0.001e9,11), element = 'Ramsey2')
 
 #experiment.add_X_parameter('Ramsey_Scan', parameter = 'waiting_time', sweep_array = sweep_array(0, 1e-6, 31), element = 'Ramsey2')
 #
@@ -1005,7 +1013,7 @@ experiment.generate_1D_sequence()
 experiment.load_sequence()
 
 print('sequence loaded')
-
+'''
 #%%        AllXY calibration   qubit_2
 '''
 experiment.qubit_number = 1
@@ -1015,14 +1023,14 @@ experiment.seq_repetition = 100
 experiment.calibration_qubit = 'qubit_2'
 
 experiment.add_measurement('Ramsey_Scan', ['Ramsey'], [ramsey,], sequence3_cfg, sequence3_cfg_type)
-experiment.add_X_parameter('Ramsey_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.003e9, 0.003e9, 21), element = 'Ramsey')
+experiment.add_X_parameter('Ramsey_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.001e9, 0.001e9, 11), element = 'Ramsey')
 
 experiment.add_measurement('AllXY_calibration', ['AllXY'], [allxy,], sequence2_cfg, sequence2_cfg_type)
 experiment.add_X_parameter('AllXY_calibration', parameter = 'gate', sweep_array = sweep_array(1, 21, 21), element = 'AllXY')
 #experiment.add_Y_parameter('AllXY_calibration', parameter = vsg2.frequency, sweep_array = sweep_array(19.667e9, 19.687e9, 11))
 #experiment.add_Y_parameter('AllXY_calibration', parameter = vsg2.power, sweep_array = sweep_array(0.9, 1.9, 21))
 
-experiment.add_Y_parameter('Rabi_Scan', parameter = Count, sweep_array = sweep_array(1, 3, 5), with_calibration = False)
+experiment.add_Y_parameter('Rabi_Scan', parameter = Count, sweep_array = sweep_array(1, 3, 3), with_calibration = False)
 #experiment.add_Y_parameter('Rabi_Scan', parameter = Count, sweep_array = sweep_array(1, 15, 15), with_calibration = True)
 
 print('sweep parameter set')
@@ -1045,7 +1053,7 @@ print('sequence loaded')
 #    awg2.set_sqel_trigger_wait(element_no = 2+10*i, state = 1)
 '''
 #%% Calibration of CROT readout step 1
-'''
+''''
 experiment.qubit_number = 1
 
 experiment.add_measurement('2D_Rabi_Scan', ['CRot'], [crot], sequence2_cfg, sequence2_cfg_type)
@@ -1068,10 +1076,11 @@ experiment.qubit_number = 2
 experiment.seq_repetition = 100
 
 experiment.add_measurement('Rabi_Scan', ['Rabi2','CRot'], [rabi2, crot], sequence_cfg, sequence_cfg_type)
-experiment.add_X_parameter('Rabi_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(0.04e9, 0.06e9, 31), element = 'CRot')
+experiment.add_X_parameter('Rabi_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(0.045e9, 0.065e9, 31), element = 'CRot')
+#experiment.add_X_parameter('Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 0.6e-6, 31), element = 'CRot')
+
 experiment.add_Y_parameter('Rabi_Scan', parameter = Count, sweep_array = sweep_array(0, 3, 3))
 
-#experiment.add_X_parameter('Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 0.6e-6, 41), element = 'CRot')
 print('sweep parameter set')
 experiment.set_sweep(repetition = False, plot_average = False, count = 1)
 print('loading sequence')
@@ -1098,7 +1107,24 @@ print('sweep parameter set')
 print('loading sequence')
 experiment.generate_1D_sequence()
 experiment.load_sequence()
-print('sequence loaded')
+'''
+#%% Measure Q1 ramsey frequency
+'''
+experiment.qubit_number = 2
+experiment.seq_repetition = 100
+experiment.add_measurement('Ramsey_Scan', ['Ramsey2','CRot'], [ramsey2, crot], sequence_cfg, sequence_cfg_type)
+experiment.add_X_parameter('Ramsey_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.001e9, 0.001e9,11), element = 'Ramsey2')
+
+experiment.add_Y_parameter('Ramsey_Scan', parameter = Count, sweep_array = sweep_array(1, 5, 3))
+experiment.set_sweep(repetition = False, plot_average = False, count = 1)
+#experiment.add_Y_parameter('Rabi_Scan', parameter = vsg.frequency, sweep_array = sweep_array(18.380e9, 18.40e9, 21))
+
+
+print('sweep parameter set')
+
+print('loading sequence')
+experiment.generate_1D_sequence()
+experiment.load_sequence()
 '''
 
 #%% Measure Q1 as a function of detuing
@@ -1146,12 +1172,12 @@ print('sequence loaded')
 
 #%% Measure Q2 frequency
 '''
-#experiment.saveraw = True
+experiment.saveraw = True
 experiment.add_measurement('Rabi_Scan', ['Rabi3','CRot'], [rabi3, crot], sequence_cfg, sequence_cfg_type)
-experiment.add_X_parameter('Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 0.6e-6, 21), element = 'Rabi3')
+#experiment.add_X_parameter('Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 0.6e-6, 21), element = 'Rabi3')
 #experiment.add_X_parameter(measurement = 'Rabi_Scan', parameter = vsg2.frequency, sweep_array = sweep_array(19.655e9, 19.695e9, 21))
-#experiment.add_X_parameter('Rabi_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.01e9, 0.01e9, 21), element = 'Rabi3')
-experiment.add_Y_parameter('Rabi_Scan', parameter = Count, sweep_array = sweep_array(0, 5, 3))
+experiment.add_X_parameter('Rabi_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.01e9, 0.01e9, 21), element = 'Rabi3')
+experiment.add_Y_parameter('Rabi_Scan', parameter = Count, sweep_array = sweep_array(0, 5, 5))
 
 experiment.set_sweep(repetition = False, plot_average = False, count = 1)
 print('loading sequence')
@@ -1160,6 +1186,9 @@ experiment.load_sequence()
 print('sequence loaded')
 time.sleep(0.5)
 '''
+
+
+
 #%% Simultaneous pulse measure Q1 and Q2 frequency Rabi
 '''
 experiment.saveraw = True
