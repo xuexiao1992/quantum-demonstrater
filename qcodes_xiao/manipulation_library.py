@@ -75,6 +75,9 @@ class Ramsey(Manipulation):
         self.amplitude = kw.pop('amplitude', 1)
         self.frequency_shift = kw.pop('frequency_shift', 0)
         self.length = kw.pop('duration_time', 125e-9)
+        self.phase_1 = kw.pop('phase_1', 0)
+        self.phase_2 = kw.pop('phase_2', 0)
+        self.off_resonance = kw.pop('off_resonance', False)
 
     def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
@@ -88,6 +91,9 @@ class Ramsey(Manipulation):
         self.amplitude = kw.pop('amplitude', self.amplitude)
         self.frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
         self.length = kw.pop('duration_time', self.length)
+        self.phase_1 = kw.pop('phase_1', self.phase_1)
+        self.phase_2 = kw.pop('phase_2', self.phase_2)
+        self.off_resonance = kw.pop('off_resonance', self.off_resonance)
         return self
 
     def make_circuit(self, **kw):
@@ -95,20 +101,31 @@ class Ramsey(Manipulation):
         waiting_time = kw.pop('waiting_time', self.waiting_time)
         amplitude = kw.get('amplitude', self.amplitude)
         frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
+        off_resonance = kw.pop('off_resonance', self.off_resonance)
+        phase_1 = kw.pop('phase_1', self.phase_1)
+        phase_2 = kw.pop('phase_2', self.phase_2)
         
         qubit_name = kw.pop('qubit', self.qubit)
         
         qubit = Instrument.find_instrument(qubit_name)
         
+        qubit_1 = Instrument.find_instrument('qubit_1')
+        qubit_2 = Instrument.find_instrument('qubit_2')
+        
         length = kw.get('duration_time', qubit.halfPi_pulse_length)
-        
-        
+
         self.add_X(name='X1_Q1', qubit = qubit,
                    amplitude = amplitude, length = length, frequency_shift = frequency_shift)
+        
+        self.add_Z(name='Z1_Q1', qubit = qubit, degree = phase_2)
 
         self.add_X(name='X2_Q1', refgate = 'X1_Q1', qubit = qubit, waiting_time = waiting_time,
                    amplitude = amplitude, length = length, frequency_shift = frequency_shift)
         
+        if off_resonance:
+            self.add_single_qubit_gate(name='off_resonance_Q1', refgate = 'X1_Q1', refpoint = 'start', waiting_time = -30e-9,
+                                       qubit = qubit_1, amplitude = 1,
+                                       length = waiting_time + 2*length + 50e-9, frequency_shift = 0)
         
 #        self.add_Y(name = 'Y1_Q2', refgate = 'X2_Q1', qubit = self.qubits[1],)
 #
@@ -171,13 +188,13 @@ class Rabi(Manipulation):
         
         qubit = Instrument.find_instrument(qubit_name)
         
-        length = kw.get('duration_time', qubit.Pi_pulse_length)
+        length = kw.get('duration_time', self.length)
         
         amplitude = kw.get('amplitude', self.amplitude)
         frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
         print('length', length)
 
-        self.add_single_qubit_gate(name='Rabi_Oscillation', qubit = qubit, amplitude = amplitude, 
+        self.add_single_qubit_gate(name='Rabi_Oscillation', qubit = qubit, amplitude = amplitude, #axis = [0,1,0], 
                                    length = length, frequency_shift = frequency_shift)
 
         return self
@@ -1161,6 +1178,9 @@ class Rabi_all(Manipulation):
         self.frequency_shift = kw.pop('frequency_shift', 0)
         self.length = kw.pop('duration_time', 250e-9)
         self.T_amplitude = kw.get('T_amplitude', 0)
+        self.phase_1 = kw.pop('phase_1', 0)
+        self.phase_2 = kw.pop('phase_2', 0)
+        self.third_tone = kw.pop('third_tone', 0)
 
     def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
@@ -1175,31 +1195,44 @@ class Rabi_all(Manipulation):
         self.frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
         self.length = kw.pop('duration_time', self.length)
         self.T_amplitude = kw.get('T_amplitude', self.T_amplitude)
+        self.phase_1 = kw.pop('phase_1', self.phase_1)
+        self.phase_2 = kw.pop('phase_2', self.phase_2)
+        self.third_tone = kw.pop('third_tone', self.third_tone)
         return self
 
     def make_circuit(self, **kw):
         
-        waiting_time = kw.pop('waiting_time', self.waiting_time)
         amplitude = kw.get('amplitude', self.amplitude)
         T_amplitude = kw.get('T_amplitude', self.T_amplitude)
         frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
-        off_resonance_amplitude = kw.pop('off_resonance_amplitude',self.off_resonance_amplitude)
+        phase_1 = kw.pop('phase_1', self.phase_1)
+        phase_2 = kw.pop('phase_2', self.phase_2)
 #        qubit_name = kw.pop('qubit', self.qubit)
         
         qubit_1 = Instrument.find_instrument('qubit_1')
         qubit_2 = Instrument.find_instrument('qubit_2')
-        length = kw.get('duration_time', qubit_1.Pi_pulse_length)
+        length = kw.get('duration_time', self.length)
+        third_tone = kw.pop('third_tone', self.third_tone)
+#        self.add_single_qubit_gate(name='Rabi_Oscillation', qubit = qubit_2, amplitude = amplitude, 
+#                                   length = 250e-9, frequency_shift = 0)
+
+        self.add_Z(name='Z1_Q1', qubit = qubit_1, degree = phase_1)
+        self.add_Z(name='Z1_Q2', qubit = qubit_2, degree = phase_2)
         
-        
-        self.add_X(name='X1_Q1', qubit = qubit_1,
+        self.add_X(name='X1_Q1', qubit = qubit_1, #refgate = 'Rabi_Oscillation',
                    amplitude = amplitude, length = length, frequency_shift = frequency_shift)
+        
             
         self.add_X(name='X1_Q2', qubit = qubit_2, refgate = 'X1_Q1', refpoint = 'start',
                    amplitude = amplitude, length = length, frequency_shift = frequency_shift)
+        
+        if third_tone:
+            self.add_Y(name='X2_Q2', qubit = qubit_2, refgate = 'X1_Q1', refpoint = 'start',
+                       amplitude = 0.4, length = length, frequency_shift = 0)
 
-        self.add_CPhase(name = 'CP_Q12', control_qubit = qubit_1, target_qubit = qubit_2,
-                        refgate = 'X1_Q2', refpoint = 'start', waiting_time = -100e-9,
-                        amplitude_control = 0, amplitude_target = T_amplitude, length = length+150e-9)
+#        self.add_CPhase(name = 'CP_Q12', control_qubit = qubit_1, target_qubit = qubit_2,
+#                        refgate = 'X1_Q2', refpoint = 'start', waiting_time = -100e-9,
+#                        amplitude_control = 0, amplitude_target = T_amplitude, length = length+150e-9)
 
         return self
 

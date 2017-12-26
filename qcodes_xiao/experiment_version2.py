@@ -309,6 +309,17 @@ class Experiment:
                 if sequencer.sequence_cfg_type[seg].startswith('manip'):
                     if sequencer.sequence_cfg[seg]['step1']['manip_elem'] == element:
                         sequencer.sequence_cfg[seg]['step1'].update({parameter: loop})
+                elif sequencer.sequence_cfg_type[seg].startswith('read'):
+                    for w in range(len(element)):
+                        if element[w] == '_':
+                            break
+                    if element[:w] == sequencer.sequence_cfg_type[seg]:
+                        step = 'step'+element[-1]
+                        sequencer.sequence_cfg[seg][step].update({parameter: loop})
+                elif sequencer.sequence_cfg_type[seg].startswith('init'):
+                    if element.startswith(sequencer.sequence_cfg_type[seg]):
+                        step = 'step'+element[-1]
+                        sequencer.sequence_cfg[seg][step].update({parameter: loop})
 #                    break
             
             self.X_parameter = parameter
@@ -378,6 +389,8 @@ class Experiment:
                 if with_calibration:
                     print('calibration')
                     self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(self.dig, calibration_task)
+                else:
+                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(self.dig)
 #                self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(self.dig)
             else:
                 print('no calibration')
@@ -968,7 +981,7 @@ class Experiment:
         
         element_no = 0
         for seg in self.sequencer[0].sequence_cfg_type:
-            if seg.startswith('read'):
+            if seg=='read':#seg.startswith('read'):
                 break
             else:
                 element_no += len(self.segment[seg])
@@ -1259,8 +1272,8 @@ class Experiment:
             self.awg.stop()
             self.awg2.stop()
             
-            self.vsg.status('Off')
-            self.vsg2.status('Off')
+#            self.vsg.status('Off')
+#            self.vsg2.status('Off')
             
 #            
 #                    

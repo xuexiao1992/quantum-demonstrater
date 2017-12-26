@@ -109,7 +109,7 @@ Count = StandardParameter(name = 'Count', set_cmd = Counts)
 #
 #T()
 #Out[247]: -14.618142977035177
-
+'''
 Tvals = np.linspace(-13,-19, 81);
 LPvals = np.linspace(-355.6,-353.6, 81)
 Sweep_Value2 = Count[0:10:1]
@@ -119,7 +119,7 @@ array[:,0] = Tvals
 array[:,1] = LPvals
 combined = combine(T, LP, name = "T_and_LP")
 LOOP = Loop(sweep_values = Sweep_Value2).loop(combined.sweep(array), delay = 0.1).each(DIG)
-
+'''
 #
 #keithley.nplc(10)
 #LOOP = Loop(sweep_values = Sweep_Value2).loop(combined.sweep(array), delay = 0.1).each(AMP)
@@ -129,8 +129,8 @@ LOOP = Loop(sweep_values = Sweep_Value2).loop(combined.sweep(array), delay = 0.1
 #Sweep_Value1 = T[-5:-25:0.5]
 #Sweep_Value2 = LP[-350:-370:0.5]
 
-#Sweep_Value1 = T[0:-75:1]
-#Sweep_Value2 = LP[-320:-400:1]
+Sweep_Value1 = T[0:-75:1]
+Sweep_Value2 = LP[-320:-400:1]
 
 #Sweep_Value1 = RP[-1025:-950:1]
 #Sweep_Value2 = T[-25:-10:1]
@@ -139,7 +139,7 @@ LOOP = Loop(sweep_values = Sweep_Value2).loop(combined.sweep(array), delay = 0.1
 #Sweep_Value2 = SQD3[-200:-300:2]
 #
 ##
-#LOOP = Loop(sweep_values = Sweep_Value2).loop(sweep_values = Sweep_Value1).each(AMP)
+LOOP = Loop(sweep_values = Sweep_Value2).loop(sweep_values = Sweep_Value1).each(AMP)
 
 #LOOP = Loop(sweep_values = Sweep_Value1).each(DIG)
 
