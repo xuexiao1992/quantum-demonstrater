@@ -24,11 +24,12 @@ from scipy.optimize import curve_fit
 
 from pycqed.measurement.waveform_control.pulsar import Pulsar
 from experiment_version2 import Experiment
-from calibration import Calibration
+#from calibration import Calibration
 from data_set_plot import convert_to_ordered_data, convert_to_01_state, convert_to_probability
 
-import qcodes.instrument_drivers.Spectrum.M4i as M4i
-from qcodes.instrument_drivers.Spectrum import pyspcm
+import dummy_M4i as M4i
+#import qcodes.instrument_drivers.Spectrum.M4i as M4i
+#from qcodes.instrument_drivers.Spectrum import pyspcm
 from qcodes.instrument.parameter import ArrayParameter, StandardParameter
 from qcodes.instrument.sweep_values import SweepFixedValues
 from qcodes.loops import Loop, ActiveLoop
@@ -42,7 +43,7 @@ import matplotlib.widgets as widgets
 from qcodes.plots.qcmatplotlib import MatPlot
 from qcodes.plots.pyqtgraph import QtPlot
 
-from mpldatacursor import datacursor
+#from mpldatacursor import datacursor
 import time
 #%% make experiment
 
@@ -116,9 +117,9 @@ def set_5014pulsar():
     return pulsar
 
 #%%
-Qubit_1 = Qubit(name = 'Qubit_1')
+Qubit_1 = Qubit(name = 'qubit_1')
 
-Qubit_2 = Qubit(name = 'Qubit_2')
+Qubit_2 = Qubit(name = 'qubit_2')
 
 Qubit_1.define_gate(gate_name = 'Microwave1', gate_number = 1, microwave = 1, channel_I = 'ch1', channel_Q = 'ch2', channel_PM = 'ch1_marker1')
 
@@ -134,7 +135,7 @@ Qubit_2.define_neighbor(neighbor_qubit = 'qubit_2', pulse_delay = 0)
 
 qubits = [Qubit_1, Qubit_2]
 
-digitizer = M4i.M4i(name='digitizer', server_name = None)
+digitizer = M4i.dummy_M4i(name='digitizer')
 
 pulsar = set_5014pulsar()
 #%%

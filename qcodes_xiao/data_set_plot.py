@@ -29,8 +29,9 @@ import pyqtgraph as pg
 from pyqtgraph.Qt import QtGui, QtCore
 from pyqtgraph.GraphicsScene.mouseEvents import MouseDragEvent, MouseClickEvent, HoverEvent
 from pyqtgraph.GraphicsScene.GraphicsScene import GraphicsScene
-import qcodes.instrument_drivers.Spectrum.M4i as M4i
-from qcodes.instrument_drivers.Spectrum import pyspcm
+
+#import qcodes.instrument_drivers.Spectrum.M4i as M4i
+#from qcodes.instrument_drivers.Spectrum import pyspcm
 import time
 try:
     from setting_version2 import sweep_loop1
@@ -580,7 +581,7 @@ class digitizer_multiparam(MultiParameter):
         
 #        global digitizer
         self.digitizer = digitizer
-        channel_amount = bin(self.digitizer.enable_channels()).count('1')
+#        channel_amount = bin(self.digitizer.enable_channels()).count('1')
         
         if saveraw == True:
             names= ('raw_data', 'singleshot_data', 'probability_data', 'sweep_data')
@@ -607,8 +608,8 @@ class digitizer_multiparam(MultiParameter):
     def get(self):
 #        res = digitizer.single_trigger_acquisition(self.mV_range,self.memsize,self.posttrigger_size)
         time.sleep(0.2)
-        res = self.digitizer.multiple_trigger_acquisition(self.mV_range,self.memsize,self.seg_size,self.posttrigger_size)
-        
+#        res = self.digitizer.multiple_trigger_acquisition(self.mV_range,self.memsize,self.seg_size,self.posttrigger_size)
+        res = []
         ordered_data = organise(res, qubit_num = self.qubit_num, repetition = self.repetition, seg_size  = self.seg_size)
         thresholded_data = convert_to_01_state2(ordered_data, threshold = self.threshold)
         probability_data = convert_to_probability2(thresholded_data)
@@ -658,28 +659,28 @@ def set_digitizer(digitizer, sweep_num, qubit_num, repetition, threshold, X_swee
     memsize = int((repetition+1)*sweep_num*qubit_num*seg_size)
     posttrigger_size = seg_size-pretrigger
     
-    #digitizer.enable_channels(pyspcm.CHANNEL0 | pyspcm.CHANNEL3)
-    digitizer.clock_mode(pyspcm.SPC_CM_INTPLL)
-    #digitizer.clock_mode(pyspcm.SPC_CM_EXTREFCLOCK)
-    
-    digitizer.enable_channels(pyspcm.CHANNEL1 | pyspcm.CHANNEL2)
-    
-#    digitizer.enable_channels(pyspcm.CHANNEL1)
-    digitizer.data_memory_size(memsize)
-    
-    digitizer.segment_size(seg_size)
-    
-    digitizer.posttrigger_memory_size(posttrigger_size)
-    
-    digitizer.timeout(60000)
-    
-    digitizer.set_channel_settings(1,1000, input_path = 0, termination = 0, coupling = 0, compensation = None)
-    
+#    #digitizer.enable_channels(pyspcm.CHANNEL0 | pyspcm.CHANNEL3)
+#    digitizer.clock_mode(pyspcm.SPC_CM_INTPLL)
+#    #digitizer.clock_mode(pyspcm.SPC_CM_EXTREFCLOCK)
+#    
+#    digitizer.enable_channels(pyspcm.CHANNEL1 | pyspcm.CHANNEL2)
+#    
+##    digitizer.enable_channels(pyspcm.CHANNEL1)
+#    digitizer.data_memory_size(memsize)
+#    
+#    digitizer.segment_size(seg_size)
+#    
+#    digitizer.posttrigger_memory_size(posttrigger_size)
+#    
+#    digitizer.timeout(60000)
+#    
+#    digitizer.set_channel_settings(1,1000, input_path = 0, termination = 0, coupling = 0, compensation = None)
+#    
     #trig_mode = pyspcm.SPC_TMASK_SOFTWARE
     #trig_mode = pyspcm.SPC_TM_POS
-    trig_mode = pyspcm.SPC_TM_POS | pyspcm.SPC_TM_REARM
+#    trig_mode = pyspcm.SPC_TM_POS | pyspcm.SPC_TM_REARM
     
-    digitizer.set_ext0_OR_trigger_settings(trig_mode = trig_mode, termination = 0, coupling = 0, level0 = 800, level1 = 900)
+#    digitizer.set_ext0_OR_trigger_settings(trig_mode = trig_mode, termination = 0, coupling = 0, level0 = 800, level1 = 900)
     
 #    dig = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size, digitizer = digitizer)
     dig = digitizer_multiparam(mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size, digitizer = digitizer, threshold = threshold, qubit_num =qubit_num , repetition =repetition, sweep_num =sweep_num, X_sweep_array =X_sweep_array, saveraw = saveraw)
