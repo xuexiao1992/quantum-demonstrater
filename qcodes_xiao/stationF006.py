@@ -16,8 +16,8 @@ import qcodes.instrument_drivers.QuTech.IVVI as IVVI
 from qtt.instrument_drivers.gates import virtual_IVVI
 
 import qcodes.instrument_drivers.tektronix.Keithley_2700 as keith2700
-
-import qcodes.instrument_drivers.Spectrum.M4i as M4i
+import dummy_M4i as M4i
+#import qcodes.instrument_drivers.Spectrum.M4i as M4i
 from qubit import Qubit 
 #import users.boterjm.Drivers.QuTech.IVVI as IVVI
 #import users.boterjm.Drivers.Spectrum.M4i as M4i
@@ -64,7 +64,7 @@ gate_map = {
     'RQPC': (0, 14),
 
 }
-#
+
 def twodotboundaries():
     global ivvi1
     gate_boundaries = dict({
@@ -91,33 +91,6 @@ def twodotboundaries():
             'SQD3': (-1000, 200),
             'RQPC': (-1000, 200),
         })
-
-#def twodotboundaries():
-#    global ivvi1
-#    gate_boundaries = dict({
-#            'VI1': (-600, 600), 
-#            'VI2': (-600, 1600),
-#            'acQD': (-1300, 1300), 
-#            'acres': (-2000, 1300),
-#            
-#            'RS': (-1500, 1200),
-#            'RD': (-1500, 1500),
-#            'LP': (-1500, 1500), 
-#            'LPF': (-2000, 1500),
-#            'RP': (-1500, 1500), 
-#            'RPF': (-1700, 1500),
-#            
-#            'LS': (-1500, 1500),
-#            'T': (-1900, 1500),
-#        
-#            'LD': (-1500, 1500),
-#            'B': (-1500, 1500),
-#            
-#            'SQD1': (-1500, 1500),
-#            'SQD2': (-1500, 1900),
-#            'SQD3': (-1500, 1500),
-#            'RQPC': (-1500, 1500),
-#        })
 
     if ivvi1 is not None:
         # update boundaries to resolution of the dac        
@@ -249,6 +222,7 @@ def initialize(reinit=False, server_name=None):
 #                bb=(ivvi1.round_dac(bb[0]), ivvi1.round_dac(bb[1]) )
 #                gate_boundaries[k] =bb
 #        return gate_boundaries
+
 #    boundaries = twodotboundaries()
 
 
@@ -261,7 +235,7 @@ def initialize(reinit=False, server_name=None):
     # Loading AWG
     
     logging.info('LD400: load AWG driver')
-    awg2 = AWG5014.Tektronix_AWG5014(name='awg2', address='TCPIP0::192.168.0.7::inst0::INSTR', server_name=server_name)
+    awg2 = AWG5014.Tektronix_AWG5014(name='awg2', address='TCPIP0::192.168.0.6::inst0::INSTR', server_name=server_name)
     print('awg2 loaded')
     
     logging.info('LD400: load AWG driver')
