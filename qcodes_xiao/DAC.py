@@ -132,6 +132,9 @@ LOOP = Loop(sweep_values = Sweep_Value2).loop(combined.sweep(array), delay = 0.1
 Sweep_Value1 = T[0:-75:1]
 Sweep_Value2 = LP[-320:-400:1]
 
+#Sweep_Value1 = T[-10:-25:0.2]
+#Sweep_Value2 = LP[-345:-360:0.2]
+
 #Sweep_Value1 = RP[-1025:-950:1]
 #Sweep_Value2 = T[-25:-10:1]
 ##
