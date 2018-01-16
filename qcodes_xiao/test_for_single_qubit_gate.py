@@ -217,10 +217,10 @@ experiment.add_X_parameter('AllXY_calibration', parameter = 'gate', sweep_array 
 
 print('sweep parameter set')
 
-experiment.set_sweep(repetition = False, plot_average = False, count = 5)
+#experiment.set_sweep(repetition = False, plot_average = False, count = 5)
 
 print('loading sequence')
-experiment.generate_1D_sequence()
+#experiment.generate_1D_sequence()
 #experiment.load_sequence()
 print('sequence loaded')
 time.sleep(0.5)
