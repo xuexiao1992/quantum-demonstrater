@@ -4,7 +4,7 @@ Created on Wed Oct 25 11:32:40 2017
 
 @author: twatson
 """
-from manipulation_new import Manipulation
+from manipulation_new import Manipulation2
 from collections import OrderedDict
 
 class Circuit:
@@ -108,7 +108,7 @@ class Circuit:
     
     def make_circuit(self,):
         
-        manip_elem = Manipulation('test', self.pulsar, qubits = self.qubits)
+        manip_elem = Manipulation2('test', self.pulsar, qubits = self.qubits)
         for name in self.circuit:
             if self.circuit[name]['gate'] == 'single_qubit_gate':
                manip_elem.make_single_qubit_gate(name, self.circuit[name])

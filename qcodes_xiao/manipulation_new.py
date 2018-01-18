@@ -12,7 +12,7 @@ from pycqed.measurement.waveform_control.pulse import SquarePulse
 from gate import Single_Qubit_Gate, Two_Qubit_Gate, CPhase_Gate, CNot_Gate, CRotation_Gate
 
 
-class Manipulation(Element):
+class Manipulation2(Element):
 
 
     def __init__(self, name, pulsar, qubits = [], operations = {}, **kw):            ## operation is a set of objects: basic one(two) qubit(s) gates
@@ -56,7 +56,7 @@ class Manipulation(Element):
     
     def make_single_qubit_gate(self, name, parameters):
         
-        
+        print(parameters)
         axis =  parameters['axis']
         degree =  parameters['degree']
         amplitude=  parameters['amplitude']
@@ -75,13 +75,22 @@ class Manipulation(Element):
         # and record the information of the last pulse
         if name in self.operations.keys():
             raise NameError('Name already used')            ## need to stop the program or maybe randomly give a name
-        tvals, wfs = self.waveforms()   ## 960?
-        channel_id = qubit.microwave_gate['channel_I']
-        time = len(tvals[channel_id])*10e-9
-        IQ_phase = 2*np.pi*time/frequency_shift if frequency_shift != 0 else 0
+        
+        if frequency_shift != 0 and not name.startswith('off'):
+            tvals, wfs = self.waveforms()   ## 960?
+            channel_id = qubit.microwave_gate['channel_I']
+            Time = len(tvals[channel_id])*10e-9
+            IQ_phase = 2*np.pi*Time/frequency_shift #if frequency_shift != 0 else 0
+        else:
+            IQ_phase =0
+        refphase = self.refphase[qubit.name]
+        
+        
+        
         single_qubit_gate = Single_Qubit_Gate(name = name, qubit = qubit, rotating_axis = axis,
                                               frequency_shift = frequency_shift, amplitude = amplitude, refphase = refphase,
                                               IQ_phase = IQ_phase)
+
 
         if axis[0]!=0 or axis[1]!=0:
             if axis[2]!=0:
@@ -89,6 +98,7 @@ class Manipulation(Element):
             else:
                 single_qubit_gate.XY_rotation(degree = degree, length = length, waiting_time = waiting_time,
                                               refgate = None if refgate == None else self.operations[refgate], refpoint = refpoint)
+                self._add_all_pulses_of_qubit_gate(name = name, qubit_gate = single_qubit_gate)
 
         else:
             if axis[2] == 0:
@@ -97,7 +107,7 @@ class Manipulation(Element):
 #               single_qubit_gate.Z_rotation(degree = 90)
                 self.refphase[qubit.name] += degree                     ## Z rotation equals to change of refphase
 
-        self._add_all_pulses_of_qubit_gate(name = name, qubit_gate = single_qubit_gate)
+        
 
 
         return True

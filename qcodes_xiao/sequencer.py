@@ -221,16 +221,19 @@ class Sequencer:
         if manip_elem not in self.manipulation_elements:
             raise NameError('Manipulation Element [%s] not in Experiment.'%manip_elem)
 #        
-        manip = deepcopy(self.manipulation_elements[manip_elem])
-        
-        
-#        manip = Ramsey()
-        manipulation = manip(name = name, qubits = self.qubits, pulsar = self.pulsar, **kw)
-#                             parameter1 = parameter1, parameter2 = parameter2,)
-#                             waiting_time = waiting_time, duration_time = duration_time,
-#                             frequency = frequency, power = power)
-
-        manipulation.make_circuit(**kw)
+#        manip = deepcopy(self.manipulation_elements[manip_elem])
+#        
+#        
+##        manip = Ramsey()
+#        manipulation = manip(name = name, qubits = self.qubits, pulsar = self.pulsar, **kw)
+##                             parameter1 = parameter1, parameter2 = parameter2,)
+##                             waiting_time = waiting_time, duration_time = duration_time,
+##                             frequency = frequency, power = power)
+#
+#        manipulation.make_circuit(**kw)
+#       
+         
+        manipulation = self.manipulation_elements[manip_elem].make_circuit()
         
         VP_start_point = -manip.VP_before
 #        VP_end_point = manip.VP_after
