@@ -185,7 +185,7 @@ y = ds.probability_data[:,i,11:11+fitting_point].
 #raw_data_set = load_data(location = new_location, io = NewIO,)
 #%%
 
-'''
+
 def average_two_qubit(ds):
     seq_num = len(ds.singleshot_data)
     fitting_num = fitting_point
@@ -210,4 +210,3 @@ print('fidelity is: ', fidelity)
 pt = MatPlot()
 pt.add(x = x, y = average)
 pt.add(x = x, y = RB_Fidelity(x,pars[0],pars[1],pars[2]))
-'''
