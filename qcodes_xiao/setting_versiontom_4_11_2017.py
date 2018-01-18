@@ -1128,8 +1128,8 @@ print('sweep parameter set')
 experiment.set_sweep(repetition = False, plot_average = False, count = 1)
 print('loading sequence')
 experiment.generate_1D_sequence()
-experiment.load_sequence()
-print('sequence loaded')
+#experiment.load_sequence()
+#print('sequence loaded')
 #%% Simultaneous allXY with calibration
 '''
 experiment.calibration_qubit = 'all'
