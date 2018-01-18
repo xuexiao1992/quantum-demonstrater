@@ -517,7 +517,7 @@ class Experiment:
     this function below organizes segments. e.g. self.initialize_segment = {'step1': element1, 'step2': 1D/2D list, 'step3': element3...}
     """
     
-    def first_segment_into_sequence_and_elts(self, segment, segment_type, repetition, rep_idx = 0,idx_j = 0, idx_i = 0, seq_num = 0):         ## segment = self.initialize_segment
+    def add_segment_into_sequence_and_elts(self, segment, segment_type, repetition, rep_idx = 0,idx_j = 0, idx_i = 0, seq_num = 0):         ## segment = self.initialize_segment
         
         j = idx_j
         
@@ -556,58 +556,7 @@ class Experiment:
         
         return True
     
-    """
-    problems below
-    """
     
-    def update_segment_into_sequence_and_elts(self, segment, segment_type, repetition, rep_idx = 0,idx_j = 0, idx_i = 0):         ## segment = self.initialize_segment
-        
-        j = idx_j
-        
-        i = idx_i
-        unit_seq_length=0
-        for seg_type in self.sequence_cfg_type:
-            unit_seq_length += len(self.segment[seg_type])
-        if segment == self.initialize_segment:
-            former_element = 0
-        elif segment == self.manipulation_segment:
-            former_element =  len(self.initialize_segment)
-        elif segment == self.readout_segment:
-            former_element =  len(self.initialize_segment) + len(self.manipulation_segment)
-        
-        
-        for step in segment:                                ## step = 'step1'... is a string
-            
-            if type(segment[step]) is list:
-                jj = 0 if len(segment[step]) == 1 else j
-                ii = 0 if len(segment[step][0]) == 1 else i
-                element = segment[step][jj][ii]
-                wfname=element.name
-                name = wfname + '_%d_%d'%(j,i)
-                repe = repetition[step][jj][ii]
-                if jj != 0:
-                    wfname_to_delete = segment[step][jj-1][ii].name
-                    element_no = i*unit_seq_length + former_element + int(step[-1])+1
-                    print('element_no',element_no)
-                    if i == 0:
-                        self.add_new_element_to_awg_list(element = element)
-                    self.add_new_waveform_to_sequence(wfname = wfname, element_no = element_no, repetitions = repe)
-                    self.delete_element_from_awg_list(wfname = wfname_to_delete)
-            
-        return True
-    
-    
-    def add_segment(self, segment, segment_type, repetition, rep_idx = 0, idx_j = 0, idx_i = 0, seq_num = 0):
-        
-        j = idx_j
-        
-        if j == 0:
-            self.first_segment_into_sequence_and_elts(segment, segment_type, repetition, idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)
-        else:
-            self.first_segment_into_sequence_and_elts(segment, segment_type, repetition, idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)
-#            self.update_segment_into_sequence_and_elts(segment, repetition, idx_j = idx_j, idx_i = idx_i)
-        
-        return True
     
     def add_compensation(self, idx_j = 0, idx_i = 0, seq_num = 0):
         unit_length = 0
@@ -680,8 +629,10 @@ class Experiment:
                 
                 repetition = self.repetition[segment_type]
                 
-            self.add_segment(segment = segment, segment_type = segment_type, repetition = repetition, 
-                             idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)
+            
+            self.add_segment_into_sequence_and_elts(segment, segment_type, repetition, idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)
+
+            
             i+=1
             
         self.add_compensation(idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)

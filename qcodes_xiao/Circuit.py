@@ -5,13 +5,14 @@ Created on Wed Oct 25 11:32:40 2017
 @author: twatson
 """
 from manipulation_new import Manipulation
+from collections import OrderedDict
 
 class Circuit:
     
     
     def __init__(self, name, pulsar, qubits = [], **kw):
          
-         self.circuit = {}
+         self.circuit = OrderedDict()
          self.name = name
          self.pulsar = pulsar
          self.qubits = qubits
