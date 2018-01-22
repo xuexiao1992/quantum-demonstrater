@@ -56,7 +56,7 @@ def sequence_decay(t, A, B, T):
 
 def Exp_Sin_decay(t, A, B, F, Phase, T):
     
-    return A*(np.e**(-t/T))*np.sin(F*t+Phase)+B
+    return A*(np.e**((-t/T)**1.0))*np.sin(2*3.14*F*t+Phase)+B
 #%%
 IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents\\RB_experiment')
 formatter = HDF5FormatMetadata()
@@ -82,9 +82,26 @@ location8 = '2018-01-16/18-48-54/RB_experimentAllXY_sequence'
 
 location9 = '2018-01-17/13-51-14/RB_experimentAllXY_sequence'
 
-location11 = '2018-01-17/16-36-17/RB_experimentAllXY_sequence'
+location11 = '2018-01-17/14-57-17/RB_experimentAllXY_sequence'
 
-location = location11
+location12 = '2018-01-17/14-37-42/RB_experimentAllXY_sequence'
+
+location13 = '2018-01-17/16-36-17/RB_experimentAllXY_sequence'
+
+location14 =  '2018-01-18/14-38-40/RB_experimentAllXY_sequence'
+
+location15 = '2018-01-18/16-28-44/RB_experimentAllXY_sequence'
+
+location16 = '2018-01-18/17-10-49/RB_experimentAllXY_sequence'
+
+location17 = '2018-01-18/20-11-03/RB_experimentAllXY_sequence'
+
+location18 = '2018-01-18/20-24-04/RB_experimentAllXY_sequence'
+
+location_csd = '2018-01-19/16-05-12_DAC_V_sweep'
+location_csd_zoomin = '2018-01-22/11-59-47_DAC_V_sweep'
+
+location = location_csd_zoomin
 
 ds = load_data(location = location, io = IO, formatter = formatter)
 #DS = load_data(location = location1, io = IO)
@@ -112,12 +129,14 @@ pars, pcov = curve_fit(RB_Fidelity, x, y,)
 Exp1 = '00'
 Exp2 = '00'
 
+X_num = 41
+
 def average_two_qubit(ds):
     
     counts = len(ds.singleshot_data)
  
-    fitting_num = 41
-    sweep_num = 41
+    sweep_num = X_num
+    fitting_num = sweep_num
     
     experiment = 2
     
@@ -147,30 +166,32 @@ average = average_two_qubit(ds)
 
 #%%
 
-fitting_num = 41
+fitting_num = X_num
 time_range = 1.2e-6
 x = np.linspace(0, fitting_num-1, fitting_num)
 t = np.linspace(0, time_range, fitting_num)
 
 #pars1, pcov = curve_fit(sequence_decay, x, average[0],)
-pars1, pcov = curve_fit(Exp_Sin_decay, x, average[0], bounds = ((0, -inf, ), (1,x[-1])))
+pars1, pcov = curve_fit(Exp_Sin_decay, t*1e6, average[0], 
+                        p0 = (0.2, 0.4, 0.5, 1, 10),
+                        bounds = ((0,-np.inf,0.2,-np.inf,-np.inf),(np.inf,np.inf,5,np.inf,np.inf)))
 
 pt = MatPlot()
 pt.add(x = t, y = average[0], xlabel = 'dephasing_time', ylabel = 'probability |11>')
-pt.add(x = t, y = sequence_decay(x,pars1[0],pars1[1],pars1[-1]))
-pt.add(x = t, y = Exp_Sin_decay(x,pars1[0],pars1[1],pars1[2],pars1[3],pars1[4]), )
+pt.add(x = t, y = sequence_decay(t*1e6,pars1[0],pars1[1],pars1[-1]))
+pt.add(x = t, y = Exp_Sin_decay(t*1e6,pars1[0],pars1[1],pars1[2],pars1[3],pars1[4]), )
 
-print('T2* in exp1:', pars1[-1]/(fitting_num-1)*1.2, 'us')
-
+print('T2* in exp1:', pars1[-1], 'us')
+print('freq:', pars1[2], 'MHz')
 #pars2, pcov = curve_fit(sequence_decay, x, average[1],)
-pars2, pcov = curve_fit(Exp_Sin_decay, x, average[1],)
+pars2, pcov = curve_fit(Exp_Sin_decay, t*1e6, average[1], p0 = (0.2, 0.4, 0.5, 1, 10), bounds = ((0,-np.inf,0.2,-np.inf,-np.inf),(np.inf,np.inf,5,np.inf,np.inf)))
 
 pt2 = MatPlot()
 pt2.add(x = t, y = average[1], xlabel = 'dephasing_time', ylabel = 'probability |01>')
-pt2.add(x = t, y = sequence_decay(x,pars2[0],pars2[1],pars2[-1]))
-pt2.add(x = t, y = Exp_Sin_decay(x,pars2[0],pars2[1],pars2[2],pars2[3],pars2[4]))
+pt2.add(x = t, y = sequence_decay(t*1e6,pars2[0],pars2[1],pars2[-1]))
+pt2.add(x = t, y = Exp_Sin_decay(t*1e6,pars2[0],pars2[1],pars2[2],pars2[3],pars2[4]))
 
-print('T2* in exp2:', pars2[-1]/(fitting_num-1)*1.2, 'us')
-
+print('T2* in exp2:', pars2[-1], 'us')
+print('freq:', pars2[2], 'MHz')
 
 

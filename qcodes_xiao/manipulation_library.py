@@ -1610,6 +1610,82 @@ class Ramsey_all(Manipulation):
         
         return self
 
+
+class Ramsey_test(Manipulation):
+
+    def __init__(self, name, pulsar, **kw):
+
+        super().__init__(name, pulsar, **kw)
+        self.refphase = {}
+        self.qubit = kw.pop('qubit', 'qubit_2')
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = None
+        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude',1.2)
+        self.waiting_time = kw.pop('waiting_time', 0)
+        self.amplitude = kw.pop('amplitude', 1)
+        self.frequency_shift = kw.pop('frequency_shift', 0)
+        self.length = kw.pop('duration_time', 125e-9)
+
+    def __call__(self, **kw):
+        self.name = kw.pop('name', self.name)
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = kw.pop('pulsar', None)
+        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude',self.off_resonance_amplitude)
+        self.waiting_time = kw.pop('waiting_time', self.waiting_time)
+        self.amplitude = kw.pop('amplitude', self.amplitude)
+        self.frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
+        self.length = kw.pop('duration_time', self.length)
+        return self
+
+    def make_circuit(self, **kw):
+        
+        waiting_time = kw.pop('waiting_time', self.waiting_time)
+        amplitude = kw.get('amplitude', self.amplitude)
+        frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
+        off_resonance_amplitude = kw.pop('off_resonance_amplitude',self.off_resonance_amplitude)
+#        qubit_name = kw.pop('qubit', self.qubit)
+        
+        qubit_1 = Instrument.find_instrument('qubit_1')
+        qubit_2 = Instrument.find_instrument('qubit_2')
+        length = kw.get('duration_time', qubit_1.halfPi_pulse_length)
+
+        self.add_X(name='X0_Q1', qubit = qubit_1,
+                   amplitude = 1, length = waiting_time, frequency_shift = 30e6)
+
+        self.add_X(name='X0_Q2', qubit = qubit_2, refgate = 'X0_Q1', refpoint = 'start',
+                   amplitude = 1, length = waiting_time, frequency_shift = 30e6)
+
+                
+        
+        self.add_X(name='X1_Q1',refgate = 'X0_Q1', qubit = qubit_1,
+                   amplitude = amplitude, length = length, frequency_shift = frequency_shift)
+        
+        self.add_single_qubit_gate(name='off_resonance_Q1', refgate = 'X1_Q1',
+                                   qubit = qubit_1, amplitude = off_resonance_amplitude, 
+                                   length = 300e-9, frequency_shift = -30e6)
+
+        self.add_X(name='X2_Q1', refgate = 'off_resonance_Q1', 
+                   qubit = qubit_1, waiting_time = 0,
+                   amplitude = amplitude, length = length, frequency_shift = frequency_shift)
+        
+        
+        self.add_X(name='X1_Q2', qubit = qubit_2, refgate = 'X1_Q1', refpoint = 'start',
+                   amplitude = amplitude, length = length, frequency_shift = frequency_shift)
+
+        self.add_X(name='X2_Q2', refgate = 'X2_Q1', refpoint = 'start',
+                   qubit = qubit_2, waiting_time = 0,
+                   amplitude = amplitude, length = length, frequency_shift = frequency_shift)
+        
+        return self
+
+
+
 class AllXY_all(Manipulation):
 
     def __init__(self, name, pulsar, **kw):
@@ -2021,6 +2097,8 @@ class Charge_Noise_Bob3(Manipulation):
         self.add_single_qubit_gate(name='off_resonance', refgate = 'X2_Q1',
                                    qubit = qubit_1, amplitude = off_resonance_amplitude, 
                                    length = waiting_time, frequency_shift = -30e6)
+        
+        self.add_Z(name='Zde2_Q1', qubit = qubit_2, degree = 360 * 2e6*waiting_time)
         
         if add_dephase and 0:
             dephase = int(np.random.rand()*2//1)

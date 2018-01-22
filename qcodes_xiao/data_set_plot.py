@@ -668,7 +668,8 @@ def set_digitizer(digitizer, sweep_num, qubit_num, repetition, threshold, X_swee
     digitizer.data_memory_size(memsize)
     
     digitizer.segment_size(seg_size)
-    
+    digitizer.pretrigger_memory_size(pretrigger)
+    print('pretrigger set to:', pretrigger)
     digitizer.posttrigger_memory_size(posttrigger_size)
     
     digitizer.timeout(60000)
