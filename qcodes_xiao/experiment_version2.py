@@ -107,6 +107,7 @@ class Experiment:
         self.X_sweep_all_arrays = []
         self.X_all_parameters = []
         self.X_all_measurements = []
+        self.Y_measurement = None
         self.current_yvalue = 0
         
         
@@ -130,6 +131,7 @@ class Experiment:
         
         self.threshold = 0.025
         
+        self.readout_time = 0.6e-3
         
 #        self.ordered_data = new_data(location = self.data_location+'_ordered', io = self.data_IO, 
 #                                         write_period = self.write_period, formatter = self.formatter)
@@ -255,7 +257,8 @@ class Experiment:
         self.seq_cfg.append(seq_cfg)
         self.seq_cfg_type.append(seq_cfg_type)
         
-        self.digitizer, self.dig = set_digitizer(self.digitizer, 1, self.qubit_number, self.seq_repetition, self.threshold, self.X_sweep_array, self.saveraw)
+        self.digitizer, self.dig = set_digitizer(self.digitizer, 1, self.qubit_number, self.seq_repetition, self.threshold, 
+                                                 self.X_sweep_array, self.Y_sweep_array, self.saveraw, self.readout_time)
 
 #        self.sequencer[i].sweep_loop1 = self.sweep_loop1[i]
 #        self.sequencer[i].sweep_loop2 = self.sweep_loop2[i]
@@ -271,17 +274,21 @@ class Experiment:
         
         sequencer = self.find_sequencer(measurement)
         
-        self.X_sweep_array = np.append(self.X_sweep_array, sweep_array)
-        self.X_sweep_points  = np.append(self.X_sweep_points, self.X_sweep_points[-1] + len(sweep_array))
+        if len(sequencer.X_sweep_array) == 0:
+            sequencer.X_sweep_array = sweep_array 
+        
+            self.X_sweep_array = np.append(self.X_sweep_array, sweep_array)
+            self.X_sweep_points  = np.append(self.X_sweep_points, self.X_sweep_points[-1] + len(sweep_array))
         # so I want to know the structure of the multiple sweeps for plotting and saving...
-        self.X_sweep_all_arrays.append(sweep_array)
+            self.X_sweep_all_arrays.append(sweep_array)
 
         
         element = kw.pop('element', None)
         
         if type(parameter) is StandardParameter:#isinstance(obj, Tektronix_AWG5014)
             
-            self.digitizer, self.dig = set_digitizer(self.digitizer, 1, self.qubit_number, self.seq_repetition,self.threshold, 0, self.saveraw)
+            self.digitizer, self.dig = set_digitizer(self.digitizer, 1, self.qubit_number, self.seq_repetition,self.threshold, 
+                                                     0, 0, self.saveraw, self.readout_time)
             
             step = (sweep_array[1]-sweep_array[0])
             
@@ -299,7 +306,8 @@ class Experiment:
             
 #            sequencer.digitizer, sequencer.dig = set_digitizer(self.digitizer, len(sweep_array), self.qubit_number, self.seq_repetition)
             
-            self.digitizer, self.dig = set_digitizer(self.digitizer, len(self.X_sweep_array), self.qubit_number, self.seq_repetition, self.threshold, self.X_sweep_array, self.saveraw)
+            self.digitizer, self.dig = set_digitizer(self.digitizer, len(self.X_sweep_array), self.qubit_number, self.seq_repetition, self.threshold, 
+                                                     self.X_sweep_array, self.Y_sweep_array, self.saveraw, self.readout_time)
             
             i = len(sequencer.sweep_loop1)+1
             para = 'para'+str(i)
@@ -328,10 +336,11 @@ class Experiment:
             sequencer.X_parameter = parameter
             sequencer.X_parameter_type = 'In_Sequence'
             
-        self.X_all_parameters.append(sequencer.X_parameter)
-        self.X_all_measurements.append(measurement)
-        self.dimension_1 += len(sweep_array)
-        self.sweep_type = '1D'
+        if measurement not in self.X_all_measurements:
+            self.X_all_parameters.append(sequencer.X_parameter)
+            self.X_all_measurements.append(measurement)
+            self.dimension_1 += len(sweep_array)
+            self.sweep_type = '1D'
         
         return True
     
@@ -342,7 +351,7 @@ class Experiment:
             calibration_task = Task(func = self.update_calibration)
         
         sequencer = self.find_sequencer(measurement)
-        
+        self.Y_measurement = measurement
         self.Y_sweep_array = sweep_array
         
         element = kw.pop('element', None)
@@ -378,6 +387,17 @@ class Experiment:
                 if sequencer.sequence_cfg_type[seg].startswith('manip'):
                     if sequencer.sequence_cfg[seg]['step1']['manip_elem'] == element:
                         sequencer.sequence_cfg[seg]['step1'].update({parameter: loop})
+                elif sequencer.sequence_cfg_type[seg].startswith('read'):
+                    for w in range(len(element)):
+                        if element[w] == '_':
+                            break
+                    if element[:w] == sequencer.sequence_cfg_type[seg]:
+                        step = 'step'+element[-1]
+                        sequencer.sequence_cfg[seg][step].update({parameter: loop})
+                elif sequencer.sequence_cfg_type[seg].startswith('init'):
+                    if element.startswith(sequencer.sequence_cfg_type[seg]):
+                        step = 'step'+element[-1]
+                        sequencer.sequence_cfg[seg][step].update({parameter: loop})
             
             self.Y_parameter = parameter
             self.Y_parameter_type = 'In_Sequence'
@@ -392,7 +412,7 @@ class Experiment:
                 else:
                     self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(self.dig)
 #                self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(self.dig)
-            else:
+            elif self.Loop is not None and self.Y_measurement is None:
                 print('no calibration')
                 LOOP = self.Loop
                 self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(LOOP)
@@ -412,7 +432,8 @@ class Experiment:
         
         self.load_sequence()
         
-        set_digitizer(self.digitizer, len(self.X_sweep_array), self.qubit_number, self.seq_repetition, self.threshold, self.X_sweep_array, self.saveraw)
+        set_digitizer(self.digitizer, len(self.X_sweep_array), self.qubit_number, self.seq_repetition, self.threshold, 
+                      self.X_sweep_array, self.Y_sweep_array, self.saveraw, self.readout_time)
         
         self.pulsar.start()
         
@@ -1250,9 +1271,12 @@ class Experiment:
             self.data_set.add_metadata({'X_all_measurements': self.X_all_measurements})
             self.data_set.add_metadata({'readnames': self.readnames})
             self.data_set.add_metadata({'X_parameter_type': self.X_parameter_type})
+            self.data_set.add_metadata({'Y_parameter_type': self.Y_parameter_type})
             self.data_set.add_metadata({'X_sweep_points': self.X_sweep_points})
             self.data_set.add_metadata({'X_parameter':self.X_parameter})
             self.data_set.add_metadata({'Y_parameter':self.Y_parameter})
+            
+            self.data_set.arrays[self.Y_parameter+'_set'].ndarray = np.array(self.Y_sweep_array)
 
 
 
@@ -1267,7 +1291,10 @@ class Experiment:
 #                self.plot_average_probability()
             
 #            self.Loop.with_bg_task(task = self.live_plotting, bg_final_task = self.plot_save, min_delay = 1.5).run()
-            self.Loop.run()
+            try:
+                self.Loop.run()
+            except:
+                self.close()
 #            self.Loop.with_bg_task(task = self.calibrate_by_Ramsey('qubit_2'),).run()
             self.awg.stop()
             self.awg2.stop()
@@ -1287,6 +1314,8 @@ class Experiment:
 #            self.plot_probability()
 #            self.plot_average_probability()
         self.close()
+        
+        self.data_set.arrays[self.Y_parameter+'_set'].ndarray = np.array(self.Y_sweep_array)
 
         return self.data_set
 

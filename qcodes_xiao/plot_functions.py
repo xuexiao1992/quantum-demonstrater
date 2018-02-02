@@ -191,6 +191,7 @@ def plot2D(data_set, measurements = 'All', xaxis = True):
     qubit_number = metadata['qubit_number']
     X_parameter = metadata['X_parameter']
     X_parameter_type = metadata['X_parameter_type']
+    Y_parameter_type = metadata['Y_parameter_type']
     X_all_measurements = metadata['X_all_measurements']
     X_sweep_points = metadata['X_sweep_points']
     Y_parameter = metadata['Y_parameter']
@@ -199,6 +200,7 @@ def plot2D(data_set, measurements = 'All', xaxis = True):
     if measurements == 'All':
         measurements = X_all_measurements
         
+    y = data_set.sweep_data2 if Y_parameter_type == 'In_Sequence' else data_set.arrays[Y_parameter+'_set']
     y = data_set.arrays[Y_parameter+'_set']     
     z = data_set.arrays['probability_data']    
     plt.figure(20, figsize=(16, 8))

@@ -742,7 +742,7 @@ print('sequence loaded')
 '''
 
 #%%     charge noise bob joynt
-'''
+
 from manipulation_library import Charge_Noise_Bob2, Charge_Noise_Bob3, Grover
 
 experiment.qubit_number = 2
@@ -793,7 +793,7 @@ print('loading sequence')
 experiment.generate_1D_sequence()
 experiment.load_sequence()
 print('sequence loaded')
-'''
+
 #%%     CPhase
 '''
 phase_1 = 315

@@ -101,7 +101,23 @@ location18 = '2018-01-18/20-24-04/RB_experimentAllXY_sequence'
 location_csd = '2018-01-19/16-05-12_DAC_V_sweep'
 location_csd_zoomin = '2018-01-22/11-59-47_DAC_V_sweep'
 
-location = location_csd_zoomin
+location19 = '2018-01-29/16-01-06/RB_experimentAllXY_sequence'
+
+
+'''
+DCZ for below
+'''
+location20 = '2018-01-30/19-21-13/RB_experimentAllXY_sequence'
+
+location21 = '2018-01-31/14-07-36/RB_experimentAllXY_sequence'
+
+location22 = '2018-01-31/23-47-41/RB_experimentAllXY_sequence'
+location23 = '2018-02-01/00-09-15/RB_experimentAllXY_sequence'
+location24 = '2018-02-01/13-51-30/RB_experimentAllXY_sequence'
+
+location25 = '2018-02-02/14-23-12/RB_experimentAllXY_sequence'
+
+location = location25
 
 ds = load_data(location = location, io = IO, formatter = formatter)
 #DS = load_data(location = location1, io = IO)

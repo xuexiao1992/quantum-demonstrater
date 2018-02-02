@@ -134,18 +134,23 @@ for normal experiemnt:
 '''
 ##
 #Sweep_Value1 = T[-5:-25:0.5]
-#Sweep_Value2 = LP[-350:-370:0.5]
-#Sweep_Value1 = T[0:-75:1]
-#Sweep_Value2 = LP[-320:-400:1]
+#Sweep_Value2 = LP[-340:-360:0.5]
+Sweep_Value1 = T[0:-75:1]
+Sweep_Value2 = LP[-320:-400:1]
 
 #Sweep_Value1 = T[20:-100:1]
 #Sweep_Value2 = LP[-100:-400:1]
 
-Sweep_Value1 = T[-20:-60:1]
-Sweep_Value2 = LP[-120:-240:1]
+#Sweep_Value1 = T[-20:-80:1]
+#Sweep_Value1 = T[-80:-20:1]
+#Sweep_Value2 = LP[-110:-260:1]
 
-#Sweep_Value1 = T[-10:-25:0.2]
-#Sweep_Value2 = LP[-345:-360:0.2]
+
+#Sweep_Value1 = T[-40:-50:0.5]
+#Sweep_Value2 = LP[-210:-230:0.5]
+
+Sweep_Value1 = T[-10:-30:0.2]
+Sweep_Value2 = LP[-340:-360:0.2]
 
 #Sweep_Value1 = RP[-1025:-950:1]
 #Sweep_Value2 = T[-25:-10:1]

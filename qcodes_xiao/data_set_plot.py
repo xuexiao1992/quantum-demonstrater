@@ -576,19 +576,19 @@ class digitizer_param(ArrayParameter):
 class digitizer_multiparam(MultiParameter):
     
     def __init__(self,  mV_range, memsize, seg_size, posttrigger_size,
-                 digitizer, threshold, qubit_num, repetition, sweep_num, X_sweep_array, saveraw, label=None, unit=None, instrument=None, **kwargs):
+                 digitizer, threshold, qubit_num, repetition, sweep_num, X_sweep_array, Y_sweep_array = None, saveraw = True, label=None, unit=None, instrument=None, **kwargs):
         
 #        global digitizer
         self.digitizer = digitizer
         channel_amount = bin(self.digitizer.enable_channels()).count('1')
         
         if saveraw == True:
-            names= ('raw_data', 'singleshot_data', 'probability_data', 'sweep_data')
-            labels= ('raw_data', 'singleshot_data', 'probability_data','sweep_data')
+            names= ('raw_data', 'singleshot_data', 'probability_data', 'sweep_data',)# 'sweep_data2')
+            labels= ('raw_data', 'singleshot_data', 'probability_data','sweep_data',)# 'sweep_data2')
             shapes= ((qubit_num,sweep_num,repetition,int(seg_size)),(qubit_num,sweep_num,repetition),(qubit_num,sweep_num),(qubit_num,sweep_num))
         else:
-            names= ('probability_data', 'sweep_data')
-            labels= ('probability_data','sweep_data')
+            names= ('probability_data', 'sweep_data',)# 'sweep_data2')
+            labels= ('probability_data','sweep_data',)# 'sweep_data2')
             shapes= ((qubit_num,sweep_num),(qubit_num,sweep_num))
         
         
@@ -603,6 +603,7 @@ class digitizer_multiparam(MultiParameter):
         self.seg_size =seg_size
         self.posttrigger_size = posttrigger_size
         self.X_sweep_array = X_sweep_array
+        self.Y_sweep_array = Y_sweep_array
         
     def get(self):
 #        res = digitizer.single_trigger_acquisition(self.mV_range,self.memsize,self.posttrigger_size)
@@ -615,14 +616,15 @@ class digitizer_multiparam(MultiParameter):
         
         ##not sure why i cant just pass X_sweep_array...
         sweep_data = deepcopy(probability_data)
+        sweep_data2 = deepcopy(self.Y_sweep_array)
         for i in range(self.qubit_num):
             sweep_data[i,:] = self.X_sweep_array
         
         print(probability_data)
         if self.saveraw == True:
-            return (ordered_data, thresholded_data, probability_data, sweep_data)
+            return (ordered_data, thresholded_data, probability_data, sweep_data,)# sweep_data2)
         else: 
-            return (probability_data,sweep_data )
+            return (probability_data,sweep_data,)# sweep_data2)
 
         
     def __getitem__(self, keys):
@@ -632,7 +634,7 @@ class digitizer_multiparam(MultiParameter):
         """
 
 #%%
-def set_digitizer(digitizer, sweep_num, qubit_num, repetition, threshold, X_sweep_array, saveraw):
+def set_digitizer(digitizer, sweep_num, qubit_num, repetition, threshold, X_sweep_array, Y_sweep_array, saveraw, readout_time):
     pretrigger=16
     mV_range=1000
     threshold = threshold
@@ -642,7 +644,7 @@ def set_digitizer(digitizer, sweep_num, qubit_num, repetition, threshold, X_swee
     
     sample_rate = digitizer.sample_rate()
     
-    readout_time = 0.6e-3
+    readout_time = readout_time
     
     qubit_num = qubit_num
     
@@ -683,6 +685,8 @@ def set_digitizer(digitizer, sweep_num, qubit_num, repetition, threshold, X_swee
     digitizer.set_ext0_OR_trigger_settings(trig_mode = trig_mode, termination = 0, coupling = 0, level0 = 800, level1 = 900)
     
 #    dig = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size, digitizer = digitizer)
-    dig = digitizer_multiparam(mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size, digitizer = digitizer, threshold = threshold, qubit_num =qubit_num , repetition =repetition, sweep_num =sweep_num, X_sweep_array =X_sweep_array, saveraw = saveraw)
+    dig = digitizer_multiparam(mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size, digitizer = digitizer, 
+                               threshold = threshold, qubit_num =qubit_num , repetition =repetition, sweep_num =sweep_num, 
+                               X_sweep_array =X_sweep_array, Y_sweep_array = Y_sweep_array, saveraw = saveraw)
 
     return digitizer, dig
