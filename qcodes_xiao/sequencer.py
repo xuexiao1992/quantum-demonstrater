@@ -210,8 +210,7 @@ class Sequencer:
 #        frequency = kw.pop('frequency', None)
 #        power = kw.pop('power', None)
         print('manip time:', time)
-        parameter1 = kw.get('parameter1', None)
-        parameter2 = kw.get('parameter2', None)
+
         manip_elem = kw.get('manip_elem', Element(name = name, pulsar = self.pulsar))
         print(name)
         
@@ -235,7 +234,7 @@ class Sequencer:
          
         manipulation = self.manipulation_elements[manip_elem].make_circuit()
         
-        VP_start_point = -manip.VP_before
+        VP_start_point = -manipulation.VP_before
 #        VP_end_point = manip.VP_after
         wfs, tvals = manipulation.normalized_waveforms()
         max_length = max([len(tvals[ch]) for ch in tvals])/1e9
