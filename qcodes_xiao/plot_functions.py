@@ -11,7 +11,8 @@ Created on Wed Oct 18 10:41:38 2017
 
 @author: twatson
 """
-
+import sys
+sys.path.append('C:\\Users\\LocalAdmin\\AppData\\Local\\conda\\conda\\envs\\QCoDeS\\Lib\\site-packages\\qtt-0.1.3-py3.6.egg')
 import qtt
 import numpy as np
 from scipy.optimize import curve_fit

@@ -2,6 +2,14 @@
 import logging
 #logging.basicConfig(level=logging.INFO) #used to see logging in console when not using the ZMQ GUI logger
 
+
+#C:\Users\LocalAdmin\AppData\Local\conda\conda\envs\QCoDeS\Lib\site-packages\qtt-0.1.3-py3.6.egg\qtt
+
+import sys
+sys.path.append('C:\\Users\\LocalAdmin\\AppData\\Local\\conda\\conda\\envs\\QCoDeS\\Lib\\site-packages\\qtt-0.1.3-py3.6.egg')
+#
+
+
 import qcodes
 import qtt
 import numpy as np

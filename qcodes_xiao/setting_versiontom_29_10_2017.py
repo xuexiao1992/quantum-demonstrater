@@ -149,8 +149,8 @@ def Counts(x):
 
 #%%
 ##
-#station = stationF006.initialize()
-#pulsar = set_5014pulsar(awg = station.awg, awg2 = station.awg2)
+station = stationF006.initialize()
+pulsar = set_5014pulsar(awg = station.awg, awg2 = station.awg2)
 vsg = station.vsg
 vsg2 = station.vsg2
 
