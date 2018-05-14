@@ -121,7 +121,7 @@ class Experiment:
         
         self.write_period = None
         
-        self.data_IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents\\'+self.name)
+        self.data_IO = DiskIO(base_location = 'D:\\Data\\'+self.name)
         self.data_location = time.strftime("%Y-%m-%d/%H-%M-%S/") + name + label
         self.calibration_data_location = self.data_location+'_calibration'
         
@@ -1293,6 +1293,7 @@ class Experiment:
 #            self.Loop.with_bg_task(task = self.live_plotting, bg_final_task = self.plot_save, min_delay = 1.5).run()
             try:
                 self.Loop.run()
+#                print('test')
             except:
                 self.close()
 #            self.Loop.with_bg_task(task = self.calibrate_by_Ramsey('qubit_2'),).run()

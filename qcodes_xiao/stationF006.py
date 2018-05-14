@@ -73,7 +73,7 @@ def twodotboundaries():
             'acQD': (-300, 300), 
             'acres': (-300, 300),
             
-            'RS': (-1000, 200),
+            'RS': (-1000, 300),
             'RD': (-1500, 200),
             'LP': (-1000, 200), 
             'LPF': (-100, 100),
@@ -86,38 +86,45 @@ def twodotboundaries():
             'LD': (-1000, 200),
             'B': (-1000, 200),
             
-            'SQD1': (-1000, 200),
-            'SQD2': (-1000, 200),
-            'SQD3': (-1000, 200),
-            'RQPC': (-1000, 200),
+            'SQD1': (-1000, 300),
+            'SQD2': (-1000, 300),
+            'SQD3': (-1000, 300),
+            'RQPC': (-1000, 300),
         })
-
-#def twodotboundaries():
-#    global ivvi1
-#    gate_boundaries = dict({
-#            'VI1': (-600, 600), 
-#            'VI2': (-600, 1600),
-#            'acQD': (-1300, 1300), 
-#            'acres': (-2000, 1300),
-#            
-#            'RS': (-1500, 1200),
-#            'RD': (-1500, 1500),
-#            'LP': (-1500, 1500), 
-#            'LPF': (-2000, 1500),
-#            'RP': (-1500, 1500), 
-#            'RPF': (-1700, 1500),
-#            
-#            'LS': (-1500, 1500),
-#            'T': (-1900, 1500),
-#        
-#            'LD': (-1500, 1500),
-#            'B': (-1500, 1500),
-#            
-#            'SQD1': (-1500, 1500),
-#            'SQD2': (-1500, 1900),
-#            'SQD3': (-1500, 1500),
-#            'RQPC': (-1500, 1500),
-#        })
+    if ivvi1 is not None:
+        # update boundaries to resolution of the dac        
+        for k in gate_boundaries:
+            bb=gate_boundaries[k]
+            bb=(ivvi1.round_dac(bb[0]), ivvi1.round_dac(bb[1]) )
+            gate_boundaries[k] =bb
+    return gate_boundaries
+'''
+def twodotboundaries():
+    global ivvi1
+    gate_boundaries = dict({
+            'VI1': (-600, 2000), 
+            'VI2': (-600, 2000),
+            'acQD': (-1300, 2000), 
+            'acres': (-2000, 1300),
+            
+            'RS': (-1500, 1200),
+            'RD': (-1500, 1500),
+            'LP': (-1500, 1500), 
+            'LPF': (-2000, 1500),
+            'RP': (-1500, 1500), 
+            'RPF': (-1700, 1500),
+            
+            'LS': (-1500, 1500),
+            'T': (-1900, 1500),
+        
+            'LD': (-1500, 1500),
+            'B': (-1500, 1500),
+            
+            'SQD1': (-2000, 1500),
+            'SQD2': (-1500, 1900),
+            'SQD3': (-1500, 1500),
+            'RQPC': (-1500, 1500),
+        })
 
     if ivvi1 is not None:
         # update boundaries to resolution of the dac        
@@ -126,7 +133,7 @@ def twodotboundaries():
             bb=(ivvi1.round_dac(bb[0]), ivvi1.round_dac(bb[1]) )
             gate_boundaries[k] =bb
     return gate_boundaries
-
+'''
 output_map = None
 
 station = None
@@ -150,7 +157,7 @@ mwindows=None
 
 location_matfiles = 'D:/Measurements/Apr72017UNSW-19th&20th_Devices_NewBatch/data/BOTTOM/Matlab'
 
-datadir = 'D:/Measurements/Apr72017UNSW-19th&20th_Devices_NewBatch/data/BOTTOM/Qcodes'
+datadir = 'D:\\Data\\RB_experiment'
 qcodes.DataSet.default_io = qcodes.DiskIO(datadir)
 
 #%%

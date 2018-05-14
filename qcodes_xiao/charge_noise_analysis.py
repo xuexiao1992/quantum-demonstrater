@@ -117,7 +117,44 @@ location24 = '2018-02-01/13-51-30/RB_experimentAllXY_sequence'
 
 location25 = '2018-02-02/14-23-12/RB_experimentAllXY_sequence'
 
-location = location25
+location26 = '2018-02-05/21-16-27/RB_experimentAllXY_sequence'
+
+location26_1 = '2018-02-05/22-41-37/RB_experimentAllXY_sequence'
+
+'''
+NCZ
+'''
+location27 = '2018-02-05/14-47-54/RB_experimentAllXY_sequence'
+
+location28 = '2018-02-05/15-53-45/RB_experimentAllXY_sequence'
+
+location29 = '2018-02-05/17-43-54/RB_experimentAllXY_sequence'
+
+location32 = '2018-02-06/11-31-17/RB_experimentAllXY_sequence'
+
+location33 = '2018-02-06/12-58-07/RB_experimentAllXY_sequence'
+
+location34 = '2018-02-06/14-45-21/RB_experimentAllXY_sequence'
+
+location35 = '2018-02-06/16-59-19/RB_experimentAllXY_sequence'
+
+location36 = '2018-02-07/11-45-10/RB_experimentAllXY_sequence'
+
+'''
+'''
+location37 = '2018-02-07/13-18-00/RB_experimentAllXY_sequence'
+'''
+'''
+
+location38 = '2018-02-07/16-03-46/RB_experimentAllXY_sequence'
+
+location39 = '2018-02-07/17-14-48/RB_experimentAllXY_sequence'
+
+location40 = '2018-02-09/11-56-18/RB_experimentAllXY_sequence'
+
+location41 = '2018-02-09/14-18-23/RB_experimentAllXY_sequence'
+
+location = location41
 
 ds = load_data(location = location, io = IO, formatter = formatter)
 #DS = load_data(location = location1, io = IO)
@@ -146,6 +183,7 @@ Exp1 = '00'
 Exp2 = '00'
 
 X_num = 41
+time_range = 1e-6
 
 def average_two_qubit(ds):
     
@@ -178,19 +216,53 @@ def average_two_qubit(ds):
     
     return average_11
 
+
+def average_two_qubit_2(ds):
+    
+    counts = int(len(ds.singleshot_data)/2)
+ 
+    sweep_num = X_num
+    fitting_num = sweep_num
+    
+    experiment = 2
+    
+    data = np.ndarray(shape = (experiment, counts, fitting_num, 100,))
+    
+    for seq in range(counts):
+        exp = seq%2
+        for i in range(11,11+sweep_num):
+            for j in range(100):
+                if exp == 0:
+                    if ds.singleshot_data[seq][0][i][j] == int(Exp1[1]) and ds.singleshot_data[seq][1][i][j] == int(Exp1[0]):
+                        data[exp][seq][i-11][j] = 1
+                    else:
+                        data[exp][seq][i-11][j] = 0
+                elif exp == 1:
+                    if ds.singleshot_data[seq][0][i][j] == int(Exp2[1]) and ds.singleshot_data[seq][1][i][j] == int(Exp2[0]):
+                        data[exp][seq][i-11][j] = 1
+                    else:
+                        data[exp][seq][i-11][j] = 0
+    
+    average = data.mean(axis = 3)
+    average_11 = average.mean(axis = 1)
+    return average_11
+
+
+
+
 average = average_two_qubit(ds)
 
 #%%
 
+time_range = time_range
 fitting_num = X_num
-time_range = 1.2e-6
 x = np.linspace(0, fitting_num-1, fitting_num)
 t = np.linspace(0, time_range, fitting_num)
 
 #pars1, pcov = curve_fit(sequence_decay, x, average[0],)
 pars1, pcov = curve_fit(Exp_Sin_decay, t*1e6, average[0], 
-                        p0 = (0.2, 0.4, 0.5, 1, 10),
-                        bounds = ((0,-np.inf,0.2,-np.inf,-np.inf),(np.inf,np.inf,5,np.inf,np.inf)))
+                        p0 = (0.2, 0.3, 6, 1.5, 0.3),
+                        bounds = ((0,-np.inf,0.2,-np.inf,-np.inf),(np.inf,np.inf,10,np.inf,np.inf)))
 
 pt = MatPlot()
 pt.add(x = t, y = average[0], xlabel = 'dephasing_time', ylabel = 'probability |11>')
@@ -199,8 +271,9 @@ pt.add(x = t, y = Exp_Sin_decay(t*1e6,pars1[0],pars1[1],pars1[2],pars1[3],pars1[
 
 print('T2* in exp1:', pars1[-1], 'us')
 print('freq:', pars1[2], 'MHz')
-#pars2, pcov = curve_fit(sequence_decay, x, average[1],)
-pars2, pcov = curve_fit(Exp_Sin_decay, t*1e6, average[1], p0 = (0.2, 0.4, 0.5, 1, 10), bounds = ((0,-np.inf,0.2,-np.inf,-np.inf),(np.inf,np.inf,5,np.inf,np.inf)))
+#pars2, pcov = curve_fit(Exp_Sin_decay, x, average[1],)
+pars2, pcov = curve_fit(Exp_Sin_decay, t*1e6, average[1], p0 = (0.2, 0.3, 6, 1.5, 0.3), 
+                        bounds = ((0,-np.inf,0.2,-np.inf,-np.inf),(np.inf,np.inf,10,np.inf,np.inf)))
 
 pt2 = MatPlot()
 pt2.add(x = t, y = average[1], xlabel = 'dephasing_time', ylabel = 'probability |01>')

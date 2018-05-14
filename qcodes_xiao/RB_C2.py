@@ -161,8 +161,8 @@ mZ9 = 1/2*np.array([[1, 0, 0, 0],
 
 CZ = np.array([[1, 0, 0, 0],
                [0, 1, 0, 0],
-               [0, 0, -1, 0],
-               [0, 0, 0, 1]], dtype=complex)
+               [0, 0, 1, 0],
+               [0, 0, 0, -1]], dtype=complex)
 
 
 
@@ -396,10 +396,10 @@ def generate_randomized_clifford_sequence(interleave = None):
 
 #clifford_sets = generate_randomized_clifford_sequence(interleave = 'Zp')
 
-clifford_sets = generate_randomized_clifford_sequence(interleave = 'CZ')
+#clifford_sets = generate_randomized_clifford_sequence(interleave = 'CZ')
 
 
-#clifford_sets = generate_randomized_clifford_sequence()
+clifford_sets = generate_randomized_clifford_sequence()
 #
 
 

@@ -14,6 +14,7 @@ Created on Wed Oct 18 10:41:38 2017
 
 import qtt
 import numpy as np
+from scipy.optimize import curve_fit
 from qcodes.data.hdf5_format import HDF5Format, HDF5FormatMetadata
 from qcodes.data.gnuplot_format import GNUPlotFormat
 from qcodes.data.io import DiskIO
@@ -27,6 +28,21 @@ from matplotlib.widgets import Button
 import matplotlib.pyplot as plt
 
 
+def coscurve(t,A,B,C,D):
+    
+    return A*np.cos(np.pi *2*B*(t-C)/360) + D 
+    
+def fitcos(x,y):
+
+    pars1, pcov = curve_fit(coscurve, x, y, 
+                        p0 = (y.max()-y.min(), 1, 180,(y.max()-y.min())/2),
+                        bounds = ((0,0.999,0,-1),(1,1,360,1)))
+    xfit = x
+    yfit = coscurve(x,pars1[0],pars1[1],pars1[2],pars1[3])
+    print(pars1[2])
+    return xfit, yfit
+
+
 def make_pcolor_array(array):
     """ function to modify array for definining x or y axis  to plot with pcolor
     """
@@ -38,7 +54,7 @@ def make_pcolor_array(array):
     return arraynew2
 # plot stability_diagram
 
-def plot2Ddata(data_set):
+def plot2Ddata(data_set, dev = False):
     """ Plot 2D data from a genereric Qcodes loop, with a singlular measurment
     Input
     ----
@@ -55,6 +71,9 @@ def plot2Ddata(data_set):
         else:
             z = data_set.arrays[array]
             zlabel = array
+    if dev == True:
+        z = np.gradient(z, axis = 0)        
+            
     plt.figure(21, figsize=(12, 8))
     plt.clf() 
     plt.pcolormesh(x[0,:], y, z)
@@ -63,7 +82,7 @@ def plot2Ddata(data_set):
     plt.colorbar()
     
     callback = Index(data_set, plt.figure(21))
-    ppt = plt.axes([0.81, 0.05, 0.1, 0.075])
+    ppt = plt.axes([0.81, 0.90, 0.1, 0.075])
     bppt = Button(ppt, 'ppt')
     bppt.on_clicked(callback.ppt) 
     ppt._button = bppt
@@ -88,13 +107,13 @@ def plot1Ddata(data_set, paramname = 'keithley_amplitude'):
     plt.ylabel(ylabel)
     
     callback = Index(data_set, plt.figure(22))
-    ppt = plt.axes([0.81, 0.05, 0.1, 0.075])
+    ppt = plt.axes([0.81, 0.90, 0.1, 0.075])
     bppt = Button(ppt, 'ppt')
     bppt.on_clicked(callback.ppt) 
     ppt._button = bppt
         
 # plot 1D
-def plot1D(data_set, measurements = 'All', xaxis = True, sameaxis = False):
+def plot1D(data_set, measurements = 'All', xaxis = True, sameaxis = False, fitfunction = None):
     """ Plot 1D data from a qubit experiment
     Input
     -----
@@ -116,7 +135,7 @@ def plot1D(data_set, measurements = 'All', xaxis = True, sameaxis = False):
     if measurements == 'All':
         measurements = X_all_measurements
         
-    y = data_set.arrays['probability_data'].mean(axis = 0)      
+    y = data_set.arrays['probability_data'].mean(axis = 0)    
     plt.figure(20, figsize=(16, 8))
     plt.clf()
 
@@ -152,7 +171,9 @@ def plot1D(data_set, measurements = 'All', xaxis = True, sameaxis = False):
                     t = plt.axis()
                     plt.axis([t[0], t[1], y[i,:].min(), y[i,:].max()])
                     plt.xlabel(measurement)
-                
+                    if fitfunction != None:
+                        xfit, yfit = fitfunction(x, y[i,x_start:x_end])
+                        plt.plot(xfit,yfit)
                 
                 else:
                     x = np.zeros(shape = (x_end-x_start))
@@ -166,11 +187,12 @@ def plot1D(data_set, measurements = 'All', xaxis = True, sameaxis = False):
                 j = j+1
             jj = jj+1
     callback = Index(data_set, plt.figure(20))
-    ppt = plt.axes([0.81, 0.05, 0.1, 0.075])
+    ppt = plt.axes([0.81, 0.90, 0.1, 0.075])
     bppt = Button(ppt, 'ppt')
     bppt.on_clicked(callback.ppt) 
     ppt._button = bppt
 #    addPPTslide(txt = data_set.location, fig=plt.figure(20), notes=qtt.tools.reshape_metadata(data_set, printformat='fancy'))                
+
 
 # plot 2D
 def plot2D(data_set, measurements = 'All', xaxis = True):
@@ -200,8 +222,11 @@ def plot2D(data_set, measurements = 'All', xaxis = True):
     if measurements == 'All':
         measurements = X_all_measurements
         
-    y = data_set.sweep_data2 if Y_parameter_type == 'In_Sequence' else data_set.arrays[Y_parameter+'_set']
-    y = data_set.arrays[Y_parameter+'_set']     
+    y = data_set.sweep_data if Y_parameter_type == 'In_Sequence' else data_set.arrays[Y_parameter+'_set']
+    y = data_set.arrays[Y_parameter+'_set']   
+    
+
+        
     z = data_set.arrays['probability_data']    
     plt.figure(20, figsize=(16, 8))
     plt.clf()
@@ -256,7 +281,7 @@ def plot2D(data_set, measurements = 'All', xaxis = True):
                         plt.ylabel(Y_parameter) #need to change this for an abitrary y sweep
                     j = j+1
     callback = Index(data_set, plt.figure(20))
-    ppt = plt.axes([0.81, 0.05, 0.1, 0.075])
+    ppt = plt.axes([0.81, 0.90, 0.1, 0.075])
     bppt = Button(ppt, 'ppt')
     bppt.on_clicked(callback.ppt) 
     ppt._button = bppt
@@ -282,7 +307,7 @@ class Index(object):
 #
 ##plt.figure(21, figsize=(16, 8))
 ##callback = Index()
-##ppt = plt.axes([0.81, 0.05, 0.1, 0.075])
+##ppt = plt.axes([0.81, 0.90, 0.1, 0.075])
 ##bppt = Button(ppt, 'ppt')
 ##bppt.on_clicked(callback.ppt)  
 #

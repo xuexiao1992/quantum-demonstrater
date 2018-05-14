@@ -58,6 +58,10 @@ def T1_fitting(x, t0, A, B):
     
     return A*np.e**(-x/t0)+B
 
+def T2_star_fitting(t, A, B, F, Phase, T):
+    
+    return A*(np.exp(-(t/T)**2))*np.sin(2*3.14*F*t+Phase)+B
+
 #%%
 IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents\\RB_experiment')
 formatter = HDF5FormatMetadata()
@@ -67,6 +71,34 @@ location = '2017-12-12/16-57-48/RB_experimentAllXY_sequence'
 location2 = '2017-12-12/17-28-29/RB_experimentAllXY_sequence'
 location3 = '2017-12-12/17-47-41/RB_experimentAllXY_sequence'
 
+location3 = '2018-03-23/14-41-59/RB_experimentAllXY_sequence'
+location3 = '2018-03-23/17-16-26/RB_experimentAllXY_sequence'
+
+location3 = '2018-03-23/17-39-47/RB_experimentAllXY_sequence'
+
+location3 = '2018-03-24/14-47-41/RB_experimentAllXY_sequence'
+location3 = '2018-03-24/15-08-20/RB_experimentAllXY_sequence'
+location3 = '2018-03-24/17-33-21/RB_experimentAllXY_sequence'
+#location3 = '2018-03-24/19-54-21/RB_experimentAllXY_sequence'
+location3 = '2018-03-26/11-27-04/RB_experimentAllXY_sequence'
+location3 = '2018-03-28/16-07-43/RB_experimentAllXY_sequence'
+location3 = '2018-03-28/16-40-41/RB_experimentAllXY_sequence'
+
+location3 = '2018-04-05/11-37-02/RB_experimentAllXY_sequence'
+
+location3 = '2018-04-05/14-48-44/RB_experimentAllXY_sequence'
+#location3 = '2018-04-05/15-21-16/RB_experimentAllXY_sequence'
+location3 = '2018-04-05/16-50-37/RB_experimentAllXY_sequence'
+
+location3 = '2018-04-05/20-26-26/RB_experimentAllXY_sequence'
+location3 = '2018-04-05/20-55-38/RB_experimentAllXY_sequence'
+location3 = '2018-04-06/10-55-25/RB_experimentAllXY_sequence'
+location3 = '2018-04-06/11-26-17/RB_experimentAllXY_sequence'
+
+location3 = '2018-04-06/19-53-52/RB_experimentAllXY_sequence'
+
+#location3 = '2018-04-04/18-38-25/RB_experimentAllXY_sequence'
+
 ds = load_data(location = location3, io = IO, formatter = formatter)
 
 
@@ -75,15 +107,44 @@ ds = load_data(location = location3, io = IO, formatter = formatter)
 Qubit = 2
 i = 0 if Qubit == 2 else 1
 
-fitting_point = 59
-x = np.linspace(1e-6, 25e-3, 60)[:fitting_point]
-y = ds.probability_data[:,i,:fitting_point].mean(axis = 0)
+fitting_point = 50
+start_point = 11
+#x = np.linspace(1e-6, 25e-3, 60)[:fitting_point]
+x = np.linspace(0, 30e-6, 51)[:fitting_point]
+y = ds.probability_data[:,i,start_point:start_point+fitting_point].mean(axis = 0)
 
 pars, pcov = curve_fit(T1_fitting, x, y,)
 
+#pars, pcov = curve_fit(T1_fitting, x, y, 
+#                        p0 = (0.01, 0.2, 0.15),
+#                        bounds = ((0,-np.inf,0),(0.1,np.inf,0.3)))
+
+pars, pcov = curve_fit(T1_fitting, x, y, 
+                        p0 = (0.01, -0.2, 0.15),
+                        bounds = ((0,-np.inf,-1),(0.1,np.inf,1)))
+
+
+#%%
+'''
+fitting_point = 40
+
+x = np.linspace(0, 1.5e-6, 51)[:fitting_point]
+y = ds.probability_data[:,i,:fitting_point].mean(axis = 0)
+
+pars, pcov = curve_fit(T2_star_fitting, x, y,
+                       p0 = (0.8, 0.3, 3e6, 0, 0.5e-6),
+                       bounds = ((0.25,-np.inf,1e6,-np.inf,0),(2,np.inf,10e6,np.inf,5)))
+
+'''
 #%%
 
 pt = MatPlot()
 pt.add(x = x, y = T1_fitting(x,pars[0],pars[1],pars[2]))
-pt.add(x = x,y = ds.probability_data[:,i,:fitting_point].mean(axis = 0))
-print('T1 is: ', pars[0], 'ms')
+#pt.add(x = x, y = T2_star_fitting(x,pars[0],pars[1],pars[2],pars[3],pars[4]))
+pt.add(x = x,y = ds.probability_data[:,i,start_point:start_point+fitting_point].mean(axis = 0))
+print('T1 is: ', pars[0]*1000, 'ms')
+pt1 = MatPlot()
+pt1.add_to_plot(x = x, y = T1_fitting(x,pars[0],pars[1],pars[2]),fmt='*')
+#%%
+
+

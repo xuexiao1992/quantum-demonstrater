@@ -57,9 +57,9 @@ mZ9 = 1/np.sqrt(2)*np.array([[1, 0,],
 
 
 CZ = np.array([[1, 0, 0, 0],
-               [0, -1, 0, 0],
+               [0, 1, 0, 0],
                [0, 0, 1, 0],
-               [0, 0, 0, 1]], dtype=complex)
+               [0, 0, 0, -1]], dtype=complex)
 
 gates = {
         'I': I,

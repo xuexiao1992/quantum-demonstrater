@@ -10,9 +10,44 @@ import numpy as np
 from scipy import constants as C
 from qcodes.instrument.base import Instrument
 from pycqed.measurement.waveform_control.element import Element
-from pycqed.measurement.waveform_control.pulse import CosPulse, SquarePulse, LinearPulse
+from pycqed.measurement.waveform_control.pulse import Pulse, CosPulse, SquarePulse, LinearPulse#, AdiabaticCosPulse
 import math
 from qubit import Qubit
+
+#%%
+
+
+class AdiabaticCosPulse(Pulse):
+
+    def __init__(self, channel, name='adiabatic cos pulse', **kw):
+        Pulse.__init__(self, name)
+
+        self.channel = channel  # this is just for convenience, internally
+        self.channels.append(channel)
+        # this is the part the sequencer element wants to communicate with
+        self.start_frequency = kw.pop('start_frequency', 1e6)
+        self.end_frequency = kw.pop('end_frequency', 1e6)
+        self.amplitude = kw.pop('amplitude', 0.)
+        self.length = kw.pop('length', 0.)
+        self.phase = kw.pop('phase', 0.)
+
+    def __call__(self, **kw):
+        self.start_frequency = kw.pop('start_frequency', self.start_frequency)
+        self.end_frequency = kw.pop('end_frequency', self.end_frequency)
+        self.amplitude = kw.pop('amplitude', self.amplitude)
+        self.length = kw.pop('length', self.length)
+        self.phase = kw.pop('phase', self.phase)
+
+        return self
+
+    def chan_wf(self, chan, tvals):
+        self.frequency = np.linspace(self.start_frequency, self.end_frequency, len(tvals))
+        return self.amplitude * np.cos(2 * np.pi *
+                                       (self.frequency * tvals +
+                                        self.phase / 360.))
+
+
+
 
 #%% gate
 
@@ -115,6 +150,30 @@ class Single_Qubit_Gate(Gate):
             microwave_pulse_Q = CosPulse(channel = self.channel_Q, name = '%s_microwave_pulse_Q'%self.name, frequency = freq,
                                          amplitude = pulse_amp,
                                          length = pulse_length, phase = phase-90)
+            
+        '''
+        adiabatic sweep for test
+        '''
+        if type(self.frequency_shift) is list :
+            phase = self.IQ_phase-self.refphase + self.axis_angle
+            freq = self.frequency_shift
+            start_freq = self.frequency_shift[0]
+            end_freq = self.frequency_shift[1]
+            
+            microwave_pulse_I = AdiabaticCosPulse(channel = self.channel_I, name = '%s_microwave_pulse_I'%self.name, 
+                                                  start_frequency = start_freq, end_frequency = end_freq,
+                                                  amplitude = pulse_amp,
+                                                  length = pulse_length, phase = phase)
+
+            microwave_pulse_Q = AdiabaticCosPulse(channel = self.channel_Q, name = '%s_microwave_pulse_Q'%self.name,
+                                                  start_frequency = start_freq, end_frequency = end_freq,
+                                                  amplitude = pulse_amp,
+                                                  length = pulse_length, phase = phase-90)
+        
+        
+        
+        '''
+        '''
 
 
         self.pulses[0] = {

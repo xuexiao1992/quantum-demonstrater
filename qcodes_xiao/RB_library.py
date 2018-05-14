@@ -31,8 +31,8 @@ class RB_Martinis(Manipulation):
         self.clifford_number = kw.pop('clifford_number', 0)
         self.sequence_number = kw.pop('sequence_number', 0)
         self.detuning_time = kw.pop('detuning_time', 80e-9)
-        self.phase_1 = kw.pop('phase_1', 175)
-        self.phase_2 = kw.pop('phase_2', 175)
+        self.phase_1 = kw.pop('phase_1', 178)
+        self.phase_2 = kw.pop('phase_2', 302)
         self.Pi_amplitude = kw.pop('Pi_amplitude', 0)
 
     def __call__(self, **kw):
@@ -128,7 +128,7 @@ class RB_Martinis(Manipulation):
                     
                     self.add_CPhase(name = name+'1', refgate = refgate, waiting_time = 10e-9,
                                     control_qubit = self.qubits[0], target_qubit = self.qubits[1],
-                                    amplitude_control = 30*0.5*-0.0262, amplitude_target = 30*0.5*0.04, 
+                                    amplitude_control = 30*0.5*-0.0267, amplitude_target = 30*0.5*0.02, 
                                     length = self.detuning_time)
                     self.add_Z(name='Z1_Q1', qubit = self.qubits[0], degree = self.phase_1)
                     self.add_Z(name='Z1_Q2', qubit = self.qubits[1], degree = self.phase_2)

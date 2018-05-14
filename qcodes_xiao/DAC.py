@@ -24,6 +24,9 @@ from qcodes.instrument_drivers.Spectrum import pyspcm
 
 
 from data_set_plot import digitizer_param, convert_to_ordered_data, convert_to_01_state, convert_to_probability, set_digitizer, seperate_data, average_probability
+
+import time
+
 #%%
 
 #station = stationF006.initialize()
@@ -96,6 +99,7 @@ def Counts(x):
 
 Count = StandardParameter(name = 'Count', set_cmd = Counts)
 
+
 #%%
 #
 #Sweep_Value1 = T[-16:-24:0.1]
@@ -133,43 +137,141 @@ for normal experiemnt:
 
 '''
 ##
-#Sweep_Value1 = T[-5:-25:0.5]
-#Sweep_Value2 = LP[-340:-360:0.5]
+from qcodes.instrument.parameter import ArrayParameter, StandardParameter
+
+Count = StandardParameter(name = 'Count', set_cmd = Counts)
+
 Sweep_Value1 = T[0:-75:1]
 Sweep_Value2 = LP[-320:-400:1]
 
-#Sweep_Value1 = T[20:-100:1]
-#Sweep_Value2 = LP[-100:-400:1]
+Sweep_Value1 = T[20:-40:1]
+Sweep_Value2 = LP[-820:-900:1]
+
+
+Sweep_Value1 = T[25:0:1]
+Sweep_Value2 = LP[-660:-760:1]
+
+
+#Sweep_Value1 = T[15:-25:1]
+#Sweep_Value2 = LP[-500:-580:1]
+
+Sweep_Value1 = T[40:-100:2]
+Sweep_Value2 = LP[-500:-700:2]
+
+Sweep_Value1 = T[-20:-80:2]
+Sweep_Value2 = LP[-700:-840:2]
+#
+Sweep_Value1 = T[-0:-120:2]
+Sweep_Value2 = LP[-650:-900:2]
+
+#Sweep_Value1 = T[-0:-70:1.5]
+#Sweep_Value2 = LP[-530:-620:1.5]
+#
+Sweep_Value1 = T[-50:-100:1.5]
+Sweep_Value2 = LP[-660:-740:1.5]
+
+Sweep_Value1 = T[-40:-90:1.5]
+Sweep_Value2 = LP[-630:-740:1.5]
+
+##
+#Sweep_Value1 = T[-60:-110:1.5]
+#Sweep_Value2 = LP[-720:-790:1.5]
+
+#Sweep_Value1 = T[-20:-130:2]
+#Sweep_Value2 = LP[-670:-840:2]
+
+#Sweep_Value1 = T[-20:-60:0.5]
+#Sweep_Value2 = LP[-570:-610:0.5]
+
+#Sweep_Value1 = T[0:-100:2]
+#Sweep_Value2 = LP[-650:-850:2]
+
+
+#
+#Sweep_Value1 = T[-20:-120:2.5]
+#Sweep_Value2 = LP[-650:-850:2.5]
+##
+##
+#Sweep_Value1 = T[-30:-80:1.5]
+#Sweep_Value2 = LP[-650:-750:1.5]
+
+
+#Sweep_Value1 = T[-80:-120:1]
+#Sweep_Value2 = LP[-460:-540:1]
+
+
+
+#Sweep_Value1 = T[40:-60:2]
+#Sweep_Value2 = LP[-300:-600:2]
+
+#Sweep_Value1 = T[-15:-40:0.5]
+#Sweep_Value2 = LP[-760:-810:0.5]
+
+#Sweep_Value1 = T[100:-150:2]
+#Sweep_Value2 = LP[-300:-900:2]
 
 #Sweep_Value1 = T[-20:-80:1]
 #Sweep_Value1 = T[-80:-20:1]
 #Sweep_Value2 = LP[-110:-260:1]
 
 
-#Sweep_Value1 = T[-40:-50:0.5]
-#Sweep_Value2 = LP[-210:-230:0.5]
+#Sweep_Value1 = G.LD[-200:-280:1]
+#Sweep_Value2 = LP[-480:-560:1]
 
-Sweep_Value1 = T[-10:-30:0.2]
-Sweep_Value2 = LP[-340:-360:0.2]
+#Sweep_Value1 = T[20:-20:1]
+#Sweep_Value2 = G.B[-280:-350:1]
 
-#Sweep_Value1 = RP[-1025:-950:1]
-#Sweep_Value2 = T[-25:-10:1]
+#Sweep_Value1 = T[-0:-40:1]
+#Sweep_Value2 = LP[-330:-370:1]
+
+#Sweep_Value1 = T[-5:-25:0.2]
+#Sweep_Value2 = LP[-330:-350:0.2]
+
+#Sweep_Value1 = G.RD[-550:-650:1]
+#Sweep_Value2 = LP[-400:-500:1]
 ##
-#Sweep_Value1 = SQD1[0:-100:1]
-#Sweep_Value2 = SQD3[-200:-300:1]
+#Sweep_Value1 = SQD1[0:-300:2]
+#Sweep_Value2 = SQD3[-100:-400:2]
+
+#Sweep_Value1 = SQD1[-0:-250:3]
+#Sweep_Value2 = SQD3[-500:-700:3]
+
+
+
+#Sweep_Value1 = G.LD[-150:-350:3]
+#Sweep_Value2 = SQD3[-500:-700:3]
+
+#Sweep_Value1 = Count[0:100:0.5]
+
 #
 ##
 LOOP = Loop(sweep_values = Sweep_Value2).loop(sweep_values = Sweep_Value1).each(AMP)
 
 #LOOP = Loop(sweep_values = Sweep_Value1).each(DIG)
 
-NewIO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents\\RB_experiment')
+#LOOP = Loop(sweep_values = Sweep_Value1).each(AMP)
+
+
+#Sweep_Value3 = Count[0:4000:1]
+#LOOP = Loop(sweep_values = Sweep_Value3, delay = 0.5).each(AMP)
+
+
+NewIO = DiskIO(base_location = 'D:\\Data\\RB_experiment')
 
 
 ## get_data_set should contain parameter like io, location, formatter and others
 data = LOOP.get_data_set(location=None, loc_record = {'name':'DAC', 'label':'V_sweep'}, 
                        io = NewIO,)
 print('loop.data_set: %s' % LOOP.data_set)
+'''
+plot = QtPlot()
+plot.add(data.keithley_amplitude, figsize=(1200, 500))
+_ = LOOP.with_bg_task(plot.update, plot.save).run()
+'''
+
+
+
+
 '''
 pt = MatPlot()
 pt.add(x = data.gates_T_set, y = data.gates_LP_set, z = data.keithley_amplitude)
@@ -207,3 +309,27 @@ G.VI2(120)
 G.acQD(77)
 G.acres(160)
 '''
+
+#%%
+
+def read_AMP(t_total):
+    
+    t0 = time.time()
+    X = np.linspace(0,t_total, t_total+1)
+    Y = np.zeros((t_total+1,), dtype = np.float32)
+#    Y = np.array
+    plot = MatPlot(x = X, y = Y)
+#    plot = QtPlot()
+#    plot.add(x = X, y = Y)
+    for i in range(t_total):
+        
+        t = time.time()
+        
+        if (t-t0) == i:
+            Y[i] = AMP()
+            plot.update()
+    
+    return Y
+    
+    
+    
