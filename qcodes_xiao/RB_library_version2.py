@@ -178,39 +178,40 @@ class RB_all(Manipulation):
                 'qubit_2': clifford_gates2
                 }
 
-        axis = {'Xp': [1,0,0],
-                'X9': [1,0,0],
-                'mXp': [-1,0,0],
-                'mX9': [-1,0,0],
-                'Yp': [0,1,0],
-                'Y9': [0,1,0],
-                'mYp': [0,-1,0],
-                'mY9': [0,-1,0]
-                }
+        rotating_axis = {'Xp': [1,0,0],
+                         'X9': [1,0,0],
+                         'mXp': [-1,0,0],
+                         'mX9': [-1,0,0],
+                         'Yp': [0,1,0],
+                         'Y9': [0,1,0],
+                         'mYp': [0,-1,0],
+                         'mY9': [0,-1,0],
+                         'I': [1,0,0]
+                         }
         
-        length = {'Xp': qubit_1.Pi_pulse_length,
-                  'X9': qubit_1.halfPi_pulse_length,
-                  'mXp': qubit_1.Pi_pulse_length,
-                  'mX9': qubit_1.halfPi_pulse_length,
-                  'Yp': qubit_1.Pi_pulse_length,
-                  'Y9': qubit_1.halfPi_pulse_length,
-                  'mYp': qubit_1.Pi_pulse_length,
-                  'mY9': qubit_1.halfPi_pulse_length,
-                  'I': 0,# if not self.align else 10e-9,
-                  'None': 0
-                  }
+        gate_length = {'Xp': qubit_1.Pi_pulse_length,
+                       'X9': qubit_1.halfPi_pulse_length,
+                       'mXp': qubit_1.Pi_pulse_length,
+                       'mX9': qubit_1.halfPi_pulse_length,
+                       'Yp': qubit_1.Pi_pulse_length,
+                       'Y9': qubit_1.halfPi_pulse_length,
+                       'mYp': qubit_1.Pi_pulse_length,
+                       'mY9': qubit_1.halfPi_pulse_length,
+                       'I': 5e-9,# if not self.align else 10e-9,
+                       'None': 0
+                       }
 
         gate_name = 'prepare_state'
         
         length_total1 = 0
         length_total2 = 0
 
-        for i in range(len(clifford_gates)):
+        for i in range(len(clifford_gates1)):
             
             print('go to next clifford : ', i)
             
-            length_clifford1 = sum([length[gate] for gate in clifford_gates1[i]])
-            length_clifford2 = sum([length[gate] for gate in clifford_gates2[i]])
+            length_clifford1 = sum([gate_length[gate] for gate in clifford_gates1[i]])
+            length_clifford2 = sum([gate_length[gate] for gate in clifford_gates2[i]])
             
             length_total1 += length_clifford1
             length_total2 += length_clifford2
@@ -224,27 +225,33 @@ class RB_all(Manipulation):
                     gate = clifford[j]
                     
                     if gate == 'I':
-                        if length['I'] == 0:
+                        if gate_length['I'] == 0:
                             continue
-                        amp = self.offresonance_amplitude if qubit == 'qubit_1' else 0
+                        amp = self.off_resonance_amplitude if qubit == 'qubit_1' else 0
                         freq_shift = -30e6 if qubit == 'qubit_1' else 0
                     else:
                         amp = 1
+                        freq_shift = 0
                     
-                    axis = axis[gate]
-                    length = length[gate]
+                    axis = rotating_axis[gate]
+                    length = gate_length[gate]
                     
                     last_gate = gate_name
                     
                     if i+j == 0:
-                        refgate = None if qubit == 'qubit_1' else last_gate
-                        refpoint = 'start' if qubit == 'qubit_2' else None
-                    else:
-                        refgate = last_gate+qubit
+                        refgate = None if qubit == 'qubit_1' else 'C11'+clifford_gates1[0][0]+'qubit_1'
+                        refpoint = 'start' if qubit == 'qubit_2' else 'end'
+                    elif j == 0:
+                        refgate = 'C%d%d'%(i,j+1)+clifford_gates[qubit][i-1][j]+qubit
                         refpoint = 'end'
+                    elif i == 0:
+                        refgate = 'C%d%d'%(i+1,j)+clifford_gates[qubit][i][j-1]+qubit
+                        refpoint = 'end'
+                        
                         
                     gate_name = 'C%d%d'%((i+1),(j+1))+gate
                     element_name = gate_name + qubit
+                    print(element_name)
                     
                     self.add_single_qubit_gate(name = element_name, refgate = refgate, refpoint = refpoint,
                                                qubit = qubit_obj[qubit], axis = axis,
@@ -257,14 +264,19 @@ class RB_all(Manipulation):
                                                length = length_clifford1-length_clifford2,)
 
                 elif length_clifford2 > length_clifford1:
-                    self.add_single_qubit_gate(name = 'off_resonance', refgate = last_gate+'qubit_1', refpoint = 'end',
+                    self.add_single_qubit_gate(name = 'off_resonance', refgate = 'C%d%d'%(i+1,j+1)+clifford_gates1[-1][-1]+'qubit_1', 
+                                               refpoint = 'end',
                                                qubit = qubit_1, axis = [1,0,0],
                                                amplitude = self.off_resonance_amplitude, 
                                                length = length_clifford2-length_clifford1, frequency_shift = -30e6)
         
         
+        ii = len(clifford_gates1)
+        jj = len(clifford_gates1[-1])
+        
         if length_total1 < length_total2 and not self.align:
-            self.add_single_qubit_gate(name = 'off_resonance', refgate = last_gate+'qubit_1', refpoint = 'end',
+            self.add_single_qubit_gate(name = 'off_resonance', refgate = 'C%d%d'%(ii,jj)+clifford_gates1[-1][-1]+'qubit_1', 
+                                       refpoint = 'end',
                                        qubit = qubit_1, axis = [1,0,0],
                                        amplitude = self.off_resonance_amplitude, 
                                        length = length_total2-length_total1, frequency_shift = -30e6)
