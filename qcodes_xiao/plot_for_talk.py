@@ -37,9 +37,20 @@ from qcodes.instrument_drivers.Spectrum import pyspcm
 import time
 from scipy.optimize import curve_fit
 
+
+import matplotlib as mpl
+mpl.rcParams['axes.labelsize'] = 20
+mpl.rcParams['figure.autolayout'] = True
+mpl.rcParams['font.family'] = 'sans-serif'
+mpl.rcParams['font.sans-serif'] = 'Helvetica'
+mpl.rcParams['text.usetex'] = False
+mpl.rcParams['font.size'] = 15
+
 #%%
 
 IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents\\RB_experiment')
+IO = DiskIO(base_location = 'D:\\Data\\RB_experiment')
+
 formatter = HDF5FormatMetadata()
 
 
@@ -49,9 +60,15 @@ location = '2017-11-04/11-06-25/RB_experimentAllXY_sequence'  # slow decay
 
 location = '2017-11-06/13-12-43/RB_experimentAllXY_sequence'  # with fast decay
 
-location = '2017-11-06/11-53-47/RB_experimentAllXY_sequence'  # with fast decay
+#location = '2017-11-06/11-53-47/RB_experimentAllXY_sequence'  # with fast decay
 
-ds = load_data(location = location, io = IO, formatter = formatter)
+
+location_f1 = '2017-10-30/14-00-19/RB_experimentAllXY_sequence'  # resonance
+
+location_f2 = '2017-10-30/15-28-55/RB_experimentAllXY_sequence'  # resonance 2MHz
+
+
+ds = load_data(location = location_f2, io = IO, formatter = formatter)
 
 
 
@@ -67,6 +84,13 @@ def Gaussian_Sin(t, A, F, P, B, T):
 def Exp_Sin(t, A, F, P, B, T):
     
     return A*(np.exp(-(t/T)))*np.sin(2*3.14*F*t+P)+B
+
+
+def Func_Gaussian(x, a, x0, sigma, offset):
+#    x_new = x/1e6
+#    sigma = 1
+    return a*np.exp(-(x-x0)**2/(2*sigma**2))+offset
+
 #%%
 
 '''
@@ -78,16 +102,32 @@ x = np.linspace(0,3e-6,61)
 y = ds.probability_data[:,0,start_point:].mean(axis = 0)
 
 
-
+#%%
+'''
+for resonance
+'''
+start_point = 6
+fitting_point = 11 
+x = np.linspace(-1,1,31)
+x1 = x[start_point:start_point+fitting_point]
+y = ds.probability_data[:,0,:].mean(axis = 0)
+y1 = y[start_point:start_point+fitting_point]
 #%%
 
+pars, pcov = curve_fit(Func_Gaussian, x1, y1,
+                       p0 = (0.5, 0, 0.2, 0.2),
+                       bounds = ((0.3, -1, 0.1,0.1),(0.8, 1, 0.8,0.5)))
+    
+y_fit = Func_Gaussian(x1, pars[0], pars[1], pars[2], pars[3])
 
+
+#%%
 Fit = 'G'
 
 if Fit == 'N':
     pars, pcov = curve_fit(Func_Sin, x, y,
-                           p0 = (0.3, 1.5e6, 0, 0.3),
-                           bounds = ((0.2, 1.1e6, -np.pi, -1),(0.5, 2.5e6, np.pi, 1)))
+                           p0 = (0.5, 1.5e6, 0.1, 0.4),
+                           bounds = ((0.2, 1.1e6, -np.pi, -1),(0.8, 2.5e6, np.pi, 1)))
     
     y_fit = Func_Sin(x, pars[0], pars[1], pars[2], pars[3])
 
@@ -106,12 +146,23 @@ elif Fit == 'E':
     
     y_fit = Exp_Sin(x, pars[0], pars[1], pars[2], pars[3], pars[4])
 
+#%% fit resonance
+    
+pt1 = MatPlot()
 
+pt1.add(x = x, y = y, fmt='bs', xlabel = 'Frequecny shift', ylabel = '$P_{|1>}$', xunit = 'MHz', yunit = '%')
+pt1.add(x = x1, y = y_fit, fmt = 'r--',)# xlabel = 'Clifford Numbers', ylabel = 'probability |1>')#fmt='*')
+
+    
+    
+#%%  fit Rabi
+
+    
 pt1 = MatPlot()
 #pt1.add_to_plot(x = x, y = y, fmt='bs')
 #pt1.add_to_plot(x = x, y = y_fit, fmt = 'r--')#fmt='*')
 
-pt1.add(x = x*1e6, y = y, fmt='bs', xlabel = 'Burst Time', ylabel = 'Probability |1>', xunit = 'us', yunit = '%')
+pt1.add(x = x*1e6, y = y, fmt='bs', xlabel = 'Burst Time', ylabel = '$P_{|1>}$', xunit = 'us', yunit = '%')
 pt1.add(x = x*1e6, y = y_fit, fmt = 'r--',)# xlabel = 'Clifford Numbers', ylabel = 'probability |1>')#fmt='*')
 
 

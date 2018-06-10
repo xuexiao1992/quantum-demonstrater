@@ -143,7 +143,7 @@ class Calibration(Experiment):
         
         return frequency
     
-    def set_calibration(self,)
+#    def set_calibration(self,)
     def calibrate_by_Ramsey(self,):
         
         

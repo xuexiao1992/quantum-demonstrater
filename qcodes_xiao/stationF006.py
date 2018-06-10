@@ -5,8 +5,8 @@ import logging
 
 #C:\Users\LocalAdmin\AppData\Local\conda\conda\envs\QCoDeS\Lib\site-packages\qtt-0.1.3-py3.6.egg\qtt
 
-import sys
-sys.path.append('C:\\Users\\LocalAdmin\\AppData\\Local\\conda\\conda\\envs\\QCoDeS\\Lib\\site-packages\\qtt-0.1.3-py3.6.egg')
+#import sys
+#sys.path.append('C:\\Users\\LocalAdmin\\AppData\\Local\\conda\\conda\\envs\\QCoDeS\\Lib\\site-packages\\qtt-0.1.3-py3.6.egg')
 #
 
 
@@ -73,6 +73,7 @@ gate_map = {
 
 }
 #
+
 def twodotboundaries():
     global ivvi1
     gate_boundaries = dict({
@@ -107,6 +108,7 @@ def twodotboundaries():
             gate_boundaries[k] =bb
     return gate_boundaries
 '''
+
 def twodotboundaries():
     global ivvi1
     gate_boundaries = dict({
@@ -128,9 +130,9 @@ def twodotboundaries():
             'LD': (-1500, 1500),
             'B': (-1500, 1500),
             
-            'SQD1': (-2000, 1500),
-            'SQD2': (-1500, 1900),
-            'SQD3': (-1500, 1500),
+            'SQD1': (-2000, 2000),
+            'SQD2': (-2000, 2000),
+            'SQD3': (-2000, 2000),
             'RQPC': (-1500, 1500),
         })
 
@@ -165,7 +167,7 @@ mwindows=None
 
 location_matfiles = 'D:/Measurements/Apr72017UNSW-19th&20th_Devices_NewBatch/data/BOTTOM/Matlab'
 
-datadir = 'D:\\Data\\RB_experiment'
+datadir = 'K:\\ns\\qt\\spin-qubits\\data\\b059_data\\2018 data\\Data\\'
 qcodes.DataSet.default_io = qcodes.DiskIO(datadir)
 
 #%%
@@ -276,7 +278,7 @@ def initialize(reinit=False, server_name=None):
     # Loading AWG
     
     logging.info('LD400: load AWG driver')
-    awg2 = AWG5014.Tektronix_AWG5014(name='awg2', address='TCPIP0::192.168.0.7::inst0::INSTR', server_name=server_name)
+    awg2 = AWG5014.Tektronix_AWG5014(name='awg2', address='TCPIP0::192.168.0.4::inst0::INSTR', server_name=server_name)
     print('awg2 loaded')
     
     logging.info('LD400: load AWG driver')

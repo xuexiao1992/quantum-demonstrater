@@ -39,6 +39,8 @@ from qcodes.plots.pyqtgraph import QtPlot
 
 from data_set_plot import convert_to_ordered_data, convert_to_01_state, convert_to_probability, set_digitizer, seperate_data, average_probability
 
+from shutil import copyfile
+
 #%%
 
 def Func_Sin(x,amp,omega,phase,offset):
@@ -121,9 +123,14 @@ class Experiment:
         
         self.write_period = None
         
-        self.data_IO = DiskIO(base_location = 'D:\\Data\\'+self.name)
+        self.base_location = 'K:\\ns\\qt\\spin-qubits\\data\\b059_data\\2018 data\\Data\\'+self.name
+        
+        self.data_IO = DiskIO(self.base_location)
         self.data_location = time.strftime("%Y-%m-%d/%H-%M-%S/") + name + label
         self.calibration_data_location = self.data_location+'_calibration'
+        
+        
+        self.full_path = self.base_location + '\\' + self.data_location
         
         self.data_set = None
         
@@ -1303,10 +1310,10 @@ class Experiment:
 #            self.vsg.status('Off')
 #            self.vsg2.status('Off')
             
-#            
+#               
 #                    
-                    
-                    
+            copyfile('C:\\Github\\quantum-demonstrater\\qcodes_xiao\\experiment_version2.py' , self.full_path+'\\experiment_version2.py')
+            copyfile('C:\\Github\\quantum-demonstrater\\qcodes_xiao\\manipulation_library.py' , self.full_path+'\\manipulation_library.py')   
             
 #            
 #            self.calculate_average_data()

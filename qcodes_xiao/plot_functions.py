@@ -11,8 +11,7 @@ Created on Wed Oct 18 10:41:38 2017
 
 @author: twatson
 """
-import sys
-sys.path.append('C:\\Users\\LocalAdmin\\AppData\\Local\\conda\\conda\\envs\\QCoDeS\\Lib\\site-packages\\qtt-0.1.3-py3.6.egg')
+
 import qtt
 import numpy as np
 from scipy.optimize import curve_fit
@@ -294,8 +293,10 @@ class Index(object):
         self.fig =fig
         
     def ppt(self, event):
-        addPPTslide(txt = self.data_set.location, fig=self.fig, notes=qtt.tools.reshape_metadata(self.data_set, printformat='fancy'))
-
+        addPPTslide(title = self.data_set.location, fig=self.fig, notes=qtt.tools.reshape_metadata(self.data_set, printformat='fancy'))
+#        addPPTslide(fig=self.fig, notes=qtt.tools.reshape_metadata(self.data_set, printformat='fancy'))
+#        addPPTslide(fig=self.fig)
+        print('test')
 
 
 

@@ -170,8 +170,8 @@ Sweep_Value2 = LP[-650:-900:2]
 Sweep_Value1 = T[-50:-100:1.5]
 Sweep_Value2 = LP[-660:-740:1.5]
 
-Sweep_Value1 = T[-40:-90:1.5]
-Sweep_Value2 = LP[-630:-740:1.5]
+Sweep_Value1 = T[-30:-80:1]
+Sweep_Value2 = LP[-650:-720:1]
 
 ##
 #Sweep_Value1 = T[-60:-110:1.5]
@@ -233,9 +233,9 @@ Sweep_Value2 = LP[-630:-740:1.5]
 #Sweep_Value1 = SQD1[0:-300:2]
 #Sweep_Value2 = SQD3[-100:-400:2]
 
-#Sweep_Value1 = SQD1[-0:-250:3]
-#Sweep_Value2 = SQD3[-500:-700:3]
-
+#
+#Sweep_Value1 = SQD1[-0:-100:2]
+#Sweep_Value2 = SQD3[-300:-500:2]
 
 
 #Sweep_Value1 = G.LD[-150:-350:3]
@@ -245,6 +245,9 @@ Sweep_Value2 = LP[-630:-740:1.5]
 
 #
 ##
+
+
+
 LOOP = Loop(sweep_values = Sweep_Value2).loop(sweep_values = Sweep_Value1).each(AMP)
 
 #LOOP = Loop(sweep_values = Sweep_Value1).each(DIG)
@@ -257,7 +260,7 @@ LOOP = Loop(sweep_values = Sweep_Value2).loop(sweep_values = Sweep_Value1).each(
 
 
 NewIO = DiskIO(base_location = 'D:\\Data\\RB_experiment')
-
+NewIO = DiskIO(base_location = 'K:\\ns\\qt\\spin-qubits\\data\\b059_data\\2018 data\\Data\\RB_experiment')
 
 ## get_data_set should contain parameter like io, location, formatter and others
 data = LOOP.get_data_set(location=None, loc_record = {'name':'DAC', 'label':'V_sweep'}, 

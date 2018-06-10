@@ -79,6 +79,9 @@ class Manipulation(Element):
                                               IQ_phase = IQ_phase)
         
         if axis[0]!=0 or axis[1]!=0:
+            if length == 0:
+                print('Idle gate added')
+                return True
             if axis[2]!=0:
                 raise ValueError('should be either in X-Y plane or Z axis')
             else:

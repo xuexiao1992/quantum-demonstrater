@@ -968,7 +968,89 @@ class MeasureTminus(Manipulation):
 
         return self
 
+class Hahn(Manipulation):
+    def __init__(self, name, pulsar, **kw):
 
+        super().__init__(name, pulsar, **kw)
+        self.refphase = {}
+        self.qubit = kw.pop('qubit', 'qubit_2')
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = None
+#        self.detuning_amplitude = kw.pop('detuning_amplitude', 30*0.5*-0.0272)
+#        self.detuning_amplitude2 = kw.pop('detuning_amplitude2', 30*0.5*0.02)
+        self.Pi_amplitude = kw.pop('Pi_amplitude', 0)
+        self.frequency_shift = kw.pop('frequency_shift', 0)
+        self.wait_time = kw.pop('wait_time', 80e-9)
+#        self.phase = kw.pop('phase', 0)
+        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude',1.2)
+        self.target_qubit = kw.pop('target_qubit', 'qubit_1')
+
+    def __call__(self, **kw):
+        self.name = kw.pop('name', self.name)
+        self.qubits = kw.pop('qubits', self.qubits)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = kw.pop('pulsar', self.pulsar)
+#        self.detuning_amplitude = kw.pop('detuning_amplitude', self.detuning_amplitude)
+#        self.detuning_amplitude2 = kw.pop('detuning_amplitude2', self.detuning_amplitude2)
+        self.Pi_amplitude = kw.pop('Pi_amplitude', self.Pi_amplitude)
+        self.frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
+        self.wait_time = kw.pop('wait_time', self.wait_time)
+#        self.phase = kw.pop('phase', self.phase)
+        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude',self.off_resonance_amplitude)
+        self.target_qubit = kw.pop('target_qubit', self.target_qubit)
+        return self
+
+    def make_circuit(self, **kw):
+        
+#        phase = kw.pop('phase', self.phase)
+        wait_time = kw.pop('wait_time', self.wait_time)
+#        detuning_amplitude = kw.get('detuning_amplitude', self.detuning_amplitude)
+#        detuning_amplitude2 = kw.get('detuning_amplitude2', self.detuning_amplitude2)
+        Pi_amplitude = kw.get('Pi_amplitude', self.Pi_amplitude)
+        frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
+        off_resonance_amplitude = kw.pop('off_resonance_amplitude',self.off_resonance_amplitude)
+        target_qubit = kw.pop('target_qubit', self.target_qubit)
+        control_qubit = 'qubit_1' if target_qubit == 'qubit_2' else 'qubit_2'
+        C = int(control_qubit[-1])-1
+        T = int(target_qubit[-1])-1
+        qubit_1 = Instrument.find_instrument('qubit_1')
+        qubit_2 = Instrument.find_instrument('qubit_2')
+        self.qubits[0] = qubit_1
+        self.qubits[1] = qubit_2
+        
+        # Pi/2 on target
+        self.add_X(name='X1_T', qubit = self.qubits[T],  
+                   amplitude = 1, length = self.qubits[1].halfPi_pulse_length, 
+                   frequency_shift = frequency_shift,)
+        
+        # Wait for time wait_time/2
+        self.add_CPhase(name = 'wait1', refgate = 'X1_T',
+                        control_qubit = self.qubits[C], target_qubit = self.qubits[T],
+                        amplitude_control = 0, amplitude_target = 0,
+                        length = wait_time/2)
+        
+        # Decoulping Pi on target
+        self.add_single_qubit_gate(name='X_Pi_decouple_T', refgate = 'wait1',
+                               qubit = self.qubits[T], amplitude = 1, 
+                               length = self.qubits[T].Pi_pulse_length, frequency_shift = 0)
+        
+        # Wait for time wait_time/2
+        self.add_CPhase(name = 'wait2', refgate = 'X_Pi_decouple_T',
+                        control_qubit = self.qubits[C], target_qubit = self.qubits[T],
+                        amplitude_control = 0, amplitude_target = 0,
+                        length = wait_time/2)
+        
+         # Pi/2 on target
+        self.add_X(name='X2_T', refgate = 'wait2', qubit = self.qubits[T],  
+                   amplitude = 1, length = self.qubits[1].halfPi_pulse_length, 
+                   frequency_shift = frequency_shift,)
+
+        return self
 
 class DCZ(Manipulation):
     def __init__(self, name, pulsar, **kw):
@@ -981,8 +1063,13 @@ class DCZ(Manipulation):
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = None
+        
         self.detuning_amplitude = kw.pop('detuning_amplitude', 30*0.5*-0.0272)
         self.detuning_amplitude2 = kw.pop('detuning_amplitude2', 30*0.5*0.02)
+        
+        self.detuning_amplitude3 = kw.pop('detuning_amplitude3', self.detuning_amplitude)
+        self.detuning_amplitude4 = kw.pop('detuning_amplitude4', self.detuning_amplitude2)
+        
         self.Pi_amplitude = kw.pop('Pi_amplitude', 0)
         self.frequency_shift = kw.pop('frequency_shift', 0)
         self.detuning_time = kw.pop('detuning_time', 80e-9)
@@ -997,8 +1084,12 @@ class DCZ(Manipulation):
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = kw.pop('pulsar', self.pulsar)
+        
         self.detuning_amplitude = kw.pop('detuning_amplitude', self.detuning_amplitude)
         self.detuning_amplitude2 = kw.pop('detuning_amplitude2', self.detuning_amplitude2)
+        self.detuning_amplitude3 = kw.pop('detuning_amplitude3', self.detuning_amplitude3)
+        self.detuning_amplitude4 = kw.pop('detuning_amplitude4', self.detuning_amplitude4)
+        
         self.Pi_amplitude = kw.pop('Pi_amplitude', self.Pi_amplitude)
         self.frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
         self.detuning_time = kw.pop('detuning_time', self.detuning_time)
@@ -1011,8 +1102,18 @@ class DCZ(Manipulation):
         
         phase = kw.pop('phase', self.phase)
         detuning_time = kw.pop('detuning_time', self.detuning_time)
+        
         detuning_amplitude = kw.get('detuning_amplitude', self.detuning_amplitude)
         detuning_amplitude2 = kw.get('detuning_amplitude2', self.detuning_amplitude2)
+        
+        detuning_amplitude3 = kw.pop('detuning_amplitude3', self.detuning_amplitude3)
+        detuning_amplitude4 = kw.pop('detuning_amplitude4', self.detuning_amplitude4)
+        
+        
+        detuning_amplitude2 = 30*0.5*0.02
+        detuning_amplitude4 = 30*0.5*-0.02
+        detuning_amplitude3 = detuning_amplitude + 30*0.5*0.08
+        
         Pi_amplitude = kw.get('Pi_amplitude', self.Pi_amplitude)
         frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
         off_resonance_amplitude = kw.pop('off_resonance_amplitude',self.off_resonance_amplitude)
@@ -1099,9 +1200,14 @@ class DCZ(Manipulation):
         self.add_CPhase(name = 'CP1_Q12', refgate = 'wait1',
                         control_qubit = self.qubits[0], target_qubit = self.qubits[1],
                         amplitude_control = detuning_amplitude, amplitude_target = detuning_amplitude2, 
-                        length = detuning_time/2)
+                        length = detuning_time/4)
         
-        self.add_CPhase(name = 'wait2', refgate = 'CP1_Q12',
+        self.add_CPhase(name = 'rCP1_Q12', refgate = 'CP1_Q12',
+                        control_qubit = self.qubits[0], target_qubit = self.qubits[1],
+                        amplitude_control = detuning_amplitude3, amplitude_target = detuning_amplitude4, 
+                        length = detuning_time/4)
+        
+        self.add_CPhase(name = 'wait2', refgate = 'rCP1_Q12',
                         control_qubit = self.qubits[0], target_qubit = self.qubits[1],
                         amplitude_control = 0, amplitude_target = 0, 
                         length = te)
@@ -1131,9 +1237,14 @@ class DCZ(Manipulation):
         self.add_CPhase(name = 'CP2_Q12', refgate = 'wait3',
                         control_qubit = self.qubits[0], target_qubit = self.qubits[1],
                         amplitude_control = detuning_amplitude, amplitude_target = detuning_amplitude2, 
-                        length = detuning_time/2)
+                        length = detuning_time/4)
         
-        self.add_CPhase(name = 'wait4', refgate = 'CP2_Q12',
+        self.add_CPhase(name = 'rCP2_Q12', refgate = 'CP2_Q12',
+                        control_qubit = self.qubits[0], target_qubit = self.qubits[1],
+                        amplitude_control = detuning_amplitude3, amplitude_target = detuning_amplitude4, 
+                        length = detuning_time/4)
+        
+        self.add_CPhase(name = 'wait4', refgate = 'rCP2_Q12',
                         control_qubit = self.qubits[0], target_qubit = self.qubits[1],
                         amplitude_control = 0, amplitude_target = 0, 
                         length = te)
