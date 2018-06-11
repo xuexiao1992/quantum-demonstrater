@@ -1112,7 +1112,7 @@ class DCZ(Manipulation):
         
         detuning_amplitude2 = 30*0.5*0.02
         detuning_amplitude4 = 30*0.5*-0.02
-        detuning_amplitude3 = detuning_amplitude + 30*0.5*0.08
+        detuning_amplitude3 = detuning_amplitude + 30*0.5*0.083
         
         Pi_amplitude = kw.get('Pi_amplitude', self.Pi_amplitude)
         frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
