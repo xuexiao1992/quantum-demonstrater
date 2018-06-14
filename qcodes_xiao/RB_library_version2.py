@@ -124,7 +124,7 @@ class RB_all(Manipulation):
         self.clifford_number = kw.pop('clifford_number', 0)
         self.sequence_number = kw.pop('sequence_number', 0)
         
-        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude', 0.95)
+        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude', 0.9)
         
         self.align = kw.pop('align', False)
 
@@ -161,6 +161,7 @@ class RB_all(Manipulation):
         self.off_resonance_amplitude = kw.pop('off_resonance_amplitude', self.off_resonance_amplitude)
         
         self.align = kw.pop('align', self.align)
+        self.align = False
         
 #        clifford_index = list((np.random.rand(self.clifford_number)*24).astype(int))
 
@@ -168,7 +169,7 @@ class RB_all(Manipulation):
 
         clifford_gates1 = clifford_sets1[self.sequence_number][self.clifford_number]
         
-        clifford_gates2 = clifford_sets2[self.sequence_number][self.clifford_number]
+        clifford_gates2 = clifford_sets1[self.sequence_number][self.clifford_number]
         
         print(clifford_gates1)
         print(clifford_gates2)
@@ -201,7 +202,8 @@ class RB_all(Manipulation):
                        'None': 0
                        }
 
-        gate_name = 'prepare_state'
+        gate_name_1 = 'prepare_state_1'
+        gate_name_2 = 'prepare_state_2'
         
         length_total1 = 0
         length_total2 = 0
@@ -236,24 +238,37 @@ class RB_all(Manipulation):
                     axis = rotating_axis[gate]
                     length = gate_length[gate]
                     
-                    last_gate = gate_name
+                    last_gate_1 = gate_name_1
+                    last_gate_2 = gate_name_2
                     
                     if i+j == 0:
-                        refgate = None if qubit == 'qubit_1' else 'C11'+clifford_gates1[0][0]+'qubit_1'
+#                        refgate = None if qubit == 'qubit_1' else 'C11'+clifford_gates1[0][0]+'qubit_1'
+                        refgate = None if qubit == 'qubit_1' else 'C11'+'qubit_1'
                         refpoint = 'start' if qubit == 'qubit_2' else 'end'
                     elif j == 0:
-                        refgate = 'C%d%d'%(i,j+1)+clifford_gates[qubit][i-1][j]+qubit
+#                        refgate = 'C%d%d'%(i,j+1)+clifford_gates[qubit][i-1][j]+qubit
+                        refgate = last_gate_1 if qubit == 'qubit_1' else last_gate_2
+                        
                         refpoint = 'end'
                     elif i == 0:
-                        refgate = 'C%d%d'%(i+1,j)+clifford_gates[qubit][i][j-1]+qubit
+#                        refgate = 'C%d%d'%(i+1,j)+clifford_gates[qubit][i][j-1]+qubit
+                        refgate = 'C%d%d'%(i+1,j)+qubit
+                        refpoint = 'end'
+                    else:
+                        refgate = 'C%d%d'%(i+1,j)+qubit
                         refpoint = 'end'
                         
+#                    gate_name = 'C%d%d'%((i+1),(j+1))+gate
+                    gate_name = 'C%d%d'%((i+1),(j+1)) + qubit
+#                    element_name = gate_name + qubit
+                    if qubit == 'qubit_1':
+                        gate_name_1 = gate_name
+                    else:
+                        gate_name_2 = gate_name
                         
-                    gate_name = 'C%d%d'%((i+1),(j+1))+gate
-                    element_name = gate_name + qubit
-                    print(element_name)
+                    print(gate_name)
                     
-                    self.add_single_qubit_gate(name = element_name, refgate = refgate, refpoint = refpoint,
+                    self.add_single_qubit_gate(name = gate_name, refgate = refgate, refpoint = refpoint,
                                                qubit = qubit_obj[qubit], axis = axis,
                                                amplitude = amp, length = length, frequency_shift = freq_shift)
             if self.align:

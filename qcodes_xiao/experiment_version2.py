@@ -32,7 +32,7 @@ import stationF006
 #from stationF006 import station
 from copy import deepcopy
 from manipulation_library import Ramsey
-from qcodes.instrument.parameter import ArrayParameter, StandardParameter
+from qcodes.instrument.parameter import Parameter, ArrayParameter, StandardParameter
 import time
 from qcodes.plots.qcmatplotlib import MatPlot
 from qcodes.plots.pyqtgraph import QtPlot
@@ -292,7 +292,7 @@ class Experiment:
         
         element = kw.pop('element', None)
         
-        if type(parameter) is StandardParameter:#isinstance(obj, Tektronix_AWG5014)
+        if type(parameter) is Parameter:#isinstance(obj, Tektronix_AWG5014)
             
             self.digitizer, self.dig = set_digitizer(self.digitizer, 1, self.qubit_number, self.seq_repetition,self.threshold, 
                                                      0, 0, self.saveraw, self.readout_time)
@@ -363,7 +363,7 @@ class Experiment:
         
         element = kw.pop('element', None)
         
-        if type(parameter) is StandardParameter:
+        if type(parameter) is Parameter:
             
             step = (sweep_array[1]-sweep_array[0])
             
@@ -884,6 +884,8 @@ class Experiment:
             
         comp_amp = [-amplitude[k]/3000000 for k in range(2)]
         
+        print('compensation amplitude:', comp_amp)
+        
         if np.max(np.abs(comp_amp)) >= 0.5:
             raise ValueError('amp too large')
         
@@ -908,6 +910,43 @@ class Experiment:
         self.sequencer[seq_num].sequence.append(name = 'compensation_%d_%d'%(seq_num, idx_i), 
                                                 wfname = 'compensation_%d_%d'%(seq_num, idx_i), 
                                                 trigger_wait = False, repetitions = 3000)
+        
+        
+        
+        
+        '''
+        test below about zero bias
+        '''
+        
+        zerobias_element = Element('zerobias_%d_%d'%(seq_num, idx_i), self.pulsar)
+
+        zerobias_element.add(SquarePulse(name = 'ZERO1', channel = self.channel_VP[0], amplitude=0, length=1e-6),
+                            name='zerobias1',)
+        zerobias_element.add(SquarePulse(name = 'ZERO2', channel = self.channel_VP[1], amplitude=0, length=1e-6),
+                            name='zerobias2',refpulse = 'zerobias1', refpoint = 'start', start = 0)
+        
+        zerobias_element.add(SquarePulse(name='zero_c1m2', channel=self.occupied_channel1, amplitude=0.1, length=1e-6),
+                                           name='zero%d_c1m2'%(i+1),refpulse = 'zerobias1', refpoint = 'start')
+        zerobias_element.add(SquarePulse(name='zero_c5m2', channel=self.occupied_channel2, amplitude=0.1, length=1e-6),
+                                           name='zero%d_c5m2'%(i+1),refpulse = 'zerobias1', refpoint = 'start')
+        
+        self.elts.append(zerobias_element)
+        self.sequencer[seq_num].elts.append(zerobias_element)
+        
+        self.sequence.append(name = 'zerobias_%d_%d'%(seq_num, idx_i), 
+                             wfname = 'zerobias_%d_%d'%(seq_num, idx_i), 
+                             trigger_wait = False, repetitions = 500)
+        self.sequencer[seq_num].sequence.append(name = 'zerobias_%d_%d'%(seq_num, idx_i), 
+                                                wfname = 'zerobias_%d_%d'%(seq_num, idx_i), 
+                                                trigger_wait = False, repetitions = 500)
+        
+        
+        '''
+        test zerobias finished
+        '''
+        
+        
+        
         
         return True
 
@@ -1003,7 +1042,7 @@ class Experiment:
         wfs['ch%d_marker1'%i] = np.full((1000,),1)
         wfs['ch%d_marker2'%i] = np.full((1000,),1)
         wfs['ch%d'%i] = np.full((1000,),wfs_vp)
-        print('ana', wfs['ch%d'%i], 'm1', wfs['ch%d_marker1'%i], 'm2', wfs['ch%d_marker2'%i])
+#        print('ana', wfs['ch%d'%i], 'm1', wfs['ch%d_marker1'%i], 'm2', wfs['ch%d_marker2'%i])
         awg.send_waveform_to_list(w = wfs['ch%d'%i], m1 = wfs['ch%d_marker1'%i],
                                   m2 = wfs['ch%d_marker2'%i], wfmname = name+'_ch%d'%i)
         

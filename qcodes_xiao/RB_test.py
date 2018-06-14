@@ -126,20 +126,6 @@ Clifford_group[22] = np.linalg.multi_dot([X9, Y9, X9][::-1])
 Clifford_group[23] = np.linalg.multi_dot([mX9, Y9, mX9][::-1])
 
 
-#%%
-
-Clifford_gates = [
-        ['I'], ['Xp'], ['Yp'], ['Zp'],
-        ['mZ9', 'X9'], ['Z9', 'X9'], ['Z9', 'mX9'], ['mZ9', 'mX9'], 
-        ['X9', 'Z9'], ['mX9', 'mZ9'], ['X9', 'mZ9'], ['mX9', 'Z9'],
-        ['X9'], ['mX9'], 
-        ['Z9', 'mX9', 'mZ9'], ['Z9', 'X9', 'mZ9'], 
-        ['Z9'], ['mZ9'],
-        ['Y9', 'mZp'], ['mY9', 'Zp'], 
-        ['X9', 'Zp'], ['mX9', 'mZp'], 
-        ['Xp', 'Z9'], ['mXp', 'Z9']
-        ]
-
 #%%     convert to sequence
 
 clifford_index = [6,3,8,0]

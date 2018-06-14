@@ -225,11 +225,17 @@ def initialize(reinit=False, server_name=None):
     
     # Loading IVVI
     logging.info('LD400: load IVVI driver')
+    
+    
+    
     ivvi1 = IVVI.IVVI(name='ivvi1', dac_step=10, dac_delay=0.025, address='COM5', server_name=server_name, 
                      numdacs=16, use_locks=True)
-    print('')
+    
     ivvi2 = IVVI.IVVI(name='ivvi2', dac_step=10, dac_delay=0.025, address='COM6', server_name=server_name, 
                      numdacs=16, use_locks=True)
+    
+    print('')
+    
 #    
 
 #    def twodotboundaries():
