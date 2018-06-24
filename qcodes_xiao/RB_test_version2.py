@@ -176,6 +176,13 @@ Clifford_group[23] = np.linalg.multi_dot([mXp, mZ9][::-1])
 
 '''
 
+
+'''
+H = XYZ = XZX = ZXZ = YZZ
+
+'''
+
+
 Clifford_gates = [
         ['Z9', 'X9', 'mZ9', 'Y9'], ['Xp'], ['Yp'], ['X9', 'Zp', 'X9'],
         ['X9', 'Y9'], ['X9', 'mY9'], ['mX9', 'Y9'], ['mX9', 'mY9'], 

@@ -86,10 +86,14 @@ class Ramsey(Manipulation):
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = None
         
+        qubit_name = kw.pop('qubit', self.qubit)
+        
+        qubit = Instrument.find_instrument(qubit_name)
+        
         self.waiting_time = kw.pop('waiting_time', 0)
         self.amplitude = kw.pop('amplitude', 1)
         self.frequency_shift = kw.pop('frequency_shift', 0)
-        self.length = kw.pop('duration_time', 125e-9)
+        self.length = kw.pop('duration_time', qubit.halfPi_pulse_length)
         self.phase_1 = kw.pop('phase_1', 0)
         self.phase_2 = kw.pop('phase_2', 0)
         self.off_resonance = kw.pop('off_resonance', False)
@@ -225,8 +229,10 @@ class Rabi(Manipulation):
         amplitude = kw.get('amplitude', self.amplitude)
         frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
         print('length', length)
+        
+        self.add_Z(name='Z1_Q1', qubit = qubit, degree = 90)
 
-        self.add_single_qubit_gate(name='Rabi_Oscillation', qubit = qubit, amplitude = amplitude, #axis = [0,1,0], 
+        self.add_single_qubit_gate(name='Rabi_Oscillation', qubit = qubit, amplitude = amplitude, #axis = [1,0,0], 
                                    length = length, frequency_shift = frequency_shift)
         
 #        self.add_single_qubit_gate(name='Rabi_heating', refgate = 'Rabi_Oscillation', qubit = qubit, amplitude = amplitude, #axis = [0,1,0], 
@@ -247,6 +253,8 @@ class CRot(Manipulation):
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = None
         self.amplitude = kw.pop('amplitude', 0)
+        self.amplitude2 = kw.pop('amplitude2', 0)
+        
         self.amplitudepi = kw.pop('amplitudepi', 1)
         self.frequency_shift = kw.pop('frequency_shift', 0)
         self.length = kw.pop('duration_time', 275e-9)
@@ -257,6 +265,10 @@ class CRot(Manipulation):
             self.qubits_name = [qubit.name for qubit in self.qubits]
             self.refphase = {qubit.name: 0 for qubit in self.qubits}
         self.pulsar = kw.pop('pulsar', None)
+        
+        self.amplitude = kw.get('amplitude', self.amplitude)
+        self.amplitude2 = kw.pop('amplitude2', self.amplitude2)
+        
         return self
 
     def make_circuit(self, **kw):
@@ -267,12 +279,15 @@ class CRot(Manipulation):
         length = kw.get('duration_time', qubit.CRot_pulse_length)
         
         length = kw.get('duration_time', self.length)
+        
         amplitude = kw.get('amplitude', self.amplitude)
+        amplitude2 = kw.pop('amplitude2', self.amplitude2)
+        
         amplitudepi = kw.get('amplitudepi', self.amplitudepi)
         frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
 
         self.add_CPhase(name = 'CP_Q12', control_qubit = self.qubits[0], target_qubit = self.qubits[1],
-                        amplitude_control = amplitude, amplitude_target = 0, length = length+150e-9)
+                        amplitude_control = amplitude, amplitude_target = amplitude2, length = length+150e-9)
         
         self.add_single_qubit_gate(name='CRot', refgate = 'CP_Q12', qubit = self.qubits[1], 
                                    refpoint = 'start', waiting_time = 100e-9, amplitude = amplitudepi, 
@@ -294,7 +309,8 @@ class Rabi_detuning(Manipulation):
         self.pulsar = None
         self.amplitude = kw.pop('amplitude', 0)
         self.frequency_shift = kw.pop('frequency_shift', 0)
-        self.length = kw.pop('duration_time', 275e-9)
+        qubit = Instrument.find_instrument(self.qubit)
+        self.length = kw.pop('duration_time', qubit.Pi_pulse_length)
     def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
         self.qubits = kw.pop('qubits', None)
@@ -1734,7 +1750,7 @@ class Rabi_all(Manipulation):
         return self
 
 
-from RB_test import convert_clifford_to_sequence, clifford_sets
+#from RB_test import convert_clifford_to_sequence, clifford_sets
 
 class RB_all(Manipulation):
 

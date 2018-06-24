@@ -172,7 +172,7 @@ def generate_randomized_clifford_sequence(interleave = None):
     
     sequence_length = 100
     
-    sequence_number = 45
+    sequence_number = 42
     
     for j in range(sequence_number):
         

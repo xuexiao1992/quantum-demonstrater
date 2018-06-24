@@ -174,8 +174,8 @@ Sweep_Value1 = T[-30:-80:2]
 Sweep_Value2 = LP[-650:-720:2]
 
 
-Sweep_Value1 = T[-20:-70:1.5]
-Sweep_Value2 = LP[-510:-580:1.5]
+Sweep_Value1 = T[-0:-60:1.5]
+Sweep_Value2 = LP[-460:-530:1.5]
 
 ##
 #Sweep_Value1 = T[-10:-130:2]
@@ -234,16 +234,19 @@ Sweep_Value2 = LP[-510:-580:1.5]
 #Sweep_Value1 = G.RD[-550:-650:1]
 #Sweep_Value2 = LP[-400:-500:1]
 ##
-#Sweep_Value1 = SQD1[0:-300:2]
-#Sweep_Value2 = SQD3[-100:-400:2]
+#Sweep_Value1 = SQD1[0:-300:2.5]
+#Sweep_Value2 = SQD3[-100:-500:2.5]
 
 #
-#Sweep_Value1 = SQD1[-0:-100:2]
+#Sweep_Value1 = SQD1[-0:-200:2]
 #Sweep_Value2 = SQD3[-300:-500:2]
 
 
-#Sweep_Value1 = G.LD[-150:-350:3]
-#Sweep_Value2 = SQD3[-500:-700:3]
+#Sweep_Value1 = SQD1[-0:-140:2]
+#Sweep_Value2 = SQD3[-350:-450:2]
+
+#Sweep_Value1 = SQD1[-40:-120:2]
+#Sweep_Value2 = SQD3[-350:-500:2]
 
 #Sweep_Value1 = Count[0:100:0.5]
 
