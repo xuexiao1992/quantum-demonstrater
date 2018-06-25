@@ -1930,7 +1930,7 @@ experiment.load_sequence()
 print('sequence loaded')
 '''
 #%% Simultaneous pulse measure Q1 & Q2 frequency ramsey
-'''
+
 experiment.saveraw = True
 
 experiment.add_measurement('Ramsey_Scan', ['Ramsey12','CRot'], [ramsey12, crot], sequence_cfg, sequence_cfg_type)
@@ -1947,7 +1947,7 @@ print('loading sequence')
 experiment.generate_1D_sequence()
 experiment.load_sequence()
 print('sequence loaded')
-'''
+
 #%%Simultaneous pulse measure Q2 frequency ramsey with noise
 '''
 experiment.calibration_qubit = 'all'
@@ -2014,7 +2014,7 @@ print('sequence loaded')
 #%% Simultaneous allXY with calibration
 
 #experiment.saveraw = True
-
+'''
 experiment.calibration_qubit = 'all'
 experiment.add_measurement('Ramsey_Scan', ['Ramsey12','CRot'], [ramsey12, crot], sequence_cfg, sequence_cfg_type)
 #experiment.add_X_parameter('Ramsey_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.001e9, 0.001e9, 11), element = 'Ramsey12')
@@ -2038,7 +2038,7 @@ experiment.generate_1D_sequence()
 experiment.load_sequence()
 
 print('sequence loaded')
-
+'''
 #%% Sync pulses step 1
 '''
 sychpulses1 = Sychpulses1(name = 'Sychpulses1', pulsar = pulsar, Pi_amplitude = 0, detuning_amplitude = 30*0.5*-0.031, detuning_time = 72e-9, phase = 0, off_resonance_amplitude = 1.3)
