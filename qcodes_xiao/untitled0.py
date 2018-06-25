@@ -1,12 +1,8 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Sun May 21 19:03:19 2017
+Created on Sun Apr 22 13:32:05 2018
 
-@author: X.X
+@author: xiaoxue
 """
 
-import pyvisa
-
-rm = pyvisa.ResourceManager()
-
-print(rm.list_resources())

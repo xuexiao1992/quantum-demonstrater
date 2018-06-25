@@ -238,6 +238,19 @@ for i in range(24):
     else:
         print('%dth Clifford is wrong\n'%i)
 
+
+
+#%%
+
+Pauli_group = [
+        ['I', 'I'],
+        ['I', 'Xp'], ['I', 'Yp'], ['I', 'Zp'],
+        ['Xp', 'I'], ['Yp', 'I'], ['Zp', 'I'],
+        ['Xp', 'Xp'], ['Xp', 'Yp'], ['Xp', 'Zp'],
+        ['Yp', 'Xp'], ['Yp', 'Yp'], ['Yp', 'Zp'],
+        ['Zp', 'Xp'], ['Zp', 'Yp'], ['Zp', 'Zp']
+        ]
+
 #%%     convert to sequence
 
 #clifford_index = [6,3,8,0]
@@ -293,17 +306,26 @@ def convert_clifford_to_sequence(clifford_index, start = 'I', interleave = None)
 
 def generate_randomized_clifford_sequence(start = 'I', interleave = None):
     
-    clifford_sets = []
+    clifford_sets_1 = []
+    clifford_sets_2 = []
     
     sequence_length = 100
     
-    sequence_number = 45
+    rep_num = 20
+    
+    sequence_number = 16*rep_num
     
     start = start
     
     for j in range(sequence_number):
         
-        clifford_sets.append([])
+        clifford_sets_1.append([])
+        clifford_sets_2.append([])
+        
+        Pauli_index = j//rep_num
+        
+        start_1 = Pauli_group[Pauli_index][0]
+        start_2 = Pauli_group[Pauli_index][0]
         
         for i in range(sequence_length+1):
             
@@ -312,20 +334,25 @@ def generate_randomized_clifford_sequence(start = 'I', interleave = None):
             elif i in range(30, 101) and i%10 != 0:
                 continue
             
-            clifford_index = list((np.random.rand(i)*24).astype(int))
+            clifford_index_1 = list((np.random.rand(i)*24).astype(int))
+            clifford_index_2 = list((np.random.rand(i)*24).astype(int))
             
-            clifford_gates = convert_clifford_to_sequence(clifford_index, start, interleave)
-            print(clifford_gates)
+            clifford_gates_1 = convert_clifford_to_sequence(clifford_index_1, start_1, interleave)
+            clifford_gates_2 = convert_clifford_to_sequence(clifford_index_2, start_2, interleave)
             
-            clifford_sets[j].append(clifford_gates)
+            print(clifford_gates_1)
+            print(clifford_gates_2)
             
-    return clifford_sets
+            clifford_sets_1[j].append(clifford_gates_1)
+            clifford_sets_2[j].append(clifford_gates_2)
+            
+    return clifford_sets_1, clifford_sets_2
 
-#clifford_sets = generate_randomized_clifford_sequence(interleave = 'Zp')
+clifford_sets_1, clifford_sets_2 = generate_randomized_clifford_sequence(interleave = 'Zp')
 
-clifford_sets1 = generate_randomized_clifford_sequence(start = 'I')
+#clifford_sets1 = generate_randomized_clifford_sequence(start = 'I')
 
-clifford_sets2 = generate_randomized_clifford_sequence(start = 'I')
+#clifford_sets2 = generate_randomized_clifford_sequence(start = 'I')
 
 #%%
 
