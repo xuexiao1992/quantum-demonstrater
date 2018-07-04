@@ -200,6 +200,28 @@ location_new2 = '2018-06-20/16-17-29/RB_experimentAllXY_sequence'
 location_new2 = '2018-06-22/18-36-27/RB_experimentAllXY_sequence'
 
 
+location_new2 = '2018-06-27/16-28-13/RB_experimentAllXY_sequence'
+
+location_new2 = '2018-06-29/16-09-21/RB_experimentAllXY_sequence'
+location_new2 = '2018-06-29/19-33-12/RB_experimentAllXY_sequence'
+location_new2 = '2018-06-29/21-42-22/RB_experimentAllXY_sequence'
+location_new2 = '2018-06-30/01-22-14/RB_experimentAllXY_sequence'
+#location_new2 = '2018-06-30/03-37-05/RB_experimentAllXY_sequence'
+#location_new2 = '2018-06-30/11-51-09/RB_experimentAllXY_sequence'
+#location_new2 = '2018-06-30/13-20-51/RB_experimentAllXY_sequence'
+#location_new2 = '2018-06-30/16-25-38/RB_experimentAllXY_sequence'
+#location_new2 = '2018-07-01/14-36-37/RB_experimentAllXY_sequence'
+#location_new2 = '2018-07-01/17-29-32/RB_experimentAllXY_sequence'
+#location_new2 = '2018-07-01/18-10-34/RB_experimentAllXY_sequence'
+#location_new2 = '2018-07-01/18-49-56/RB_experimentAllXY_sequence'
+#location_new2 = '2018-07-01/19-40-32/RB_experimentAllXY_sequence'
+location_new2 = '2018-07-02/01-31-40/RB_experimentAllXY_sequence'
+location_new2 = '2018-07-02/11-49-51/RB_experimentAllXY_sequence'
+location_new2 = '2018-07-02/16-28-41/RB_experimentAllXY_sequence'
+location_new2 = '2018-07-02/17-24-54/RB_experimentAllXY_sequence'
+location_new2 = '2018-07-02/19-10-11/RB_experimentAllXY_sequence'
+
+
 DS = load_data(location = location_new2, io = IO_K, formatter = formatter)
 
 #%%
@@ -212,7 +234,7 @@ DS2 = load_data(location = location_b, io = IO, formatter = formatter)
 #%%
 
 ds = DS
-Qubit = 2
+Qubit = 1
 i = 0 if Qubit == 2 else 1
 ramsey_point = 11
 fitting_point = 24
@@ -227,6 +249,10 @@ pars, pcov = curve_fit(RB_Fidelity, x, y,
                        p0 = (0.9, 0.2, 0.4),
                        bounds = ((0.7, 0, 0),(1, 0.8, 0.8)))
 #                       bounds = ((), ()))
+#pars, pcov = curve_fit(RB_Fidelity, x, y,
+#                       p0 = (-0.9, 0.2, -0.4),
+#                       bounds = ((-1, 0, -1),(-0.5, 0.8, 0)))
+
 
 #%%
 plot_point = fitting_point

@@ -372,12 +372,12 @@ class Experiment:
             if self.Loop is None:
 #                calibration = calibration_task if parameter
                 if with_calibration:
-                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(self.dig, calibration_task)
+                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 1.5).each(self.dig, calibration_task)
                 else:
-                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(self.dig)
+                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 1.5).each(self.dig)
             else:
                 LOOP = self.Loop
-                self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(LOOP)
+                self.Loop = Loop(sweep_values = Sweep_Value, delay = 1.5).each(LOOP)
             
             self.Y_parameter = parameter.full_name
             self.Y_parameter_type = 'Out_Sequence'
@@ -415,14 +415,14 @@ class Experiment:
             if self.Loop is None:
                 if with_calibration:
                     print('calibration')
-                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(self.dig, calibration_task)
+                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 1.5).each(self.dig, calibration_task)
                 else:
-                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(self.dig)
+                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 1.5).each(self.dig)
 #                self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(self.dig)
             elif self.Loop is not None and self.Y_measurement is None:
                 print('no calibration')
                 LOOP = self.Loop
-                self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(LOOP)
+                self.Loop = Loop(sweep_values = Sweep_Value, delay = 1.5).each(LOOP)
             
             
         
@@ -935,10 +935,10 @@ class Experiment:
         
         self.sequence.append(name = 'zerobias_%d_%d'%(seq_num, idx_i), 
                              wfname = 'zerobias_%d_%d'%(seq_num, idx_i), 
-                             trigger_wait = False, repetitions = 500)
+                             trigger_wait = False, repetitions = 300)
         self.sequencer[seq_num].sequence.append(name = 'zerobias_%d_%d'%(seq_num, idx_i), 
                                                 wfname = 'zerobias_%d_%d'%(seq_num, idx_i), 
-                                                trigger_wait = False, repetitions = 500)
+                                                trigger_wait = False, repetitions = 300)
         
         
         '''
@@ -1126,7 +1126,12 @@ class Experiment:
         trigger_element.add(SquarePulse(name = 'SIG_digi', channel = 'ch8', amplitude=0.5, length=800e-9),
                             name='SIG_digi',refpulse = 'TRG_digi', refpoint = 'start', start = 0)
         
-        
+        '''
+        trigger_element.add(SquarePulse(name = 'TRG_ZERO1', channel = self.channel_VP[0], amplitude=0, length=180e-9),
+                            name='TRG_zero1', refpulse = 'trigger2', refpoint = 'start', start = 0)
+        trigger_element.add(SquarePulse(name = 'TRG_ZERO2', channel = self.channel_VP[1], amplitude=0, length=180e-9),
+                            name='TRG_zero2',refpulse = 'trigger2', refpoint = 'start', start = 0)
+        '''
         extra_element = Element('extra', self.pulsar)
         extra_element.add(SquarePulse(name = 'EXT2', channel = 'ch8_marker2', amplitude=2, length=5e-9),
                             name='extra2',)
@@ -1142,6 +1147,8 @@ class Experiment:
     def load_sequence(self, measurement = 'self',):
         
         print('load sequence')
+        self.awg.all_channels_off()
+        self.awg2.all_channels_off()
 #        elts = list(self.element.values())
 #        self.awg.delete_all_waveforms_from_list()
 #        self.awg2.delete_all_waveforms_from_list()
@@ -1160,7 +1167,7 @@ class Experiment:
 #        sequence = self.sequence
         self.pulsar.program_awgs(sequence, *elts, AWGs = ['awg','awg2'],)       ## elts should be list(self.element.values)
         
-        time.sleep(5)
+        time.sleep(1)
         
         self.add_marker_into_first_readout(self.awg2)
 #        self.awg2.trigger_level(0.5)
@@ -1169,7 +1176,8 @@ class Experiment:
         last_element_num = self.awg2.sequence_length()
         self.awg.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 2)
         self.awg2.set_sqel_goto_target_index(element_no = last_element_num, goto_to_index_no = 2)
-
+#        self.awg.all_channels_on()
+#        self.awg2.all_channels_on()
         return True
     
     def set_sweep_with_calibration(self, repetition = False, plot_average = False, **kw):

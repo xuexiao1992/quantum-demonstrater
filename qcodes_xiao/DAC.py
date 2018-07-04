@@ -175,7 +175,7 @@ Sweep_Value2 = LP[-650:-720:2]
 
 
 Sweep_Value1 = T[-0:-60:1.5]
-Sweep_Value2 = LP[-460:-530:1.5]
+Sweep_Value2 = LP[-510:-570:1.5]
 
 ##
 #Sweep_Value1 = T[-10:-130:2]

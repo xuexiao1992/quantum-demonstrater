@@ -57,7 +57,8 @@ class Manipulation(Element):
 
     def add_single_qubit_gate(self, name = None, qubit = None, axis = [1,0,0], degree = 90,
                               amplitude = 1, length = 50e-9, frequency_shift = 0, refphase = 0,
-                              refgate = None, refpoint = 'end', waiting_time = 0, refpoint_new = 'start'):
+                              refgate = None, refpoint = 'end', waiting_time = 0, refpoint_new = 'start', 
+                              refqubit = None):
         # no idea yet  perhaps call the element.add() function but just to add the first pulse
         # and record the information of the last pulse
         t0 = time.time()
@@ -86,7 +87,8 @@ class Manipulation(Element):
                 raise ValueError('should be either in X-Y plane or Z axis')
             else:
                 single_qubit_gate.XY_rotation(degree = degree, length = length, waiting_time = waiting_time,
-                                              refgate = None if refgate == None else self.operations[refgate], refpoint = refpoint)
+                                              refgate = None if refgate == None else self.operations[refgate], refpoint = refpoint,
+                                              refqubit = refqubit)
 
         else:
             if axis[2] == 0:

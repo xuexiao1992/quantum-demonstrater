@@ -126,6 +126,55 @@ Clifford_group[22] = np.linalg.multi_dot([X9, Y9, X9][::-1])
 Clifford_group[23] = np.linalg.multi_dot([mX9, Y9, mX9][::-1])
 
 
+
+#%%
+'''
+
+Clifford_gates = [
+        ['X9', 'mX9'], ['Xp'], ['Yp'], ['X9', 'Zp', 'X9'],
+        ['X9', 'Y9'], ['X9', 'mY9'], ['mX9', 'Y9'], ['mX9', 'mY9'], 
+        ['Y9', 'X9'], ['Y9', 'mX9'], ['mY9', 'X9'], ['mY9', 'mX9'],
+        ['Y9', 'mZ9', 'mY9'], ['Y9', 'Z9', 'mY9'],                         # X9, mX9
+        ['X9', 'Z9', 'mX9'], ['X9', 'mZ9', 'mX9'],                          # Y9, mY9
+        ['mX9', 'Z9', 'Y9'], ['mX9', 'mZ9', 'mY9'],
+        ['X9', 'mZ9', 'X9'], ['X9', 'Z9', 'X9'],
+        ['Y9', 'X9', 'Z9'], ['Y9', 'mX9', 'mZ9'],
+        ['Xp', 'Z9'], ['mXp', 'mZ9']
+        ]
+
+Clifford_group = [{}]*(24)
+
+
+#Clifford_group[0] = np.linalg.multi_dot([Z9, X9, mZ9, Y9][::-1])
+Clifford_group[0] = np.linalg.multi_dot([X9, mX9][::-1])
+Clifford_group[1] = np.linalg.multi_dot([I, Xp][::-1])
+Clifford_group[2] = np.linalg.multi_dot([I, Yp][::-1])
+Clifford_group[3] = np.linalg.multi_dot([X9, Zp, X9][::-1])
+
+Clifford_group[4] = np.linalg.multi_dot([X9, Y9][::-1])
+Clifford_group[5] = np.linalg.multi_dot([X9, mY9][::-1])
+Clifford_group[6] = np.linalg.multi_dot([mX9, Y9][::-1])
+Clifford_group[7] = np.linalg.multi_dot([mX9, mY9][::-1])
+Clifford_group[8] = np.linalg.multi_dot([Y9, X9][::-1])
+Clifford_group[9] = np.linalg.multi_dot([Y9, mX9][::-1])
+Clifford_group[10] = np.linalg.multi_dot([mY9, X9][::-1])
+Clifford_group[11] = np.linalg.multi_dot([mY9, mX9][::-1])
+
+Clifford_group[12] = np.linalg.multi_dot([Y9, mZ9, mY9][::-1])
+Clifford_group[13] = np.linalg.multi_dot([Y9, Z9, mY9][::-1])
+Clifford_group[14] = np.linalg.multi_dot([X9, Z9, mX9][::-1])
+Clifford_group[15] = np.linalg.multi_dot([X9, mZ9, mX9][::-1])
+Clifford_group[16] = np.linalg.multi_dot([mX9, Z9, Y9][::-1])
+Clifford_group[17] = np.linalg.multi_dot([mX9, mZ9, mY9][::-1])
+
+Clifford_group[18] = np.linalg.multi_dot([X9, mZ9, X9][::-1])
+Clifford_group[19] = np.linalg.multi_dot([X9, Z9, X9][::-1])
+Clifford_group[20] = np.linalg.multi_dot([Y9, X9, Z9][::-1])
+Clifford_group[21] = np.linalg.multi_dot([Y9, mX9, mZ9][::-1])
+Clifford_group[22] = np.linalg.multi_dot([Xp, Z9][::-1])
+Clifford_group[23] = np.linalg.multi_dot([mXp, mZ9][::-1])
+'''
+
 #%%     convert to sequence
 
 clifford_index = [6,3,8,0]
@@ -172,7 +221,7 @@ def generate_randomized_clifford_sequence(interleave = None):
     
     sequence_length = 100
     
-    sequence_number = 42
+    sequence_number = 35
     
     for j in range(sequence_number):
         
@@ -197,6 +246,10 @@ def generate_randomized_clifford_sequence(interleave = None):
 #clifford_sets = generate_randomized_clifford_sequence(interleave = 'Zp')
 
 clifford_sets = generate_randomized_clifford_sequence()
+clifford_sets_1 = clifford_sets
+clifford_sets_2 = clifford_sets
+#clifford_sets1 = generate_randomized_clifford_sequence()
+#clifford_sets2 = generate_randomized_clifford_sequence()
 
 #%%
 

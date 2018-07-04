@@ -111,7 +111,8 @@ class Single_Qubit_Gate(Gate):
         self.pulses = [None, None, None, None]            ## [microwave1_I, microwave1_Q, voltage, microwave2_I, microwave2_Q]
 
 
-    def XY_rotation(self, degree = 90, length = None, waiting_time = 0, refgate = None, refpoint = 'end'):
+    def XY_rotation(self, degree = 90, length = None, waiting_time = 0, refgate = None, refpoint = 'end', 
+                    refqubit = None):
 #        global phase
 #        IQ_Modulation = self.frequency
         if length is not None:
@@ -122,6 +123,8 @@ class Single_Qubit_Gate(Gate):
         pulse_amp = self.amplitude
         
         pulse_delay = Instrument.find_instrument(self.qubit).pulse_delay
+        if self.qubit == 'qubit_2' and refqubit == 'qubit_2':
+            pulse_delay = 0
 
         ## voltage pulse is not used here
         voltage_pulse = SquarePulse(channel = self.channel_VP, name = '%s_voltage_pulse'%self.name,

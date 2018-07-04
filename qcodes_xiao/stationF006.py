@@ -144,6 +144,7 @@ def twodotboundaries():
             gate_boundaries[k] =bb
     return gate_boundaries
 '''
+
 output_map = None
 
 station = None
