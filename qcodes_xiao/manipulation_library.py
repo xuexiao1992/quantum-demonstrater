@@ -422,6 +422,7 @@ class AllXY(Manipulation):
         self.pulsar = None
         self.amplitude = kw.pop('amplitude', 1)
         self.frequency_shift = kw.pop('frequency_shift', 0)
+        self.off_resonance_amplitude = ('off_resonacne_amplitude', 1.05)
 
     def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
@@ -432,6 +433,7 @@ class AllXY(Manipulation):
         self.pulsar = kw.pop('pulsar', self.pulsar)
         self.amplitude = kw.pop('amplitude', self.amplitude)
         self.frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
+        self.off_resonance_amplitude = ('off_resonacne_amplitude', self.off_resonance_amplitude)
         return self
 
     def make_circuit(self, **kw):
@@ -443,10 +445,19 @@ class AllXY(Manipulation):
         amplitude = kw.get('amplitude', self.amplitude)
         frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
         
+        off_resonance_amplitude = ('off_resonacne_amplitude', self.off_resonance_amplitude)
+        
+        
         g = int(kw.pop('gate', 1)-1)
         gate = AllXY_array[g]
         for i in range(len(gate)):
+            
             amplitude = 0 if gate[i] == 'I' else 1
+            '''
+            if gate[i] == 'I':
+                amplitude = off_resonance_amplitude if qubit_name == 'qubit_1' else 0
+                frequency_shift = -30e6 if qubit_name == 'qubit_1' else 0
+            '''
             axis = [1,0,0] if gate[i].startswith('X') else [0,1,0]
             length = qubit.Pi_pulse_length if gate[i].endswith('pi') else qubit.halfPi_pulse_length
             

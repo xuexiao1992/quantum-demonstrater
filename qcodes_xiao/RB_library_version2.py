@@ -231,6 +231,10 @@ class RB_all(Manipulation):
         
         self.off_resonance_amplitude = kw.pop('off_resonance_amplitude', 0.9)
         
+        self.amplitude_control = kw.pop('amplitude_control', 30*0.5*-0.03)
+        self.amplitude_target = kw.pop('amplitude_target', 30*0.5*0.02)
+        self.detuning_time = kw.pop('detuning_time', 0)
+        
         self.align = kw.pop('align', False)
 
     def __call__(self, **kw):
@@ -246,6 +250,10 @@ class RB_all(Manipulation):
         self.off_resonance_amplitude = kw.pop('off_resonance_amplitude', self.off_resonance_amplitude)
         
         self.align = kw.pop('align', self.align)
+        self.detuning_time = kw.pop('detuning_time', self.detuning_time)
+        
+        self.amplitude_control = kw.pop('amplitude_control', self.amplitude_control)
+        self.amplitude_target = kw.pop('amplitude_target', self.amplitude_target)
 
         return self
 
@@ -262,6 +270,10 @@ class RB_all(Manipulation):
         
         self.sequence_number = int(kw.pop('sequence_number', self.sequence_number))
         self.clifford_number = int(kw.pop('clifford_number', self.clifford_number))
+        
+        amplitude_control = kw.pop('amplitude_control', self.amplitude_control)
+        amplitude_target = kw.pop('amplitude_target', self.amplitude_target)
+        detuning_time = kw.pop('detuning_time', self.detuning_time)
         
         self.off_resonance_amplitude = kw.pop('off_resonance_amplitude', self.off_resonance_amplitude)
         
@@ -362,6 +374,14 @@ class RB_all(Manipulation):
                     elif gate == 'Zp_prep':
                         amp = self.off_resonance_amplitude if qubit == 'qubit_1' else 0
                         freq_shift = -30e6 if qubit == 'qubit_1' else 0
+                    elif gate == 'CZ':
+                        if gate == 'CZ_dumy':
+                            pass
+                        self.add_CPhase(name = 'CP1', refgate = 'H1_Q1', waiting_time = 10e-9,
+                                        control_qubit = qubit_1, target_qubit = qubit_2,
+                                        amplitude_control = amplitude_control, amplitude_target = amplitude_target, 
+                                        length = detuning_time)
+                        pass
                     elif 'Z' in gate:
                         if gate == 'Zp' or gate == 'mZp':
                             degree = 180

@@ -62,6 +62,12 @@ CZ = np.array([[1, 0, 0, 0],
                [0, 0, -1, 0],
                [0, 0, 0, 1]], dtype=complex)
 
+CZ_dumy = np.array([[1, 0, 0, 0],
+                    [0, 1, 0, 0],
+                    [0, 0, 1, 0],
+                    [0, 0, 0, 1]], dtype=complex)
+
+
 Zp_prep = -1j*Pauli_Z
 
 
@@ -80,6 +86,7 @@ gates = {
         'Z9': Z9,
         'mZ9': mZ9,
         'CZ': CZ,
+        'CZ_dumy': CZ_dumy,
         'Zp_prep': Zp_prep
         }
 
@@ -296,8 +303,8 @@ def convert_clifford_to_sequence(clifford_index_1, clifford_index_2, start_1 = '
             if interleave is not None:
                 clifford_groups_1.append(gates[interleave])
                 clifford_gates_1.append([interleave])
-                clifford_groups_2.append(gates[interleave])
-                clifford_gates_2.append([interleave])
+                clifford_groups_2.append(gates[interleave+'_dumy'])
+                clifford_gates_2.append([interleave+'_dumy'])
                 
                 clifford_groups_all.append(gates[interleave])
                 
@@ -385,11 +392,11 @@ def generate_randomized_clifford_sequence(start = 'I', interleave = None):
     
     sequence_length = 100
     
-    rep_num = 10
+    rep_num = 20
     
     sequence_number = 16*rep_num
     
-#    sequence_number = 15
+#    sequence_number = 35
     start = start
     
     for j in range(sequence_number):
@@ -397,15 +404,16 @@ def generate_randomized_clifford_sequence(start = 'I', interleave = None):
         clifford_sets_1.append([])
         clifford_sets_2.append([])
         
-        Pauli_index = j//rep_num
-#        Pauli_index = j%rep_num
+#        Pauli_index = j//rep_num
+        Pauli_index = j%16
         
-        
+        print('j:', j)
+        print('index:', Pauli_index)
         start_1 = Pauli_group[Pauli_index][0]
         start_2 = Pauli_group[Pauli_index][1]
         
-#        start_1 = 'Zp_prep'
-#        start_2 = 'Zp_prep'
+#        start_1 = 'Xp'
+#        start_2 = 'Xp'
 #        
         for i in range(sequence_length+1):
             
