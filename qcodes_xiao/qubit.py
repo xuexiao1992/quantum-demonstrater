@@ -9,7 +9,7 @@ from qcodes.instrument.base import Instrument
 from qcodes import validators as vals
 
 class Qubit(Instrument):
-    
+#class Qubit:
     def __init__(self, name, gates = [], **kw):
         super().__init__(name, **kw)
 #        self.msmt_suffix = '_' + name  # used to append to measuremnet labels

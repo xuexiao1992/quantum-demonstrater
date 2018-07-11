@@ -168,6 +168,9 @@ location_d = '2018-03-03/13-51-20/RB_experimentAllXY_sequence' #interleave Q2 wi
 
 IO_K = DiskIO(base_location = 'K:\\ns\\qt\\spin-qubits\\data\\b059_data\\2018 data\\Data\\RB_experiment')
 
+IO_K2 = DiskIO(base_location = 'K:\\ns\\qt\\spin-qubits\\data\\b059_data\\2018 data\\Data\\RB_experiment2')
+
+
 '''
 qubit 2
 '''
@@ -223,8 +226,10 @@ location_new2 = '2018-07-02/19-10-11/RB_experimentAllXY_sequence'
 
 location_new2 = '2018-07-05/13-25-05/RB_experimentAllXY_sequence'
 
+location_new2 = '2018-07-09/16-36-36/RB_experiment2AllXY_sequence'
 
-DS = load_data(location = location_new2, io = IO_K, formatter = formatter)
+
+DS = load_data(location = location_new2, io = IO_K2, formatter = formatter)
 
 #%%
 NewIO = DiskIO(base_location = 'D:\\Data\\RB_experiment')

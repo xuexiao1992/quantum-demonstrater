@@ -33,7 +33,11 @@ import stationF006
 from copy import deepcopy
 from manipulation_library import Ramsey
 from qcodes.instrument.parameter import Parameter, ArrayParameter, StandardParameter
+import os
 import time
+import threading
+import multiprocessing
+
 from qcodes.plots.qcmatplotlib import MatPlot
 from qcodes.plots.pyqtgraph import QtPlot
 
@@ -175,6 +179,10 @@ class Experiment:
         self.seq_cfg_type = []
         
         self.sequencer = []
+        
+        self.sequence_list = []
+        self.elts_list = []
+        
         
         self.dimension_1 = 0
         self.dimension_2 = 0
@@ -453,20 +461,23 @@ class Experiment:
     
     def update_Y_parameter_v2(self, index_j):
         
-        self.restore_precious_sequence(filename = '')
+        self.restore_previous_sequence(filename = '')
     
     def update_Y_parameter(self, idx_j):
         
         self.pulsar.stop()
+        '''
         self.sequence = Sequence(name = self.name)
         self.elts = []
         for sequencer in self.sequencer:
             sequencer.elts = []
             sequencer.sequence = Sequence(name = sequencer.name)
         self.generate_1D_sequence(idx_j = idx_j)
-        self.load_sequence()
+        '''
+        self.load_sequence(idx_j = idx_j)
+        
         if 0:
-            self.restore_precious_sequence(filename = '')
+            self.restore_previous_sequence(filename = '')
         self.awg.all_channels_on()
         self.awg2.all_channels_on()
         
@@ -997,18 +1008,42 @@ class Experiment:
         self.add_compensation(idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)
 
         return True
- 
+    
+    def generate_sequence(self, multi_threading = False, multi_processing = False):
+        if self.Y_parameter_type == 'Out_Sequence':
+            self.generate_1D_sequence()
+        elif multi_threading:
+            threads = [threading.Thread(target=self.generate_1D_sequence, args = (idx_j)) for idx_j in range(len(self.Y_sweep_array))]
+            [thread.start() for thread in threads]
+            [thread.join() for thread in threads]
+        elif multi_processing:
+            processes = [multiprocessing.Process(target=self.generate_1D_sequence, args = (idx_j)) for idx_j in range(len(self.Y_sweep_array))]
+            [process.start() for process in processes]
+            [process.join() for process in processes]
+        else:
+            for idx_j in range(len(self.Y_sweep_array)):
+                self.generate_1D_sequence(idx_j)
+    
     def generate_1D_sequence(self, idx_j = 0):
         seq_num = 0
         
 #        self.set_trigger()
+        self.sequence = Sequence(name = self.name)
+        self.elts = []
         
+        for sequencer in self.sequencer:
+            sequencer.elts = []
+            sequencer.sequence = Sequence(name = sequencer.name)
+            
         for sequencer in self.sequencer:
             D1 = sequencer.dimension_1
             for idx_i in range(D1):
                 self.generate_unit_sequence(idx_j = idx_j, idx_i = idx_i, seq_num = seq_num)
             seq_num += 1
         self.sequence, self.elts = self.set_trigger(self.sequence, self.elts)
+#        self.sequence, self.elts = self.set_trigger(self.sequence, self.elts)
+        self.sequence_list.append(self.sequence)
+        self.elts_list.append(self.elts)
 #        if idx_j == 0:
 #            self.load_sequence()
 
@@ -1127,7 +1162,7 @@ class Experiment:
         
         return True
 
-    def set_trigger(self,sequence, elts):
+    def set_trigger(self, sequence, elts):
         
         trigger_element = Element('trigger', self.pulsar)
 
@@ -1159,7 +1194,7 @@ class Experiment:
 #        self.sequence.append(name ='extra', wfname = 'extra', trigger_wait = False)
         return sequence, elts
 
-    def load_sequence(self, measurement = 'self', idx_j = 0):
+    def load_sequence(self, measurement = 'self', idx_j = False):
         
         print('load sequence')
         self.awg.all_channels_off()
@@ -1170,8 +1205,12 @@ class Experiment:
 #        time.sleep(1)
 
         if measurement is 'self':
-            sequence = self.sequence
-            elts = self.elts
+            if not idx_j:
+                sequence = self.sequence
+                elts = self.elts
+            else:
+                sequence = self.sequence_list[idx_j]
+                elts = self.elts_list[idx_j]
         else:
             sequencer = self.find_sequencer(measurement)
             sequence = sequencer.sequence
@@ -1180,10 +1219,7 @@ class Experiment:
 #        sequence, elts = self.set_trigger(sequence, elts)
 #        elts = self.elts
 #        sequence = self.sequence
-        start_time = time.time()
         self.pulsar.program_awgs(sequence, *elts, AWGs = ['awg','awg2'],)       ## elts should be list(self.element.values)
-        end_time = time.time()
-        print('Total loading time is: ', end_time - start_time)
         
         time.sleep(1)
         

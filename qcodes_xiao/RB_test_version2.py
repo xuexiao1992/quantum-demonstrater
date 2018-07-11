@@ -396,7 +396,7 @@ def generate_randomized_clifford_sequence(start = 'I', interleave = None):
     
     sequence_number = 16*rep_num
     
-#    sequence_number = 35
+#    sequence_number = 40
     start = start
     
     for j in range(sequence_number):
