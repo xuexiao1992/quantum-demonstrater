@@ -1765,7 +1765,7 @@ class Rabi_all(Manipulation):
         return self
 
 
-#from RB_test import convert_clifford_to_sequence, clifford_sets
+from RB_test import convert_clifford_to_sequence, clifford_sets
 #from RB_test_version2 import convert_clifford_to_sequence, clifford_sets
 
 class RB_all(Manipulation):

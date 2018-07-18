@@ -115,6 +115,34 @@ end_time = time.time()
 print("Serial time=", end_time - start_time)
  
 start_time = time.time()
+threads = [threading.Thread(target=pulsar.program_awgs, args = (sequence, *elts, AWGs = [awg[i]])) for i in range(NUM_WORKERS)]
+[thread.start() for thread in threads]
+[thread.join() for thread in threads]
+end_time = time.time()
+ 
+print("Threads time=", end_time - start_time)
+ 
+ 
+start_time = time.time()
+processes = [multiprocessing.Process(target=crunch_numbers) for _ in range(NUM_WORKERS)]
+[process.start() for process in processes]
+[process.join() for process in processes]
+end_time = time.time()
+ 
+print("Parallel time=", end_time - start_time)
+
+
+#%%     test loading sequence
+
+awgs = ['awg', 'awg2']
+NUM_WORKERS = 2
+for i in range(NUM_WORKERS):
+    pulsar.program_awgs(sequence, *elts, AWGs = [awg[i]],)
+end_time = time.time()
+ 
+print("Serial time=", end_time - start_time)
+ 
+start_time = time.time()
 threads = [threading.Thread(target=crunch_numbers) for _ in range(NUM_WORKERS)]
 [thread.start() for thread in threads]
 [thread.join() for thread in threads]
@@ -130,6 +158,8 @@ processes = [multiprocessing.Process(target=crunch_numbers) for _ in range(NUM_W
 end_time = time.time()
  
 print("Parallel time=", end_time - start_time)
+
+
 
 
 

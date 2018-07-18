@@ -33,7 +33,10 @@ import stationF006
 from copy import deepcopy
 from manipulation_library import Ramsey
 from qcodes.instrument.parameter import Parameter, ArrayParameter, StandardParameter
+import os
 import time
+import threading
+import multiprocessing
 from qcodes.plots.qcmatplotlib import MatPlot
 from qcodes.plots.pyqtgraph import QtPlot
 
@@ -264,10 +267,10 @@ class Experiment:
         self.sequencer[i].sequence_cfg_type = seq_cfg_type
         self.seq_cfg.append(seq_cfg)
         self.seq_cfg_type.append(seq_cfg_type)
-        
+        '''
         self.digitizer, self.dig = set_digitizer(self.digitizer, 1, self.qubit_number, self.seq_repetition, self.threshold, 
                                                  self.X_sweep_array, self.Y_sweep_array, self.saveraw, self.readout_time)
-
+        '''
 #        self.sequencer[i].sweep_loop1 = self.sweep_loop1[i]
 #        self.sequencer[i].sweep_loop2 = self.sweep_loop2[i]
 #        self.sequencer[i].set_sweep()
@@ -281,6 +284,7 @@ class Experiment:
     def add_X_parameter(self, measurement, parameter, sweep_array, **kw):
         
         sequencer = self.find_sequencer(measurement)
+        extending_X = kw.pop('extending_X', True)
         
         if len(sequencer.X_sweep_array) == 0:
             sequencer.X_sweep_array = sweep_array 
@@ -295,6 +299,7 @@ class Experiment:
         
         if type(parameter) is Parameter:#isinstance(obj, Tektronix_AWG5014)
             
+#            if extending_X:
             self.digitizer, self.dig = set_digitizer(self.digitizer, 1, self.qubit_number, self.seq_repetition,self.threshold, 
                                                      0, 0, self.saveraw, self.readout_time)
             
@@ -314,8 +319,9 @@ class Experiment:
             
 #            sequencer.digitizer, sequencer.dig = set_digitizer(self.digitizer, len(sweep_array), self.qubit_number, self.seq_repetition)
             
-            self.digitizer, self.dig = set_digitizer(self.digitizer, len(self.X_sweep_array), self.qubit_number, self.seq_repetition, self.threshold, 
-                                                     self.X_sweep_array, self.Y_sweep_array, self.saveraw, self.readout_time)
+            if extending_X:
+                self.digitizer, self.dig = set_digitizer(self.digitizer, len(self.X_sweep_array), self.qubit_number, self.seq_repetition, self.threshold, 
+                                                         self.X_sweep_array, self.Y_sweep_array, self.saveraw, self.readout_time)
             
             i = len(sequencer.sweep_loop1)+1
             para = 'para'+str(i)
@@ -927,8 +933,6 @@ class Experiment:
                                                 trigger_wait = False, repetitions = 3000)
         
         
-        
-        
         '''
         test below about zero bias
         '''
@@ -1070,8 +1074,20 @@ class Experiment:
         
 #        element_no = len(self.segment['init']) + len(self.segment['manip']) + 1 + 1
         element_no += 2
+        
         awg.set_sqel_waveform(waveform_name = name+'_ch%d'%i, channel = i,
                               element_no = element_no)
+        
+        print('1st element:', element_no)
+        
+        if len(self.X_sweep_array) > len(self.dig.X_sweep_array):
+            coeff = int(len(self.X_sweep_array)/len(self.dig.X_sweep_array))
+            unit_length = int((awg.sequence_length()-1)/coeff)
+            for j in range(1, coeff):
+                awg.set_sqel_waveform(waveform_name = name+'_ch%d'%i, channel = i,
+                              element_no = element_no+unit_length*j) #element_no+2*len(self.dig.X_sweep_array))
+                print('%dth element'%j, element_no + unit_length*j)
+                
         return first_read
 
     def add_marker_into_first_readout_v2(self, awg, element = None):
@@ -1180,12 +1196,20 @@ class Experiment:
 #        sequence, elts = self.set_trigger(sequence, elts)
 #        elts = self.elts
 #        sequence = self.sequence
+        def task1():
+            self.pulsar.program_awgs(sequence, *elts, AWGs = ['awg'],)
+        def task2():
+            self.pulsar.program_awgs(sequence, *elts, AWGs = ['awg2'],)
+        print('Start counting loading time!')
         start_time = time.time()
-        self.pulsar.program_awgs(sequence, *elts, AWGs = ['awg','awg2'],)       ## elts should be list(self.element.values)
+#        self.pulsar.program_awgs(sequence, *elts, AWGs = ['awg','awg2'],)       ## elts should be list(self.element.values)
+        threads = [threading.Thread(target=task1), threading.Thread(target=task2),]
+        [thread.start() for thread in threads]
+        [thread.join() for thread in threads]
         end_time = time.time()
         print('Total loading time is: ', end_time - start_time)
         
-        time.sleep(1)
+        time.sleep(0.5)
         
         self.add_marker_into_first_readout(self.awg2)
 #        self.awg2.trigger_level(0.5)

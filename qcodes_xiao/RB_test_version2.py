@@ -392,7 +392,7 @@ def generate_randomized_clifford_sequence(start = 'I', interleave = None):
     
     sequence_length = 100
     
-    rep_num = 20
+    rep_num = 10
     
     sequence_number = 16*rep_num
     

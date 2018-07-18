@@ -217,7 +217,7 @@ def convert_clifford_to_sequence(clifford_index, interleave = None):
 
 def generate_randomized_clifford_sequence(interleave = None):
     
-    interleave = 'Zp'
+#    interleave = 'Zp'
     
     clifford_sets = []
     
@@ -239,7 +239,7 @@ def generate_randomized_clifford_sequence(interleave = None):
             clifford_index = list((np.random.rand(i)*24).astype(int))
             
             clifford_gates = convert_clifford_to_sequence(clifford_index, interleave)
-#            print(clifford_gates)
+            print(clifford_gates)
             
             clifford_sets[j].append(clifford_gates)
             
@@ -247,7 +247,7 @@ def generate_randomized_clifford_sequence(interleave = None):
 
 #clifford_sets = generate_randomized_clifford_sequence(interleave = 'Zp')
 
-#clifford_sets = generate_randomized_clifford_sequence()
+clifford_sets = generate_randomized_clifford_sequence()
 #clifford_sets_1 = clifford_sets
 #clifford_sets_2 = clifford_sets
 #clifford_sets1 = generate_randomized_clifford_sequence()

@@ -65,105 +65,6 @@ def sequence_decay(m, A, B, M):
 IO = DiskIO(base_location = 'C:\\Users\\LocalAdmin\\Documents\\RB_experiment')
 IO = DiskIO(base_location = 'D:\\Data\\RB_experiment')
 formatter = HDF5FormatMetadata()
-location1 = '2017-10-27/17-42-30/RB_experimentAllXY_sequence'
-location2 = '2017-10-28/15-16-42/RB_experimentAllXY_sequence'
-location3 = '2017-10-31/15-07-12/RB_experimentAllXY_sequence'
-location4 = '2017-10-30/13-01-20/RB_experimentAllXY_sequence'
-
-location5 = '2017-10-31/18-36-10/RB_experimentAllXY_sequence'   # Q2
-location6 = '2017-11-01/14-11-19/RB_experimentAllXY_sequence'   # Q1
-
-location7 = '2017-11-01/17-21-09/RB_experimentAllXY_sequence'
-location8 = '2017-11-01/19-46-17/RB_experimentAllXY_sequence' # simultaneous RB
-
-
-location9 = '2017-11-03/16-40-00/RB_experimentAllXY_sequence'
-
-location10 = '2017-11-03/20-35-34/RB_experimentAllXY_sequence'
-location11 = '2017-11-04/03-58-33/RB_experimentAllXY_sequence'
-
-
-location12 = '2017-11-07/00-58-57/RB_experimentAllXY_sequence'
-location12 = '2017-11-07/21-21-27/RB_experimentAllXY_sequence'      # project CZ on Q1 92.15%
-
-location13 = '2017-11-08/12-29-49/RB_experimentAllXY_sequence'
-location14 = '2017-11-08/13-30-25/RB_experimentAllXY_sequence'      # project CZ on Q2  85%
-location15 = '2017-11-08/17-51-57/RB_experimentAllXY_sequence'      # project CZ on Q2  85%
-
-
-
-location16 = '2017-11-09/10-30-58/RB_experimentAllXY_sequence'
-location16 = '2017-11-09/14-50-11/RB_experimentAllXY_sequence'      # # project CZ on Q1  92.74%   ctrl at |1>
-location17 = '2017-11-09/16-02-47/RB_experimentAllXY_sequence'       # project CZ on Q1  93.44%
-location18 = '2017-11-09/17-35-19/RB_experimentAllXY_sequence'      # project CZ on Q1  93.61%
-location19 = '2017-11-09/19-37-27/RB_experimentAllXY_sequence'      # project CZ on Q1  95.30%   ctrl at |0>
-
-location20 = '2017-11-09/22-27-11/RB_experimentAllXY_sequence'
-
-
-location21 = '2017-11-10/00-09-24/RB_experimentAllXY_sequence'
-location22 = '2017-11-10/01-53-00/RB_experimentAllXY_sequence'
-location23 = '2017-11-10/11-45-13/RB_experimentAllXY_sequence'
-location24 = '2017-11-10/13-30-08/RB_experimentAllXY_sequence'
-location25 = '2017-11-10/15-03-46/RB_experimentAllXY_sequence'
-
-location26 = '2017-11-10/17-00-57/RB_experimentAllXY_sequence'# sequential
-location27 = '2017-11-11/14-58-59/RB_experimentAllXY_sequence'# sequential with no interleave
-location28 = '2017-11-11/17-13-19/RB_experimentAllXY_sequence'# simultaneous with no interleave
-location29 = '2017-11-11/21-30-12/RB_experimentAllXY_sequence'# simultaneous with no interleave
-
-location99 = '2017-11-12/17-07-04/RB_experimentAllXY_sequence'# simultaneous with interleave
-location100 = '2017-11-12/21-43-54/RB_experimentAllXY_sequence'# simultaneous with interleave
-location101 = '2017-11-12/23-40-02/RB_experimentAllXY_sequence'# simultaneous with interleave
-
-location102 = '2017-11-13/15-34-14/RB_experimentAllXY_sequence'# simultaneous with no interleave
-
-location_a = '2017-11-13/18-47-23/RB_experimentAllXY_sequence'# simultaneous with no interleave
-location_b = '2017-11-13/21-29-25/RB_experimentAllXY_sequence'# simultaneous with no interleave
-
-location_c = '2017-11-14/14-25-46/RB_experimentAllXY_sequence'# simultaneous with interleave
-
-#%%
-
-location_1 = '2017-11-15/22-53-31/RB_experimentAllXY_sequence'  # 80.1 Q2  87.8 Q1
-location_2 = '2017-11-16/00-45-47/RB_experimentAllXY_sequence'  #85.5 Q2   84 Q1
-
-location_3 = '2017-11-16/16-05-05/RB_experimentAllXY_sequence'  #85.15 Q2   875 Q1
-
-location_4 = '2017-11-16/18-42-49/RB_experimentAllXY_sequence'  #85.13 Q2   885 Q1
-
-location_5 = '2017-11-16/20-22-33/RB_experimentAllXY_sequence'  #82.15 Q2   8705 Q1
-
-location_6 = '2017-11-16/22-52-43/RB_experimentAllXY_sequence'  #82.6 Q2   865 Q1
-
-
-#%%
-
-location_x = '2017-11-23/00-45-24/RB_experimentAllXY_sequence'
-location_y = '2017-11-23/10-00-08/RB_experimentAllXY_sequence'
-location_z = '2017-11-25/10-26-51/RB_experimentAllXY_sequence' #80%
-
-location_xx = '2017-11-25/11-30-33/RB_experimentAllXY_sequence' #81%
-
-location_xy = '2017-11-25/16-07-59/RB_experimentAllXY_sequence' #80%
-location_xzz = '2017-11-25/17-14-58/RB_experimentAllXY_sequence' #80%
-
-location_xz = '2017-11-25/23-01-05/RB_experimentAllXY_sequence' #80%
-
-location_xyy = '2017-11-26/01-55-19/RB_experimentAllXY_sequence' #80%
-location_xyy1 = '2017-11-26/03-27-08/RB_experimentAllXY_sequence' #80%
-
-location_te = '2017-12-12/12-02-59_DAC_V_sweep'
-
-
-location_a = '2018-02-28/17-30-30/RB_experimentAllXY_sequence' #interleave Q1 with Q2 down
-location_b = '2018-03-01/15-06-19/RB_experimentAllXY_sequence' #interleave Q1 with Q2 up
-
-location_c = '2018-03-03/10-35-16/RB_experimentAllXY_sequence' #interleave Q2 with Q1 down
-location_d = '2018-03-03/13-51-20/RB_experimentAllXY_sequence' #interleave Q2 with Q1 up
-
-
-#%%
 
 
 IO_K = DiskIO(base_location = 'K:\\ns\\qt\\spin-qubits\\data\\b059_data\\2018 data\\Data\\RB_experiment')
@@ -172,83 +73,60 @@ IO_K2 = DiskIO(base_location = 'K:\\ns\\qt\\spin-qubits\\data\\b059_data\\2018 d
 
 
 '''
-qubit 2
+character benchmarking
 '''
 
-location_new = '2018-05-30/12-05-27/RB_experimentAllXY_sequence'
-location_new2 = '2018-05-30/14-16-31/RB_experimentAllXY_sequence'
-location_new3 = '2018-05-30/18-26-14/RB_experimentAllXY_sequence'
-location_new4 = '2018-05-31/11-27-16/RB_experimentAllXY_sequence'
-
-location_dc = '2018-05-29/15-05-16_DAC_V_sweep'
-
-
-'''
-qubit 1
-'''
-location_new = '2018-06-01/17-40-40/RB_experimentAllXY_sequence'
-
-'''
-simultaneous
-'''
-
-location_new = '2018-06-04/18-00-34/RB_experimentAllXY_sequence'
-
-location_new2 = '2018-06-05/11-45-29/RB_experimentAllXY_sequence'
-
-location_new2 = '2018-06-20/13-08-22/RB_experimentAllXY_sequence'
-
-location_new2 = '2018-06-20/16-17-29/RB_experimentAllXY_sequence'
-
-location_new2 = '2018-06-22/18-36-27/RB_experimentAllXY_sequence'
-
-
-location_new2 = '2018-06-27/16-28-13/RB_experimentAllXY_sequence'
-
-location_new2 = '2018-06-29/16-09-21/RB_experimentAllXY_sequence'
-location_new2 = '2018-06-29/19-33-12/RB_experimentAllXY_sequence'
-location_new2 = '2018-06-29/21-42-22/RB_experimentAllXY_sequence'
-location_new2 = '2018-06-30/01-22-14/RB_experimentAllXY_sequence'
-#location_new2 = '2018-06-30/03-37-05/RB_experimentAllXY_sequence'
-#location_new2 = '2018-06-30/11-51-09/RB_experimentAllXY_sequence'
-#location_new2 = '2018-06-30/13-20-51/RB_experimentAllXY_sequence'
-#location_new2 = '2018-06-30/16-25-38/RB_experimentAllXY_sequence'
-#location_new2 = '2018-07-01/14-36-37/RB_experimentAllXY_sequence'
-#location_new2 = '2018-07-01/17-29-32/RB_experimentAllXY_sequence'
-#location_new2 = '2018-07-01/18-10-34/RB_experimentAllXY_sequence'
-#location_new2 = '2018-07-01/18-49-56/RB_experimentAllXY_sequence'
-#location_new2 = '2018-07-01/19-40-32/RB_experimentAllXY_sequence'
-location_new2 = '2018-07-02/01-31-40/RB_experimentAllXY_sequence'
-location_new2 = '2018-07-02/11-49-51/RB_experimentAllXY_sequence'
-location_new2 = '2018-07-02/16-28-41/RB_experimentAllXY_sequence'
-location_new2 = '2018-07-02/17-24-54/RB_experimentAllXY_sequence'
-location_new2 = '2018-07-02/19-10-11/RB_experimentAllXY_sequence'
-
-location_new2 = '2018-07-05/13-25-05/RB_experimentAllXY_sequence'
-
-location_new2 = '2018-07-09/16-36-36/RB_experiment2AllXY_sequence'
-location_new2 = '2018-07-13/12-33-00/RB_experimentAllXY_sequence'
-
-location_new2 = '2018-07-13/16-18-24/RB_experimentAllXY_sequence'
-location_new2 = '2018-07-18/11-16-23/RB_experimentAllXY_sequence'
+location_new2 = '2018-07-03/12-43-46/RB_experimentAllXY_sequence'
 
 
 DS = load_data(location = location_new2, io = IO_K, formatter = formatter)
 
 #%%
-NewIO = DiskIO(base_location = 'D:\\Data\\RB_experiment')
+ds = DS
+fitting_points = 24
+seq_rep_num = 10
+sequence_number = 16*seq_rep_num
+repetition = 50
+init_state = ['00', '01','10', '11',]
 
-DS = load_data(location = location_dc, io = NewIO)
+x = np.array([len(clifford_sets[0][i]) for i in range(fitting_points)])
 
-DS = load_data(location = location_4, io = IO, formatter = formatter)
-DS2 = load_data(location = location_b, io = IO, formatter = formatter)
+#def average_two_qubit(ds)
+data = {}
+average = {}
+for init in init_state:
+    data[init] = np.ndarray(shape = (int(sequence_number/4), fitting_points, repetition,))
+
+for j in range(sequence_number):
+    j_new = j%seq_rep_num
+    Pauli_index = j//seq_rep_num
+    init_index = Pauli_index//4
+    for i in range(11, 11+fitting_points):
+        for k in range(repetition):
+            if ds.singleshot_data[j][0][i][k] == 0 and ds.singleshot_data[j][1][i][k] == 0:
+                data[init_state[init_index]][j_new][i-11][k] = 1
+            else:
+                data[init_state[init_index]][j_new][i-11][k] = 0
+for init in init_state:
+    average_probability = data[init].mean(axis = 2)
+    average[init] = average_probability.mean(axis = 0)
+    
+P1 = average['00'] - average['01'] + average['10'] - average['11'] 
+P2 = average['00'] + average['01'] - average['10'] - average['11']
+P3 = average['00'] - average['01'] - average['10'] + average['11']
+
+pars1, pcov1 = curve_fit(RB_Fidelity, x, y, p0 = (0.9, 0.2, 0.4), bounds = ((0.7, 0, 0),(1, 0.8, 0.8)))
+pars2, pcov2 = curve_fit(RB_Fidelity, x, y, p0 = (0.9, 0.2, 0.4), bounds = ((0.7, 0, 0),(1, 0.8, 0.8)))
+pars3, pcov3 = curve_fit(RB_Fidelity, x, y, p0 = (0.9, 0.2, 0.4), bounds = ((0.7, 0, 0),(1, 0.8, 0.8)))
+
+
 #%%
 
 ds = DS
-Qubit = 2
+Qubit = 1
 i = 0 if Qubit == 2 else 1
 ramsey_point = 11
-fitting_point = 21
+fitting_point = 24
 x = np.array([len(clifford_sets[0][i]) for i in range(fitting_point)])
 #x = x-1
 #x[0] = 0
