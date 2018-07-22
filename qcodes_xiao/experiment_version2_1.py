@@ -1149,8 +1149,10 @@ class Experiment:
     
     def restore_previous_sequence(self, filename = 'setup_0_.AWG'):
         
-        self.awg.load_awg_file(filename = filename)
-        
+        def task1():
+            self.awg.load_awg_file(filename = filename)
+        def task2():
+            self.awg2.load_awg_file(filename = filename)
 #        self.awg2.load_awg_file(filename = filename)
 #        self.awg.write('AWGCONTROL:SRESTORE "{}"'.format(filename))
         

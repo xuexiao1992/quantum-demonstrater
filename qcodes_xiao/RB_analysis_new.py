@@ -78,13 +78,17 @@ character benchmarking
 
 location_new2 = '2018-07-03/12-43-46/RB_experimentAllXY_sequence'
 
+location_new2 = '2018-07-05/14-41-58/RB_experimentAllXY_sequence'
+
 
 DS = load_data(location = location_new2, io = IO_K, formatter = formatter)
 
-#%%
+#%% character benchmarking without normalization
+
 ds = DS
 fitting_points = 24
-seq_rep_num = 10
+#seq_rep_num = 20
+seq_rep_num = int(DS.sequence_number_set.shape[0]/16)
 sequence_number = 16*seq_rep_num
 repetition = 50
 init_state = ['00', '01','10', '11',]
@@ -99,8 +103,12 @@ for init in init_state:
 
 for j in range(sequence_number):
     j_new = j%seq_rep_num
+    
     Pauli_index = j//seq_rep_num
+    Pauli_index = j%16
+    
     init_index = Pauli_index//4
+    
     for i in range(11, 11+fitting_points):
         for k in range(repetition):
             if ds.singleshot_data[j][0][i][k] == 0 and ds.singleshot_data[j][1][i][k] == 0:
@@ -115,9 +123,29 @@ P1 = average['00'] - average['01'] + average['10'] - average['11']
 P2 = average['00'] + average['01'] - average['10'] - average['11']
 P3 = average['00'] - average['01'] - average['10'] + average['11']
 
-pars1, pcov1 = curve_fit(RB_Fidelity, x, y, p0 = (0.9, 0.2, 0.4), bounds = ((0.7, 0, 0),(1, 0.8, 0.8)))
-pars2, pcov2 = curve_fit(RB_Fidelity, x, y, p0 = (0.9, 0.2, 0.4), bounds = ((0.7, 0, 0),(1, 0.8, 0.8)))
-pars3, pcov3 = curve_fit(RB_Fidelity, x, y, p0 = (0.9, 0.2, 0.4), bounds = ((0.7, 0, 0),(1, 0.8, 0.8)))
+pars1, pcov1 = curve_fit(RB_Fidelity, x, P1, p0 = (0.9, 0.2, 0), bounds = ((0.7, 0, 0),(1, 0.8, 0.001)))
+pars2, pcov2 = curve_fit(RB_Fidelity, x, P2, p0 = (0.9, 0.2, 0), bounds = ((0.7, 0, 0),(1, 0.8, 0.001)))
+pars3, pcov3 = curve_fit(RB_Fidelity, x, P3, p0 = (0.9, 0.2, 0), bounds = ((0.7, 0, 0),(1, 0.8, 0.001)))
+Fidelity = 3/15 * (pars1[0] + pars2[0]) + 9/15 * pars3[0]
+
+#%%
+
+
+import matplotlib as mpl
+
+plot_point = fitting_points
+plot_points = fitting_points
+pt = MatPlot()
+pt.add(x = x[:plot_points],y = ds.probability_data[:,i,11:11+fitting_points].mean(axis = 0)[:plot_point], fmt = 'bp',xlabel = 'Clifford Numbers', ylabel = '$P_{|1>}$', xunit = 'N', yunit = '%')
+pt.add(x = x[:plot_points], y = RB_Fidelity(x,pars[0],pars[1],pars[2])[:plot_point],fmt = 'r--', )
+
+
+
+
+#%%     character benchmarking with normalization
+
+P_pi_1 = 0.98
+P_
 
 
 #%%

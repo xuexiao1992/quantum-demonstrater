@@ -234,14 +234,17 @@ class Sequencer:
         
         VP_start_point = -manip.VP_before
 #        VP_end_point = manip.VP_after
-        wfs, tvals = manipulation.normalized_waveforms()
-        max_length = max([len(tvals[ch]) for ch in tvals])/1e9
+        try:
+            max_length = manipulation.ideal_length()
+        except:
+            wfs, tvals = manipulation.normalized_waveforms()
+            max_length = max([len(tvals[ch]) for ch in tvals])/1e9
 
         for i in range(len(self.qubits)):
             refpulse = None if i ==0 else 'manip1'
             start = VP_start_point if i ==0 else 0
             
-            time = max(time, max_length-VP_start_point)
+            time = max(time, max_length-VP_start_point)+100e-9
             
             manipulation.add(SquarePulse(name='manip%d'%(i+1), channel=self.channel_VP[i], amplitude=amplitudes[i], length=time),
                            name='manip%d'%(i+1), refpulse = refpulse, refpoint = 'start', start = start)

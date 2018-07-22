@@ -13,7 +13,7 @@ import time
 import threading
 import multiprocessing
 
-from RB_test import generate_randomized_clifford_sequence
+#from RB_test import generate_randomized_clifford_sequence
 #%%
 
 NUM_WORKERS = 4
@@ -33,6 +33,7 @@ def only_sleep():
  
 def crunch_numbers():
     """ Do some computations """
+    print('running')
     print("PID: %s, Process Name: %s, Thread Name: %s" % (
         os.getpid(),
         multiprocessing.current_process().name,
@@ -106,7 +107,7 @@ end_time = time.time()
 print("Parallel time=", end_time - start_time)
 
 #%%
-
+'''
 start_time = time.time()
 for _ in range(NUM_WORKERS):
     crunch_numbers()
@@ -131,13 +132,14 @@ end_time = time.time()
  
 print("Parallel time=", end_time - start_time)
 
-
+'''
 #%%     test loading sequence
 
 awgs = ['awg', 'awg2']
-NUM_WORKERS = 2
+NUM_WORKERS = 4
 for i in range(NUM_WORKERS):
-    pulsar.program_awgs(sequence, *elts, AWGs = [awg[i]],)
+#    pulsar.program_awgs(sequence, *elts, AWGs = [awg[i]],)
+    crunch_numbers()
 end_time = time.time()
  
 print("Serial time=", end_time - start_time)
@@ -159,7 +161,58 @@ end_time = time.time()
  
 print("Parallel time=", end_time - start_time)
 
+#%%
+
+#output = multiprocessing.Queue()
+
+elements = experiment.elts
+
+tvals = 1
+waveforms = 1
+#global tvals, waveforms
+
+def get_wfm():# idx, output):
+#    global tvals, waveforms
+    i = -22
+    print(222)
+    print("PID: %s, Process Name: %s, Thread Name: %s" % (
+        os.getpid(),
+        multiprocessing.current_process().name,
+        threading.current_thread().name)
+    )
+    tvals, waveforms = elements[i].normalized_waveforms()
+#    output.put((idx, waveforms))
+    print(1)
+    return True
 
 
+start_time = time.time()
+
+length = len(elements)
+NUM_WORKERS = 4
+for i in range(NUM_WORKERS):
+    get_wfm()
+end_time = time.time()
+ 
+print("Serial time=", end_time - start_time)
+ 
+start_time = time.time()
+#threads = [threading.Thread(target=get_wfm, args = (-22,)) for i in range(NUM_WORKERS)]
+threads = [threading.Thread(target=get_wfm) for i in range(NUM_WORKERS)]
+[thread.start() for thread in threads]
+[thread.join() for thread in threads]
+end_time = time.time()
+
+print("Threads time=", end_time - start_time)
+
+start_time = time.time()
+#processes = [multiprocessing.Process(target=get_wfm, args = (-22,)) for i in range(NUM_WORKERS)]
+processes = [multiprocessing.Process(target=get_wfm) for i in range(NUM_WORKERS)]
+[process.start() for process in processes]
+[process.join() for process in processes]
+end_time = time.time()
+ 
+print("Parallel time=", end_time - start_time)
 
 
+#results = [output.get() for p in processes]

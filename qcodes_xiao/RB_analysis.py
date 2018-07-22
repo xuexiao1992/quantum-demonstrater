@@ -232,6 +232,13 @@ location_new2 = '2018-07-13/12-33-00/RB_experimentAllXY_sequence'
 location_new2 = '2018-07-13/16-18-24/RB_experimentAllXY_sequence'
 location_new2 = '2018-07-18/11-16-23/RB_experimentAllXY_sequence'
 
+location_new2 = '2018-07-18/19-45-46/RB_experimentAllXY_sequence'
+
+location_new2 = '2018-07-21/01-59-54/RB_experimentAllXY_sequence'
+location_new2 = '2018-07-21/16-34-34/RB_experimentAllXY_sequence'
+location_new2 = '2018-07-21/19-03-59/RB_experimentAllXY_sequence'
+location_new2 = '2018-07-21/23-23-55/RB_experimentAllXY_sequence'
+location_new2 = '2018-07-22/02-18-53/RB_experimentAllXY_sequence'
 
 DS = load_data(location = location_new2, io = IO_K, formatter = formatter)
 
