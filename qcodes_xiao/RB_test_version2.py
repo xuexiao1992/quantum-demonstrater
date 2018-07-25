@@ -100,6 +100,7 @@ gates = {
         'mZ9': mZ9,
         'CZ': CZ,
         'CZ_dumy': CZ_dumy,
+        'CZ_dumy_dumy': CZ_dumy,
         'Zp_prep': Zp_prep
         }
 
@@ -435,7 +436,7 @@ def generate_randomized_clifford_sequence(start = 'I', interleave = None):
     clifford_sets_1 = []
     clifford_sets_2 = []
     
-    sequence_length = 100
+    sequence_length = 60
     
     rep_num = 40
     
@@ -484,7 +485,7 @@ def generate_randomized_clifford_sequence(start = 'I', interleave = None):
     return clifford_sets_1, clifford_sets_2
 
 
-clifford_sets_1, clifford_sets_2 = generate_randomized_clifford_sequence(interleave = None)
+clifford_sets_1, clifford_sets_2 = generate_randomized_clifford_sequence(interleave = 'CZ_dumy')
 
 clifford_sets = clifford_sets_1
 #clifford_sets_2 = clifford_sets_1
