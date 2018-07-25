@@ -233,7 +233,7 @@ def generate_randomized_clifford_sequence(interleave = None):
             
             if i in range(15, 30) and i%3 != 0:
                 continue
-            elif i in range(30, 101) and i%5 != 0:
+            elif i in range(30, 101) and i%10 != 0:
                 continue
             
             clifford_index = list((np.random.rand(i)*24).astype(int))

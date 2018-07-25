@@ -170,6 +170,10 @@ def plot1D(data_set, measurements = 'All', xaxis = True, sameaxis = False, fitfu
                     plt.plot(x, y[i,x_start:x_end])
                     t = plt.axis()
                     plt.axis([t[0], t[1], y[i,:].min(), y[i,:].max()])
+                    '''
+                    mark
+                    '''
+#                    plt.axhline((y[i,:].min() + y[i,:].max())/2)
                     plt.xlabel(measurement)
                     if fitfunction != None:
                         xfit, yfit = fitfunction(x, y[i,x_start:x_end])

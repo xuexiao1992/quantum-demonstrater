@@ -133,13 +133,16 @@ Fidelity = 3/15 * (pars1[0] + pars2[0]) + 9/15 * pars3[0]
 
 import matplotlib as mpl
 
-plot_point = fitting_points
+#plot_point = fitting_points
 plot_points = fitting_points
+
 pt = MatPlot()
-pt.add(x = x[:plot_points],y = ds.probability_data[:,i,11:11+fitting_points].mean(axis = 0)[:plot_point], fmt = 'bp',xlabel = 'Clifford Numbers', ylabel = '$P_{|1>}$', xunit = 'N', yunit = '%')
-pt.add(x = x[:plot_points], y = RB_Fidelity(x,pars[0],pars[1],pars[2])[:plot_point],fmt = 'r--', )
-
-
+pt.add(x = x[:plot_points],y = P1[:plot_points], fmt = 'rp',xlabel = 'Clifford Numbers', ylabel = '$P_{|1>}$', xunit = 'N', yunit = '%')
+pt.add(x = x[:plot_points],y = P2[:plot_points], fmt = 'bp',xlabel = 'Clifford Numbers', ylabel = '$P_{|1>}$', xunit = 'N', yunit = '%')
+pt.add(x = x[:plot_points],y = P3[:plot_points], fmt = 'gp',xlabel = 'Clifford Numbers', ylabel = '$P_{|1>}$', xunit = 'N', yunit = '%')
+pt.add(x = x[:plot_points], y = RB_Fidelity(x,pars1[0],pars1[1],pars1[2])[:plot_points],fmt = 'r--', )
+pt.add(x = x[:plot_points], y = RB_Fidelity(x,pars2[0],pars2[1],pars2[2])[:plot_points],fmt = 'b--', )
+pt.add(x = x[:plot_points], y = RB_Fidelity(x,pars3[0],pars3[1],pars3[2])[:plot_points],fmt = 'g--', )
 
 
 #%%     character benchmarking with normalization

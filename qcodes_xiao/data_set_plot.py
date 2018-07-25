@@ -32,10 +32,13 @@ from pyqtgraph.GraphicsScene.GraphicsScene import GraphicsScene
 import qcodes.instrument_drivers.Spectrum.M4i as M4i
 from qcodes.instrument_drivers.Spectrum import pyspcm
 import time
+'''
 try:
     from setting_version2 import sweep_loop1
 except ImportError:
     print('sweep_loop1 from setting is not imported')
+'''
+
 #%%
 """
 def gaussian(A, B, x):
@@ -658,6 +661,11 @@ def set_digitizer(digitizer, sweep_num, qubit_num, repetition, threshold, X_swee
     repetition = repetition
     
     memsize = int((repetition+1)*sweep_num*qubit_num*seg_size)
+    '''
+    mark
+    '''
+#    memsize = int(seg_size)
+    
     posttrigger_size = seg_size-pretrigger
     
     #digitizer.enable_channels(pyspcm.CHANNEL0 | pyspcm.CHANNEL3)
@@ -678,11 +686,19 @@ def set_digitizer(digitizer, sweep_num, qubit_num, repetition, threshold, X_swee
     
     digitizer.set_channel_settings(1,1000, input_path = 0, termination = 0, coupling = 0, compensation = None)
     
-    #trig_mode = pyspcm.SPC_TMASK_SOFTWARE
     #trig_mode = pyspcm.SPC_TM_POS
+    
     trig_mode = pyspcm.SPC_TM_POS | pyspcm.SPC_TM_REARM
     
     digitizer.set_ext0_OR_trigger_settings(trig_mode = trig_mode, termination = 0, coupling = 0, level0 = 800, level1 = 900)
+    '''
+    mark
+    '''
+    '''
+    trig_mode = pyspcm.SPC_TMASK_SOFTWARE
+    digitizer.set_ext0_OR_trigger_settings(trig_mode = trig_mode, termination = 0, coupling = 0, level0 = 800, level1 = 900)
+    
+    '''
     
 #    dig = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size, digitizer = digitizer)
     dig = digitizer_multiparam(mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size, digitizer = digitizer, 

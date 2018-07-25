@@ -219,6 +219,7 @@ class Experiment:
         
         self.zerobias_element = None
         
+        self.make_new_element = True
         
         self.digitizer_trigger_channel = 'ch5_marker1'
         self.digitier_readout_marker = 'ch6_marker1'
@@ -388,12 +389,12 @@ class Experiment:
             if self.Loop is None:
 #                calibration = calibration_task if parameter
                 if with_calibration:
-                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 1.5).each(self.dig, calibration_task)
+                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 0.5).each(self.dig, calibration_task)
                 else:
-                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 1.5).each(self.dig)
+                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 0.5).each(self.dig)
             else:
                 LOOP = self.Loop
-                self.Loop = Loop(sweep_values = Sweep_Value, delay = 1.5).each(LOOP)
+                self.Loop = Loop(sweep_values = Sweep_Value, delay = 0.5).each(LOOP)
             
             self.Y_parameter = parameter.full_name
             self.Y_parameter_type = 'Out_Sequence'
@@ -431,14 +432,14 @@ class Experiment:
             if self.Loop is None:
                 if with_calibration:
                     print('calibration')
-                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 1.5).each(self.dig, calibration_task)
+                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 0.5).each(self.dig, calibration_task)
                 else:
-                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 1.5).each(self.dig)
+                    self.Loop = Loop(sweep_values = Sweep_Value, delay = 0.5).each(self.dig)
 #                self.Loop = Loop(sweep_values = Sweep_Value, delay = 2).each(self.dig)
             elif self.Loop is not None and self.Y_measurement is None:
                 print('no calibration')
                 LOOP = self.Loop
-                self.Loop = Loop(sweep_values = Sweep_Value, delay = 1.5).each(LOOP)
+                self.Loop = Loop(sweep_values = Sweep_Value, delay = 0.5).each(LOOP)
             
             
         
@@ -479,27 +480,118 @@ class Experiment:
             sequencer.sequence = Sequence(name = sequencer.name)
         self.generate_1D_sequence(idx_j = idx_j)
         '''
-        if 1:
+        if self.make_new_element:
             self.load_sequence(idx_j = idx_j)
-        if 0:
-            self.restore_precious_sequence(filename = 'RB_sequence\\sequence_%d'%idx_j)
+        else:
+            self.restore_previous_sequence(filename = 'RB_sequence\\sequence_%d'%idx_j)
             self.update_elements_in_awgs()
-            
-        self.awg.all_channels_on()
+        
+        time.sleep(0.1)
+        
+        t0 = time.time()
         self.awg2.all_channels_on()
-        
-        self.vsg.status('On')
-        self.vsg2.status('On')
-
+        t1 = time.time()
+        self.awg.all_channels_on()
+        time.sleep(0.1)
+        t2 = time.time()
+#        self.vsg.status('On')
+        t3 = time.time()
+#        self.vsg2.status('On')
+#        time.sleep(0.1)
+        t4 = time.time()
         self.pulsar.start()
+        '''
+        try this?
+        self.awg2.run()
+        time.sleep(0.2)
+        self.awg.run()
+        '''
+        t5 = time.time()
         
-        time.sleep(1)
+        print('t1: %d\nt2: %d\nt3 %d\nt4: %d\nt5: %d\n'%(t1-t0,t2-t1,t3-t2,t4-t3,t5-t4,))
+        time.sleep(0.3)
 
         return
     
     def update_elements_in_awgs(self,):
         
+#        init_step3 = self.elts[3]
+#        manip_crot = self.elts[14]
         
+        init_step3 = self.segment['init']['step3']
+        manip_crot = self.segment['manip2']['step1']
+        
+        tvals1, wfs1 = init_step3.normalized_waveforms()
+        name1 = init_step3.name+'_new'
+        channel1_T = self.channel_VP[0]
+        channel1_LP = self.channel_VP[1]
+        channel_names = list(tvals1.keys())
+        
+        for ch in channel_names[12:]:
+            if len(wfs1[ch]) == 0:
+                wfs1[ch] = np.full((1000,),0)
+            elif len(wfs1[ch]) != 1000:
+                raise ValueError('Check waveforms of init_step3')
+            
+        
+        tvals2, wfs2 = manip_crot.normalized_waveforms()
+        name2= manip_crot.name+'_new'
+        channel2_I = self.channel_I[1]
+        channel2_Q = self.channel_Q[1]
+        channel_names = list(tvals2.keys())
+        
+        for ch in channel_names[:]:
+            if len(wfs2[ch]) == 0:
+                wfs2[ch] = np.full((1200,),0)
+            elif len(wfs2[ch]) < 1200:
+                append = np.full((1200-len(wfs2[ch]),),0)
+                wfs2[ch] = np.append(wfs2[ch],append)
+
+        
+        t0 = time.time()
+        
+        self.awg2.send_waveform_to_list(w = wfs1[channel1_T], m1 = wfs1[channel1_T+'_marker1'],
+                                        m2 = wfs1[channel1_T+'_marker2'], wfmname = name1+'_%s'%channel1_T)
+        '''
+        self.awg2.send_waveform_to_list(w = wfs1[channel1_LP], m1 = wfs1[channel1_LP+'_marker1'],
+                                        m2 = wfs1[channel1_LP+'_marker2'], wfmname = name1+'_%s'%channel1_LP)
+        '''
+        
+        self.awg2.send_waveform_to_list(w = wfs2[channel1_T], m1 = wfs2[channel1_T+'_marker1'],
+                                        m2 = wfs2[channel1_T+'_marker2'], wfmname = name2+'_%s'%channel1_T)
+        
+        
+        self.awg.send_waveform_to_list(w = wfs2[channel2_I], m1 = wfs2[channel2_I+'_marker1'],
+                                       m2 = wfs2[channel2_I+'_marker2'], wfmname = name2+'_%s'%channel2_I)
+        
+        self.awg.send_waveform_to_list(w = wfs2[channel2_Q], m1 = wfs2[channel2_Q+'_marker1'],
+                                       m2 = wfs2[channel2_Q+'_marker2'], wfmname = name2+'_%s'%channel2_Q)
+        
+        t1 = time.time()
+        
+        unit_element_num = 17+2
+        total_element_num = self.awg.sequence_length()-1
+#        total_element_num = len(self.sequence.elements)-1
+        
+        unit_seq_num = int(total_element_num/unit_element_num)
+        
+        for seq in range(unit_seq_num):
+#            print('seq:', seq)
+            
+            self.awg2.set_sqel_waveform(waveform_name = name1+'_%s'%channel1_T, 
+                                        channel = int(channel1_T[2])-4, element_no = seq*unit_element_num+4)
+#            self.awg2.set_sqel_waveform(waveform_name = name1+'_%s'%channel1_LP, 
+#                                        channel = int(channel1_LP[2])-4, element_no = seq*unit_element_num+4)
+            self.awg2.set_sqel_waveform(waveform_name = name2+'_%s'%channel1_T, 
+                                        channel = int(channel1_T[2])-4, element_no = seq*unit_element_num+15)
+            
+            self.awg.set_sqel_waveform(waveform_name = name2+'_%s'%channel2_I,
+                                       channel = int(channel2_I[2]), element_no = seq*unit_element_num+15)
+            self.awg.set_sqel_waveform(waveform_name = name2+'_%s'%channel2_Q, 
+                                       channel = int(channel2_Q[2]), element_no = seq*unit_element_num+15)
+           
+        t2 = time.time()
+        print('t1: %f\nt2: %f\n'%(t1-t0,t2-t1))
         return
     def update_calibration(self,):
         if self.calibration_qubit == 'all' or self.calibration_qubit == 'qubit_1':
@@ -526,12 +618,16 @@ class Experiment:
 #                 self.average_plot.append(MatPlot(figsize = (8,5)))
 #==============================================================================
         
-        for seq in range(len(self.sequencer)):
-            self.sequencer[seq].set_sweep()
-            self.make_all_segment_list(seq)
-            
-            if 0 :
-                pass
+        self.make_new_element = kw.pop('make_new_element', True)
+        if self.make_new_element:
+            for seq in range(len(self.sequencer)):
+                self.sequencer[seq].set_sweep()
+                self.make_all_segment_list(seq)
+        else:
+            self.sequencer[0].set_sweep()
+            self.make_all_segment_list(0)
+#            self.sequencer[0].make_initialize_segment_list(segment_num = 1, name = 'init')
+#            self.sequencer[0].make_manipulation_segment_list(segment_num = 5, name = 'manip2')
         
         """
         loop function
@@ -1087,9 +1183,10 @@ class Experiment:
                 '''
                 store it into awg here
                 '''
-                filename = 'RB_sequence\\sequence_%d'%idx_j
-                self.save_sequence(self.awg, filename, disk = 'C:')
-                self.save_sequence(self.awg2, filename, disk = 'C:')
+                if not self.make_new_element:
+                    filename = 'RB_sequence\\sequence_%d'%idx_j
+                    self.save_sequence(self.awg, filename, disk = 'C:')
+                    self.save_sequence(self.awg2, filename, disk = 'C:')
     
     def generate_1D_sequence(self, idx_j = 0, for_replacement = False):
         seq_num = 0
@@ -1230,6 +1327,9 @@ class Experiment:
         return True
     
     def restore_previous_sequence(self, filename = 'setup_0_.AWG'):
+        
+        self.awg.all_channels_off()
+        self.awg2.all_channels_off()
         
         def task1():
             self.awg.load_awg_file(filename = filename)

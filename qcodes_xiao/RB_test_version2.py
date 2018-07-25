@@ -59,8 +59,8 @@ mZ9 = 1/np.sqrt(2)*np.array([[1, 0,],
 
 CZ = np.array([[1, 0, 0, 0],
                [0, 1, 0, 0],
-               [0, 0, -1, 0],
-               [0, 0, 0, 1]], dtype=complex)
+               [0, 0, 1, 0],
+               [0, 0, 0, -1]], dtype=complex)
 
 CZ_dumy = np.array([[1, 0, 0, 0],
                     [0, 1, 0, 0],
@@ -70,6 +70,19 @@ CZ_dumy = np.array([[1, 0, 0, 0],
 
 Zp_prep = -1j*Pauli_Z
 
+
+CZ00 = np.array([[-1, 0, 0, 0],
+                 [0, 1, 0, 0],
+                 [0, 0, 1, 0],
+                 [0, 0, 0, 1]], dtype=complex)
+CZ01 = np.array([[1, 0, 0, 0],
+                 [0, -1, 0, 0],
+                 [0, 0, 1, 0],
+                 [0, 0, 0, 1]], dtype=complex)
+CZ10 = np.array([[1, 0, 0, 0],
+                 [0, 1, 0, 0],
+                 [0, 0, -1, 0],
+                 [0, 0, 0, 1]], dtype=complex)
 
 gates = {
         'I': I,
@@ -348,38 +361,70 @@ def convert_clifford_to_sequence(clifford_index_1, clifford_index_2, start_1 = '
             elif i == len(Clifford_group):
                 raise KeyError('Cannot find the first Clifford for Qubit 2')
         clifford_gates_2[0] = Clifford_gates[i]
+    
     if len(clifford_index_2) == 0:
         clifford_gates_2.append([start_2])
     
     if len(clifford_index_1) == 0 and len(clifford_index_2) == 0:
         return clifford_gates_1, clifford_gates_2
-        
+    
+#    m = 0
+    
     for i in range(len(Clifford_group)):
         for j in range(len(Clifford_group)):
-            mat = np.linalg.multi_dot([total_matrix, np.kron(Clifford_group[i], Clifford_group[j])][::-1])
-            if interleave is not None:
-                mat2 = np.linalg.multi_dot([total_matrix, CZ, np.kron(Clifford_group[i], Clifford_group[j])][::-1])
-                
-#            if abs(np.sum(abs(mat))-abs(np.sum(np.diag(mat)))) < 1e-8:
-#            if np.sum(abs(mat))-np.sum(abs(np))
-            if abs(np.sum(abs(mat))-np.sum(abs(np.diag(mat)))) < 1e-8 and abs(abs(np.sum(np.diag(mat)))-np.sum(abs(np.diag(mat)))) < 1e-8:
+#            print('i: %d\nj: %d\n'%(i,j))
+            mat1 = np.linalg.multi_dot([total_matrix, np.kron(Clifford_group[i], Clifford_group[j])][::-1])
+#            print('mat1: \n', mat1)
+#            mat2 = np.linalg.multi_dot([total_matrix, CZ, np.kron(Clifford_group[i], Clifford_group[j])][::-1])
+            if abs(np.sum(abs(mat1))-np.sum(abs(np.diag(mat1)))) < 1e-3 and abs(abs(np.sum(np.diag(mat1)))-np.sum(abs(np.diag(mat1)))) < 1e-3:
+#                m = 1
+                print('mat1')
                 clifford_gates_1.append(Clifford_gates[i])
                 clifford_gates_2.append(Clifford_gates[j])
+#                print('C1:', clifford_gates_1)
+#                print('C2:', clifford_gates_2)
                 return clifford_gates_1, clifford_gates_2
-            
-            elif interleave is not None and abs(np.sum(abs(mat2))-np.sum(abs(np.diag(mat2)))) < 1e-5:
-                ii = i
+    
+    for i in range(len(Clifford_group)):
+        for j in range(len(Clifford_group)):
+#            print('i: %d\nj: %d\n'%(i,j))
+            mat2 = np.linalg.multi_dot([total_matrix, CZ, np.kron(Clifford_group[i], Clifford_group[j])][::-1])
+            if abs(np.sum(abs(mat2))-np.sum(abs(np.diag(mat2)))) < 1e-5 and abs(abs(np.sum(np.diag(mat2)))-np.sum(abs(np.diag(mat2)))) < 1e-5:
+#                m = 2
+                print('mat2')
                 clifford_gates_1.append(['CZ'])
-                clifford_gates_1.append(Clifford_gates[ii])
-                clifford_gates_2.append(['CZ'])
-                clifford_gates_2.append(Clifford_gates[ii])
+                clifford_gates_2.append(['CZ_dumy'])
+                clifford_gates_1.append(Clifford_gates[i])
+                clifford_gates_2.append(Clifford_gates[j])
+#                print('C1:', clifford_gates_1)
+#                print('C2:', clifford_gates_2)
                 return clifford_gates_1, clifford_gates_2
-
-            elif i == 23 and j == 23:
-                raise ValueError('not calculated rightly')
-
-                print('not calculated rightly')
-                return 0, 0
+    
+    for i in range(len(Clifford_group)):
+        for j in range(len(Clifford_group)):
+#            print('i: %d\nj: %d\n'%(i,j))
+            for G1 in ['X9', 'Y9', 'mX9', 'mY9', 'Z9', 'mZ9', 'I', 'Xp', 'Yp', 'Zp']:
+                for G2 in ['X9', 'Y9', 'mX9', 'mY9', 'Z9', 'mZ9', 'I', 'Xp', 'Yp', 'Zp']:
+                    mat3 = np.linalg.multi_dot([total_matrix, np.kron(gates[G1], gates[G2]), CZ, np.kron(Clifford_group[i], Clifford_group[j])][::-1])
+                    if abs(np.sum(abs(mat3))-np.sum(abs(np.diag(mat3)))) < 1e-5 and abs(abs(np.sum(np.diag(mat3)))-np.sum(abs(np.diag(mat3)))) < 1e-5:
+                        print('mat3')
+                        clifford_gates_1.append([G1])
+                        clifford_gates_2.append([G2])
+                        clifford_gates_1.append(['CZ'])
+                        clifford_gates_2.append(['CZ_dumy'])
+                        clifford_gates_1.append(Clifford_gates[i])
+                        clifford_gates_2.append(Clifford_gates[j])
+#                        print('C1:', clifford_gates_1)
+#                        print('C2:', clifford_gates_2)
+                        return clifford_gates_1, clifford_gates_2
+                                
+#    if i == 23 and j == 23 and m ==0:
+    print('not calculated rightly')
+    print('i: %d\nj: %d\n'%(i,j))
+#    print('C1:', clifford_gates_1)
+#    print('C2:', clifford_gates_2)
+    raise ValueError('not calculated rightly')
+    return 0, 0
 
 #    clifford_gates.append(Clifford_gates[i])
     
@@ -392,11 +437,11 @@ def generate_randomized_clifford_sequence(start = 'I', interleave = None):
     
     sequence_length = 100
     
-    rep_num = 20
+    rep_num = 40
     
     sequence_number = 16*rep_num
     
-#    sequence_number = 40
+    sequence_number = 20
     start = start
     
     for j in range(sequence_number):
@@ -427,11 +472,11 @@ def generate_randomized_clifford_sequence(start = 'I', interleave = None):
                 
                 clifford_index_1 = list((np.random.rand(i)*24).astype(int))
                 clifford_index_2 = list((np.random.rand(i)*24).astype(int))
-                
+                print('i:', i)
                 clifford_gates_1, clifford_gates_2 = convert_clifford_to_sequence(clifford_index_1, clifford_index_2, start_1, start_2, interleave)
             
-            print(clifford_gates_1)
-            print(clifford_gates_2)
+#            print(clifford_gates_1)
+#            print(clifford_gates_2)
             
             clifford_sets_1[j].append(clifford_gates_1)
             clifford_sets_2[j].append(clifford_gates_2)
@@ -440,6 +485,7 @@ def generate_randomized_clifford_sequence(start = 'I', interleave = None):
 
 
 clifford_sets_1, clifford_sets_2 = generate_randomized_clifford_sequence(interleave = None)
+
 clifford_sets = clifford_sets_1
 #clifford_sets_2 = clifford_sets_1
 

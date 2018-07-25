@@ -12,6 +12,26 @@ from qcodes.instrument.base import Instrument
 #from experiment import Experiment
 from manipulation import Manipulation
 import stationF006
+try:
+    import cPickle as pickle
+except ModuleNotFoundError:
+    import pickle
+
+
+#%%
+
+
+def save_object(obj, obj_name = None):
+    filename = 'K:\\ns\\qt\\spin-qubits\\data\\b059_data\\2018 data\\experiment_objs\\{}.pkl'.format(obj_name)
+    with open(filename, 'wb') as output:  # Overwrites any existing file.
+        pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
+
+def load_object(obj_name = None):
+    filename = 'K:\\ns\\qt\\spin-qubits\\data\\b059_data\\2018 data\\experiment_objs\\{}.pkl'.format(obj_name)
+    with open(filename, 'rb') as input:
+        obj = pickle.load(input)
+    return obj
+
 
 #%%
 #from RB_C2 import convert_clifford_to_sequence, clifford_sets
@@ -210,9 +230,12 @@ class RB_all_test(Manipulation):
         return self
 
 #%%
-from RB_test_version2 import convert_clifford_to_sequence, clifford_sets_1, clifford_sets_2
+#from RB_test_version2 import convert_clifford_to_sequence, clifford_sets_1, clifford_sets_2
 #from RB_test import convert_clifford_to_sequence, clifford_sets_1, clifford_sets_2
 
+
+clifford_sets_1 = load_object('clifford_sets_1')
+clifford_sets_2 = load_object('clifford_sets_2')
 
 class RB_all(Manipulation):
 
@@ -234,7 +257,8 @@ class RB_all(Manipulation):
         self.amplitude_control = kw.pop('amplitude_control', 30*0.5*-0.03)
         self.amplitude_target = kw.pop('amplitude_target', 30*0.5*0.02)
         self.detuning_time = kw.pop('detuning_time', 0)
-        
+        self.phase_1 = kw.pop('phase_1', 90)
+        self.phase_2 = kw.pop('phase_2', 90)
         self.align = kw.pop('align', False)
 
     def __call__(self, **kw):
@@ -254,7 +278,8 @@ class RB_all(Manipulation):
         
         self.amplitude_control = kw.pop('amplitude_control', self.amplitude_control)
         self.amplitude_target = kw.pop('amplitude_target', self.amplitude_target)
-
+        self.phase_1 = kw.pop('phase_1', self.phase_1)
+        self.phase_2 = kw.pop('phase_2', self.phase_2)
         return self
 
     def make_circuit(self, **kw):
@@ -274,6 +299,9 @@ class RB_all(Manipulation):
         amplitude_control = kw.pop('amplitude_control', self.amplitude_control)
         amplitude_target = kw.pop('amplitude_target', self.amplitude_target)
         detuning_time = kw.pop('detuning_time', self.detuning_time)
+        
+        self.phase_1 = kw.pop('phase_1', self.phase_1)
+        self.phase_2 = kw.pop('phase_2', self.phase_2)
         
         self.off_resonance_amplitude = kw.pop('off_resonance_amplitude', self.off_resonance_amplitude)
         
@@ -374,14 +402,35 @@ class RB_all(Manipulation):
                     elif gate == 'Zp_prep':
                         amp = self.off_resonance_amplitude if qubit == 'qubit_1' else 0
                         freq_shift = -30e6 if qubit == 'qubit_1' else 0
+                    
                     elif gate == 'CZ':
                         if gate == 'CZ_dumy':
                             pass
-                        self.add_CPhase(name = 'CP1', refgate = 'H1_Q1', waiting_time = 10e-9,
-                                        control_qubit = qubit_1, target_qubit = qubit_2,
-                                        amplitude_control = amplitude_control, amplitude_target = amplitude_target, 
-                                        length = detuning_time)
-                        pass
+                        
+                        else:
+                            refgate = last_gate_1
+                            
+                            gate_name = 'CPhase%d%d'%((i+1),(j+1))
+                            
+                            gate_name_1 = gate_name + '_waiting'
+                            gate_name_2 = gate_name + '_waiting'
+                            
+                            self.add_CPhase(name = gate_name, refgate = refgate, waiting_time = 10e-9,
+                                            control_qubit = qubit_1, target_qubit = qubit_2,
+                                            amplitude_control = amplitude_control, amplitude_target = amplitude_target, 
+                                            length = detuning_time)
+                            
+                            self.add_Z(name='Zcp_Q1', qubit = qubit_1, degree = self.phase_1)
+                            self.add_Z(name='Zcp_Q2', qubit = qubit_2, degree = self.phase_2)
+                            
+                            self.add_CPhase(name = gate_name_1, refgate = gate_name, 
+                                            control_qubit = qubit_1, target_qubit = qubit_2,
+                                            amplitude_control = 0, amplitude_target = 0, 
+                                            length = 10e-9)
+                            
+                            pass
+                        continue
+                    
                     elif 'Z' in gate:
                         if gate == 'Zp' or gate == 'mZp':
                             degree = 180
@@ -393,6 +442,7 @@ class RB_all(Manipulation):
                             raise ValueError('Z gate degree is wrong')
                         self.add_Z(name='Z_%d%d'%((i+1),(j+1))+qubit, qubit = qubit_obj[qubit], degree = degree)
                         continue
+                    
                     else:
                         amp = 1
                         freq_shift = 0

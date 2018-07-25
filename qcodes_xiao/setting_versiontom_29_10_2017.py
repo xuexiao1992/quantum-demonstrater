@@ -112,8 +112,10 @@ def load_object(obj_name = None):
     with open(filename, 'rb') as input:
         obj = pickle.load(input)
     return obj
-
-
+'''
+save_object(dig_data, obj_name = 'test_dig')
+test = load_object('test_dig')
+'''
 #%%  Sweep
 
 def sweep_array(start, stop, points):
@@ -221,7 +223,7 @@ init_cfg = {
         'step1' : set_step(time = 0.2e-3, qubits = qubits, voltages = [T_factor*30*0.5*0.000, LP_factor*30*0.5*0.000]),
         'step2' : set_step(time = 4e-3, qubits = qubits, voltages = [T_factor*30*0.5*-0.004, LP_factor*30*0.5*-0.005]),
 #        'step2' : set_step(time = 5e-3, qubits = qubits, voltages = [T_factor*30*0.5*-0.004, LP_factor*30*0.5*-0.006]),
-        'step3' : set_step(time = 0.1e-3, qubits = qubits, voltages = [T_factor*30*0.5*-0.011, LP_factor*30*0.5*-0.00]),
+        'step3' : set_step(time = 0.1e-3, qubits = qubits, voltages = [T_factor*30*0.5*-0.0096, LP_factor*30*0.5*-0.00]),
         'step4' : set_step(time = 4e-3, qubits = qubits, voltages = [T_factor*30*0.5*0, LP_factor*30*0.5*0]),
         'step5' : set_step(time = 0.2e-3, qubits = qubits, voltages = [T_factor*30*0.5*0.0015, LP_factor*30*0.5*0.0015]),
         'step6' : set_step(time = 0.5e-3, qubits = qubits, voltages = [T_factor*30*0.5*0.002, LP_factor*30*0.5*-0.0005]),
@@ -481,11 +483,11 @@ experiment = Experiment(name = 'RB_experiment', label = 'AllXY_sequence', qubits
 calibration = Calibration(name = 'ramsey_calibration', label = 'Ramsey_scan', qubits = [qubit_1, qubit_2], 
                          awg = awg, awg2 = awg2, pulsar = pulsar,
                          vsg = vsg, vsg2 = vsg2, digitizer = digitizer)
-
+'''
 experiment = Experiment_v2_2(name = 'RB_experiment2', label = 'AllXY_sequence', qubits = [qubit_1, qubit_2], 
                              awg = awg, awg2 = awg2, pulsar = pulsar, 
                              vsg = vsg, vsg2 = vsg2, digitizer = digitizer)
-
+'''
 
 print('experiment initialized')
 
@@ -496,7 +498,7 @@ experiment.qubit_number = 2
 experiment.readnames = ['Qubit2', 'Qubit1']
 
 #experiment.threshold = 0.0195
-experiment.threshold = 0.028
+experiment.threshold = 0.025
 
 experiment.seq_repetition = 100
 experiment.saveraw = False
@@ -546,7 +548,7 @@ rabi12 = Rabi_all(name = 'Rabi12', pulsar = pulsar)
 rabi123 = Rabi_all(name = 'Rabi123', pulsar = pulsar)
 
 ramsey12 = Ramsey_all(name = 'Ramsey12', pulsar = pulsar, qubit = 'qubit_1', off_resonance_amplitude = 1.05, amplitude = 1, 
-                      duration_time = 125e-9, waiting_time = 260e-9,detune_q1= False)
+                      duration_time = 125e-9, waiting_time = 260e-9, detune_q1= False)
 
 #ramsey12_2 = Ramsey_all(name = 'Ramsey12_2', pulsar = pulsar, qubit = 'qubit_1', off_resonance_amplitude = 1.1, amplitude = 1, 
 #                        duration_time = 125e-9, waiting_time = 260e-9,detune_q1= False)
@@ -559,8 +561,8 @@ rabi = Rabi(name = 'Rabi', pulsar = pulsar)
 
 wait = Wait(name = 'Wait', pulsar = pulsar)
 #
-crot = CRot(name = 'CRot', pulsar = pulsar, amplitude = 30*0.5*-0.0332*T_factor, amplitude2 = 30*0.5*0.02*LP_factor,
-            amplitudepi = 1.1, frequency_shift = 0.0641e9, duration_time = 200e-9)
+crot = CRot(name = 'CRot', pulsar = pulsar, amplitude = 30*0.5*-0.0328*T_factor, amplitude2 = 30*0.5*0.02*LP_factor,
+            amplitudepi = 1.1, frequency_shift = 0.0656e9, duration_time = 204e-9)
 
 rabi2 = Rabi(name = 'Rabi2', pulsar = pulsar, amplitude = 1, qubit = 'qubit_1',)
 
@@ -997,11 +999,11 @@ print('sequence loaded')
 
 
 #%%        Randomized_Benchmarking Q1 & Q2
-
+'''
 from manipulation_library import RB_all
 #from RB_library_version2 import RB_all, RB_all_test
 
-rb12 = RB_all(name = 'RB12', pulsar = pulsar, off_resonance_amplitude = 1.05)
+rb12 = RB_all(name = 'RB12', pulsar = pulsar, off_resonance_amplitude = 1.15)
 
 #rb12_2 = RB_all(name = 'RB12', pulsar = pulsar, off_resonance_amplitude = 1.1)
 
@@ -1017,8 +1019,8 @@ experiment.add_X_parameter('Ramsey_Scan', parameter = 'frequency_shift', sweep_a
 
 experiment.add_measurement('RB', ['RB12', 'CRot'], [rb12, crot], sequence1_cfg, sequence1_cfg_type)
 #experiment.add_X_parameter(measurement = 'Rabi_Scan', parameter = vsg2.frequency, sweep_array = sweep_array(19.655e9, 19.695e9, 21))
-#experiment.add_X_parameter('RB', parameter = 'clifford_number', sweep_array = sweep_array(0, 22, 23), element = 'RB12')
-experiment.add_X_parameter('RB', parameter = 'clifford_number', sweep_array = sweep_array(0, 14, 15), element = 'RB12')
+experiment.add_X_parameter('RB', parameter = 'clifford_number', sweep_array = sweep_array(0, 23, 24), element = 'RB12')
+#experiment.add_X_parameter('RB', parameter = 'clifford_number', sweep_array = sweep_array(0, 14, 15), element = 'RB12')
 #experiment.add_X_parameter('Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 0.6e-6, 21), element = 'Rabi')
 
 experiment.add_measurement('Rabi_Scan', ['Rabi12','CRot'], [rabi12, crot], sequence11_cfg, sequence11_cfg_type)
@@ -1027,7 +1029,7 @@ experiment.add_X_parameter('Rabi_Scan', parameter = 'amplitude', sweep_array = s
 #experiment.add_Y_parameter('RB', parameter = 'sequence_number', sweep_array = sweep_array(0, 24, 25), 
 #                           element = 'RB12', with_calibration = True, pre_stored = True)
 
-experiment.add_Y_parameter('RB', parameter = 'sequence_number', sweep_array = sweep_array(0, 4, 5), element = 'RB12', with_calibration = True)
+experiment.add_Y_parameter('RB', parameter = 'sequence_number', sweep_array = sweep_array(0, 29, 30), element = 'RB12', with_calibration = True)
 
 experiment.set_sweep(repetition = False, plot_average = False, count = 1)
 print('loading sequence')
@@ -1040,10 +1042,10 @@ experiment.load_sequence()
 print('sequence loaded')
 
 
-#time.sleep(10)
+time.sleep(10)
 
 #experiment.run_experiment()
-'''
+
 
 try:
     experiment.run_experiment()
@@ -1055,7 +1057,7 @@ except:
 #from manipulation_library import RB_all
 from RB_library_version2 import RB_all, RB_all_test
 
-rb12 = RB_all(name = 'RB12', pulsar = pulsar, off_resonance_amplitude = 1.2)
+rb12 = RB_all(name = 'RB12', pulsar = pulsar, off_resonance_amplitude = 1.15)
 
 #rb12_2 = RB_all(name = 'RB12', pulsar = pulsar, off_resonance_amplitude = 1.1)
 
@@ -1142,15 +1144,28 @@ experiment.add_X_parameter('Rabi_Scan5', parameter = 'amplitude', sweep_array = 
 '''
 '''
 #sweep = sweep_array(0, 639, 640)
-experiment.add_Y_parameter('RB', parameter = 'sequence_number', sweep_array = sweep_array(0, 63, 64), element = 'RB12', with_calibration = True)
-experiment.add_Y_parameter('RB2', parameter = 'sequence_number', sweep_array = sweep_array(64, 127, 64), element = 'RB12', with_calibration = True)
-experiment.add_Y_parameter('RB3', parameter = 'sequence_number', sweep_array = sweep_array(128, 191, 64), element = 'RB12', with_calibration = True)
-experiment.add_Y_parameter('RB4', parameter = 'sequence_number', sweep_array = sweep_array(192, 255, 64), element = 'RB12', with_calibration = True)
-experiment.add_Y_parameter('RB5', parameter = 'sequence_number', sweep_array = sweep_array(256, 319, 64), element = 'RB12', with_calibration = True)
+seq_num = 128
+
+experiment.add_Y_parameter('RB', parameter = 'sequence_number', sweep_array = sweep_array(0, seq_num-1, seq_num), element = 'RB12', with_calibration = True)
+experiment.add_Y_parameter('RB2', parameter = 'sequence_number', sweep_array = sweep_array(seq_num, 2*seq_num-1, seq_num), element = 'RB12', with_calibration = True)
+experiment.add_Y_parameter('RB3', parameter = 'sequence_number', sweep_array = sweep_array(2*seq_num, 3*seq_num-1, seq_num), element = 'RB12', with_calibration = True)
+experiment.add_Y_parameter('RB4', parameter = 'sequence_number', sweep_array = sweep_array(3*seq_num, 4*seq_num-1, seq_num), element = 'RB12', with_calibration = True)
+experiment.add_Y_parameter('RB5', parameter = 'sequence_number', sweep_array = sweep_array(4*seq_num, 5*seq_num-1, seq_num), element = 'RB12', with_calibration = True)
 
 
-experiment.set_sweep(repetition = False, plot_average = False, count = 1)
+#experiment.add_Y_parameter('RB', parameter = 'sequence_number', sweep_array = sweep_array(0, 127, 128), element = 'RB12', with_calibration = True)
+#experiment.add_Y_parameter('RB2', parameter = 'sequence_number', sweep_array = sweep_array(128, 255, 128), element = 'RB12', with_calibration = True)
+#experiment.add_Y_parameter('RB3', parameter = 'sequence_number', sweep_array = sweep_array(256, 383, 128), element = 'RB12', with_calibration = True)
+#experiment.add_Y_parameter('RB4', parameter = 'sequence_number', sweep_array = sweep_array(384, 511, 128), element = 'RB12', with_calibration = True)
+#experiment.add_Y_parameter('RB5', parameter = 'sequence_number', sweep_array = sweep_array(512, 639, 128), element = 'RB12', with_calibration = True)
+
+
+experiment.set_sweep(repetition = False, plot_average = False, count = 1, make_new_element = False)
 print('loading sequence')
+
+'''
+
+'''
 try:
     experiment.generate_sequence()
 except:
@@ -1158,17 +1173,17 @@ except:
 #experiment.generate_sequence()
 experiment.load_sequence()
 print('sequence loaded')
-
-
+'''
+'''
 time.sleep(15)
 
 try:
     experiment.run_experiment()
 except:
     experiment.close()    
-
-#ds2 = experiment2.data_set
 '''
+#ds2 = experiment2.data_set
+
 
 #%%        Randomized_Benchmarking Q1 & Q2 interleaved with CZ
 
@@ -1413,18 +1428,18 @@ print('sequence loaded')
 '''
 
 #%%     CPhase
-'''
-phase_1 = 187
-phase_2 = 127
+
+phase_1 = 48.5
+phase_2 = 13
 
 
-AMP_C = 30*0.5*-0.0384      # for normal CPhase 
+AMP_C = 30*0.5*-0.0341      # for normal CPhase 
 AMP_T = 30*0.5*0.02
 duration = 80e-9
 
 
-#AMP_C = 30*0.5*0.0350      # for opposite CPhase
-#AMP_T = 30*0.5*-0.05
+AMP_C = 30*0.5*0.0386      # for opposite CPhase
+AMP_T = 30*0.5*-0.025
 #duration = 80e-9
 
 #phase1_r = 77
@@ -1440,11 +1455,11 @@ control = 'qubit_2'
 
 cphase = CPhase_Calibrate(name = 'CPhase', pulsar = pulsar, Pi_amplitude = 0, 
                           detuning_amplitude = AMP_C, detuning_amplitude2 = AMP_T,
-                          detuning_time = duration, phase = 0, off_resonance_amplitude = 0.9, control_qubit = control)
+                          detuning_time = duration, phase = 0, off_resonance_amplitude = 1.05, control_qubit = control)
 
 cphase2 = CPhase_Calibrate(name = 'CPhase2', pulsar = pulsar, Pi_amplitude = 1, 
                            detuning_amplitude = AMP_C, detuning_amplitude2 = AMP_T,
-                          detuning_time = duration, phase = 0, off_resonance_amplitude = 0.9, control_qubit = control)
+                           detuning_time = duration, phase = 0, off_resonance_amplitude = 1.05, control_qubit = control)
 
 
 experiment.calibration_qubit = 'all'
@@ -1476,7 +1491,7 @@ experiment.load_sequence()
 
 print('sequence loaded')
 #time.sleep(0.5)
-'''
+
 '''
 plot1D(experiment.data_set, measurements = ['CPhase_Calibration','CPhase_Calibration2'], sameaxis = True, fitfunction = fitcos)
 plot1D(experiment.data_set, measurements = ['CPhase_Calibration','CPhase_Calibration2'], sameaxis = True)
@@ -1609,9 +1624,9 @@ phase1 = 90
 phase2 = 90
 
 
-AMP_C = 30*0.5*-0.038
+AMP_C = 30*0.5*-0.0337
 AMP_T = 30*0.5*0.02
-#AMP_C = 30*0.5*0.032
+#AMP_C = 30*0.5*0.0335
 #AMP_T = 30*0.5*-0.025
 
 #AMP_C = 30*0.5*0.04
@@ -1629,7 +1644,7 @@ AMP_T_r = 30*0.5*-0.020
 
 dcz = DCZ(name = 'DCZ', pulsar = pulsar, Pi_amplitude = 0, detuning_amplitude = AMP_C, detuning_amplitude2 = AMP_T, 
           detuning_amplitude3 = AMP_C_r, detuning_amplitude4 = AMP_T_r, 
-          detuning_time = 80e-9, phase = 0, off_resonance_amplitude = 0.9, control_qubit = 'qubit_1')
+          detuning_time = 80e-9, phase = 0, off_resonance_amplitude = 1.15, control_qubit = 'qubit_1')
 
 experiment.calibration_qubit = 'all'
 
@@ -2098,19 +2113,19 @@ experiment.calibration_qubit = 'all'
 
 experiment.saveraw = True
 experiment.readout_time = 0.001
-experiment.threshold = 0.027
+experiment.threshold = 0.025
 #experiment.add_measurement('Ramsey_Scan', ['Ramsey12','CRot'], [ramsey12, crot], sequence_cfg, sequence_cfg_type)
 #experiment.add_X_parameter('Ramsey_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.001e9, 0.001e9, 11), element = 'Ramsey12')
 
 #experiment.add_measurement('Rabi_Scan', ['Rabi12','CRot'], [rabi12, crot], sequence3_cfg, sequence3_cfg_type)   # only read Q2
 experiment.add_measurement('Rabi_Scan', ['Rabi12','CRot'], [rabi12, crot], sequence1_cfg, sequence1_cfg_type)
-experiment.add_X_parameter('Rabi_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.01e9, 0.01e9, 31), element = 'Rabi12')
+#experiment.add_X_parameter('Rabi_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(-0.01e9, 0.01e9, 31), element = 'Rabi12')
 #experiment.add_X_parameter('Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 3e-6, 51), element = 'Rabi12')
 #experiment.add_X_parameter('Rabi_Scan', parameter = 'duration_time', sweep_array = sweep_array(0, 0.6e-6, 31), element = 'CRot')
 
 #experiment.add_X_parameter('Rabi_Scan', parameter = 'voltage_1', sweep_array = sweep_array(30*0.5*-0.007, 30*0.5*-0.013, 41), element = 'init_step3')
 #
-#experiment.add_X_parameter('Rabi_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(0.045e9, 0.075e9, 31), element = 'CRot')
+experiment.add_X_parameter('Rabi_Scan', parameter = 'frequency_shift', sweep_array = sweep_array(0.045e9, 0.075e9, 31), element = 'CRot')
 
 #experiment.add_X_parameter(measurement = 'Ramsey_Scan', parameter = vsg2.frequency, sweep_array = sweep_array(19.67e9, 19.68e9, 20))
 #experiment.add_X_parameter('Rabi_Scan', parameter = 'T_amplitude', sweep_array = sweep_array(0, 30*0.5*0.008, 31), element = 'Rabi12')
@@ -2235,7 +2250,7 @@ experiment.add_X_parameter('AllXY_calibration', parameter = 'gate', sweep_array 
 #experiment.add_X_parameter('AllXY_calibration2', parameter = 'gate', sweep_array = sweep_array(1, 21.5, 42), element = 'AllXY12',
 #                           extending_X = False)
 
-experiment.add_Y_parameter('Ramsey_Scan', parameter = Count, sweep_array = sweep_array(1, 10, 6), with_calibration = True)
+experiment.add_Y_parameter('Ramsey_Scan', parameter = Count, sweep_array = sweep_array(1, 10, 8), with_calibration = True)
 #experiment.add_Y_parameter('Ramsey_Scan', parameter = 'Count', sweep_array = sweep_array(1, 10, 6), element = 'Ramsey12', 
 #                           with_calibration = True)
 
