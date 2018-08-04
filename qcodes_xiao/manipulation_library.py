@@ -549,6 +549,7 @@ class RB(Manipulation):
         
         return self
 
+#from RB_test import convert_clifford_to_sequence, clifford_sets
 
 class RBinterleavedCZ(Manipulation):
 
@@ -565,12 +566,13 @@ class RBinterleavedCZ(Manipulation):
         self.clifford_number = kw.pop('clifford_number', 0)
         self.sequence_number = kw.pop('sequence_number', 0)
         self.control_qubit = kw.pop('control_qubit', 'qubit_2')
-        self.phase_1 = kw.pop('phase_1', 90)
-        self.phase_2 = kw.pop('phase_2', 60)        
-        self.amplitude_control = kw.pop('amplitude_control', 30*0.5*-0.0277)
-        self.amplitude_target = kw.pop('amplitude_target', 30*0.5*0.00)       
+        self.phase_1 = kw.pop('phase_1', 4)
+        self.phase_2 = kw.pop('phase_2', 225)        
+        self.amplitude_control = kw.pop('amplitude_control', 30*0.5*-0.0346)
+        self.amplitude_target = kw.pop('amplitude_target', 30*0.5*0.06)       
         self.detuning_time = kw.pop('detuning_time', 80e-9)
         self.control = kw.pop('control', 0)
+        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude',1.15)
         
     def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
@@ -588,6 +590,7 @@ class RBinterleavedCZ(Manipulation):
         self.amplitude_target = kw.pop('amplitude_target', self.amplitude_target)
         self.detuning_time = kw.pop('detuning_time', self.detuning_time)
         self.control = kw.pop('control', self.control)
+        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude',self.off_resonance_amplitude)
         return self
     
 
@@ -605,7 +608,8 @@ class RBinterleavedCZ(Manipulation):
         phase_1 = kw.pop('phase_1', self.phase_1)
         phase_2 = kw.pop('phase_2', self.phase_2)    
         amplitude_control = kw.pop('amplitude_control', self.amplitude_control)
-        amplitude_target = kw.pop('amplitude_target', self.amplitude_target)    
+        amplitude_target = kw.pop('amplitude_target', self.amplitude_target)
+        off_resonance_amplitude = kw.pop('off_resonance_amplitude',self.off_resonance_amplitude)
         detuning_time = kw.pop('detuning_time', self.detuning_time)
         control =  kw.pop('control', self.control)
         self.sequence_number = int(kw.pop('sequence_number', self.sequence_number))
@@ -620,13 +624,13 @@ class RBinterleavedCZ(Manipulation):
         print(clifford_gates)
         
         name = 'prepare_state'
-         
         self.add_single_qubit_gate(name = name, qubit = self.qubits[C], amplitude = control, 
                                    length = qubit_1.Pi_pulse_length,)
-#        
-#        self.add_single_qubit_gate(name='off_resonance1_Q1', refgate = name, refpoint = 'start',
-#                                       qubit = self.qubits[T], amplitude = 1.2, 
-#                                       length = self.qubits[0].Pi_pulse_length, frequency_shift =-30e6)
+
+        if control_qubit == 'qubit_2':
+            self.add_single_qubit_gate(name='off_resonance1_Q1', refgate = name, refpoint = 'start',
+                                       qubit = self.qubits[T], amplitude = off_resonance_amplitude, 
+                                       length = self.qubits[0].Pi_pulse_length, frequency_shift =-30e6)
             
         
         refgate = name
@@ -653,9 +657,10 @@ class RBinterleavedCZ(Manipulation):
                                 control_qubit = self.qubits[0], target_qubit = self.qubits[1],
                                 amplitude_control = 0, amplitude_target = 0, 
                                 length = 10e-9)
-                    
-                    self.add_Z(name='Z1_Q1', qubit = qubit_1, degree = phase_1)
-                    self.add_Z(name='Z1_Q2', qubit = qubit_2, degree = phase_2)
+                    if control_qubit == 'qubit_2':
+                        self.add_Z(name='Z1_Q1%d%d'%(i,j), qubit = qubit_1, degree = phase_1)
+                    else:
+                        self.add_Z(name='Z1_Q2%d%d'%(i,j), qubit = qubit_2, degree = phase_2)
                     
                     refgate = deepcopy(name3)
                     
@@ -676,9 +681,15 @@ class RBinterleavedCZ(Manipulation):
     #                refgate = None if i+j == 0 else name
 
                     name = 'C%d%d'%((i+1),(j+1))+gate
-                    self.add_single_qubit_gate(name = name, refgate = refgate, 
-                                           qubit = self.qubits[T], axis = axis,
-                                           amplitude = amplitude, length = length,)
+                    self.add_single_qubit_gate(name = name, refgate = refgate, refpoint = 'end', refqubit = self.qubits[T],
+                                               qubit = self.qubits[T], axis = axis,
+                                               amplitude = amplitude, length = length,)
+                    if control_qubit == 'qubit_1':
+                        self.add_single_qubit_gate(name = 'off_resonance1_Q1'+name, refgate = name, refpoint = 'start', 
+                                                   qubit = self.qubits[C], axis = axis,
+                                                   amplitude = off_resonance_amplitude, length = length, frequency_shift =-30e6)
+                        pass
+                        
                     refgate = deepcopy(name)         
                     
         print('clifford_gates finished')
@@ -741,7 +752,7 @@ class CPhase_Calibrate(Manipulation):
         off_resonance_amplitude = kw.pop('off_resonance_amplitude',self.off_resonance_amplitude)
         
         
-        
+        te = 15e-9
         
         
         self.add_single_qubit_gate(name='X_Pi_Q2', qubit = self.qubits[C], amplitude = Pi_amplitude, 
@@ -769,7 +780,7 @@ class CPhase_Calibrate(Manipulation):
         self.add_CPhase(name = 'CP_wait1', refgate = 'X1_Q2',
                         control_qubit = self.qubits[0], target_qubit = self.qubits[1],
                         amplitude_control = 0, amplitude_target = 0, 
-                        length = 10e-9)
+                        length = te)
         
         self.add_CPhase(name = 'CP_Q12', refgate = 'CP_wait1',
                         control_qubit = self.qubits[0], target_qubit = self.qubits[1],
@@ -779,7 +790,7 @@ class CPhase_Calibrate(Manipulation):
         self.add_CPhase(name = 'CP_wait2', refgate = 'CP_Q12',
                         control_qubit = self.qubits[0], target_qubit = self.qubits[1],
                         amplitude_control = 0, amplitude_target = 0, 
-                        length = 10e-9)
+                        length = te)
     
         
         self.add_Z(name='Z1_Q1', qubit = self.qubits[T], degree = phase)
@@ -1105,7 +1116,7 @@ class DCZ(Manipulation):
         self.frequency_shift = kw.pop('frequency_shift', 0)
         self.detuning_time = kw.pop('detuning_time', 80e-9)
         self.phase = kw.pop('phase', 0)
-        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude',1.2)
+        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude',1.15)
         self.control_qubit = kw.pop('control_qubit', 'qubit_2')
 
     def __call__(self, **kw):
@@ -1873,8 +1884,8 @@ class RB_Marcus(Manipulation):
         self.clifford_number = kw.pop('clifford_number', 0)
         self.sequence_number = kw.pop('sequence_number', 0)
         self.detuning_time = kw.pop('detuning_time', 80e-9)
-        self.phase_1 = kw.pop('phase_1', 116)
-        self.phase_2 = kw.pop('phase_2', 175)
+        self.phase_1 = kw.pop('phase_1', 31.5)
+        self.phase_2 = kw.pop('phase_2', 23)
         self.Pi_amplitude = kw.pop('Pi_amplitude', 1)
 
     def __call__(self, **kw):
@@ -1986,7 +1997,7 @@ class RB_Marcus(Manipulation):
                     
                     self.add_CPhase(name = name+'1', refgate = refgate, waiting_time = 10e-9,
                                     control_qubit = self.qubits[0], target_qubit = self.qubits[1],
-                                    amplitude_control = 30*0.5*-0.0270, amplitude_target = 30*0.5*0.04, 
+                                    amplitude_control = 30*0.5*-0.0346, amplitude_target = 30*0.5*0.02, 
                                     length = self.detuning_time)
                     self.add_Z(name='Z1_Q1', qubit = self.qubits[0], degree = self.phase_1)
                     self.add_Z(name='Z1_Q2', qubit = self.qubits[1], degree = self.phase_2)

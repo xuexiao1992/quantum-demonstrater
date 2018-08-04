@@ -687,18 +687,18 @@ def set_digitizer(digitizer, sweep_num, qubit_num, repetition, threshold, X_swee
     digitizer.set_channel_settings(1,1000, input_path = 0, termination = 0, coupling = 0, compensation = None)
     
     #trig_mode = pyspcm.SPC_TM_POS
-    
+    '''
     trig_mode = pyspcm.SPC_TM_POS | pyspcm.SPC_TM_REARM
     
     digitizer.set_ext0_OR_trigger_settings(trig_mode = trig_mode, termination = 0, coupling = 0, level0 = 800, level1 = 900)
     '''
-    mark
+#    mark
     '''
     '''
     trig_mode = pyspcm.SPC_TMASK_SOFTWARE
     digitizer.set_ext0_OR_trigger_settings(trig_mode = trig_mode, termination = 0, coupling = 0, level0 = 800, level1 = 900)
     
-    '''
+    
     
 #    dig = digitizer_param(name='digitizer', mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size, digitizer = digitizer)
     dig = digitizer_multiparam(mV_range = mV_range, memsize=memsize, seg_size=seg_size, posttrigger_size=posttrigger_size, digitizer = digitizer, 

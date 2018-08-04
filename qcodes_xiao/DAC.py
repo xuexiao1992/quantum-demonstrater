@@ -262,6 +262,10 @@ LOOP = Loop(sweep_values = Sweep_Value2).loop(sweep_values = Sweep_Value1).each(
 
 #LOOP = Loop(sweep_values = Sweep_Value1).each(DIG)
 
+#Sweep_Value1 = T[-25:-27:0.1]
+#Sweep_Value2 = LP[-558:-562:0.2]
+#LOOP = Loop(sweep_values = Sweep_Value2).loop(sweep_values = Sweep_Value1).each(dig)
+
 #LOOP = Loop(sweep_values = Sweep_Value1).each(AMP)
 
 

@@ -963,9 +963,9 @@ class Experiment:
                             name='compensation2',refpulse = 'compensation1', refpoint = 'start', start = 0)
         
         compensation_element.add(SquarePulse(name='comp_c1m2', channel=self.occupied_channel1, amplitude=2, length=1e-6),
-                                           name='comp%d_c1m2'%(i+1),refpulse = 'compensation1', refpoint = 'start')
+                                           name='comp%d_c1m2'%(idx_i+1),refpulse = 'compensation1', refpoint = 'start')
         compensation_element.add(SquarePulse(name='comp_c5m2', channel=self.occupied_channel2, amplitude=2, length=1e-6),
-                                           name='comp%d_c5m2'%(i+1),refpulse = 'compensation1', refpoint = 'start')
+                                           name='comp%d_c5m2'%(idx_i+1),refpulse = 'compensation1', refpoint = 'start')
         
         self.elts.append(compensation_element)
         self.sequencer[seq_num].elts.append(compensation_element)
@@ -992,9 +992,9 @@ class Experiment:
                                  name='zerobias2',refpulse = 'zerobias1', refpoint = 'start', start = 0)
             
             zerobias_element.add(SquarePulse(name='zero_c1m2', channel=self.occupied_channel1, amplitude=0.1, length=1e-6),
-                                 name='zero%d_c1m2'%(i+1),refpulse = 'zerobias1', refpoint = 'start')
+                                 name='zero%d_c1m2'%(idx_i+1),refpulse = 'zerobias1', refpoint = 'start')
             zerobias_element.add(SquarePulse(name='zero_c5m2', channel=self.occupied_channel2, amplitude=0.1, length=1e-6),
-                                 name='zero%d_c5m2'%(i+1),refpulse = 'zerobias1', refpoint = 'start')
+                                 name='zero%d_c5m2'%(idx_i+1),refpulse = 'zerobias1', refpoint = 'start')
             
             self.zerobias_element = zerobias_element
             

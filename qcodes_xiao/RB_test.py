@@ -57,6 +57,8 @@ mY9 = 1/np.sqrt(2)*np.array([[1, 1,],
 mZ9 = 1/np.sqrt(2)*np.array([[1, 0,],
                              [0, -1j,],], dtype=complex)
 
+Zp = I
+
 gates = {
         'I': I,
         'Xp': Xp,
@@ -221,7 +223,7 @@ def generate_randomized_clifford_sequence(interleave = None):
     
     clifford_sets = []
     
-    sequence_length = 100
+    sequence_length = 80
     
     sequence_number = 35
     
@@ -245,9 +247,9 @@ def generate_randomized_clifford_sequence(interleave = None):
             
     return clifford_sets
 
-#clifford_sets = generate_randomized_clifford_sequence(interleave = 'Zp')
+clifford_sets = generate_randomized_clifford_sequence(interleave = 'Zp')
 
-clifford_sets = generate_randomized_clifford_sequence()
+#clifford_sets = generate_randomized_clifford_sequence()
 #clifford_sets_1 = clifford_sets
 #clifford_sets_2 = clifford_sets
 #clifford_sets1 = generate_randomized_clifford_sequence()

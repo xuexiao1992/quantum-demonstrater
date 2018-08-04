@@ -17,6 +17,101 @@ from copy import deepcopy
 
 #%%
 
+Bootstrap_array = [
+        ['X', 'I'], 
+        ['Y', 'I'],
+        
+        ['Xpi', 'X'], 
+        ['Ypi', 'Y'],
+        ['X', 'Ypi'], 
+        ['Y', 'Xpi'],
+        
+        ['X', 'Y'],
+        ['Y', 'X'], 
+        ['Y', 'Xpi', 'X'],
+        ['X', 'Xpi', 'Y'], 
+        ['Y', 'Ypi', 'X'], 
+        ['X', 'Ypi', 'Y'],
+        ]
+
+class Bootstrap(Manipulation):
+
+    def __init__(self, name, pulsar, **kw):
+
+        super().__init__(name, pulsar, **kw)
+        self.refphase = {}
+        self.qubit = kw.pop('qubit', 'qubit_2')
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = None
+        self.amplitude = kw.pop('amplitude', 1)
+        self.frequency_shift = kw.pop('frequency_shift', 0)
+        self.off_resonance_amplitude = kw.pop('off_resonacne_amplitude', 1.15)
+        self.phase_error = kw.pop('phase_error', 0)
+        self.error_gate = kw.pop('error_gate', None)
+
+    def __call__(self, **kw):
+        self.name = kw.pop('name', self.name)
+        self.qubits = kw.pop('qubits', self.qubits)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = kw.pop('pulsar', self.pulsar)
+        self.amplitude = kw.pop('amplitude', self.amplitude)
+        self.frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
+        self.off_resonance_amplitude = ('off_resonacne_amplitude', self.off_resonance_amplitude)
+        self.phase_error = kw.pop('phase_error', self.phase_error)
+        self.error_gate = kw.pop('error_gate', self.error_gate)
+        return self
+
+    def make_circuit(self, **kw):
+        
+        qubit_name = kw.pop('qubit', self.qubit)
+        
+        qubit = Instrument.find_instrument(qubit_name)
+        
+        amplitude = kw.get('amplitude', self.amplitude)
+        frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
+        
+        off_resonance_amplitude = ('off_resonacne_amplitude', self.off_resonance_amplitude)
+        phase_error = kw.pop('phase_error', self.phase_error)
+        error_gate = kw.pop('error_gate', self.error_gate)
+        
+        g = int(kw.pop('gate', 1)-1)
+        gate = Bootstrap_array[g]
+        
+        for i in range(len(gate)):
+            
+            amplitude = 0 if gate[i] == 'I' else 1
+            '''
+            if gate[i] == 'I':
+                amplitude = off_resonance_amplitude if qubit_name == 'qubit_1' else 0
+                frequency_shift = -30e6 if qubit_name == 'qubit_1' else 0
+            '''
+            axis = [1,0,0] if gate[i].startswith('X') else [0,1,0]
+            length = qubit.Pi_pulse_length if gate[i].endswith('pi') else qubit.halfPi_pulse_length
+            
+            name = 'G%d'%(i+1)
+            refgate = None if i == 0 else 'G%d'%i
+            
+            if gate[i] == error_gate:
+                self.add_Z(name='error_phase', qubit = qubit, degree = phase_error)
+            
+            self.add_single_qubit_gate(name = name, refgate = refgate, 
+                                       qubit = qubit, axis = axis,
+                                       amplitude = amplitude, length = length, 
+                                       frequency_shift = frequency_shift)
+            
+            if gate[i] == error_gate:
+                self.add_Z(name='error_phase_2', qubit = qubit, degree = -phase_error)
+                
+        return self
+    
+
+
+#%%
 class Rabi_all_with_detuning(Manipulation):
 
     def __init__(self, name, pulsar, **kw):

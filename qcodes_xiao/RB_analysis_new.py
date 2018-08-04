@@ -81,7 +81,10 @@ location_new2 = '2018-07-03/12-43-46/RB_experimentAllXY_sequence'
 location_new2 = '2018-07-05/14-41-58/RB_experimentAllXY_sequence'
 
 
-DS = load_data(location = location_new2, io = IO_K, formatter = formatter)
+location_new2 = '2018-07-25/01-51-34/RB_experiment2AllXY_sequence'
+
+
+DS = load_data(location = location_new2, io = IO_K2, formatter = formatter)
 
 #%% character benchmarking without normalization
 
@@ -146,11 +149,11 @@ pt.add(x = x[:plot_points], y = RB_Fidelity(x,pars3[0],pars3[1],pars3[2])[:plot_
 
 
 #%%     character benchmarking with normalization
-
+'''
 P_pi_1 = 0.98
 P_
 
-
+'''
 #%%
 
 ds = DS

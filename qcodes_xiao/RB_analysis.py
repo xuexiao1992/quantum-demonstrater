@@ -242,6 +242,10 @@ location_new2 = '2018-07-22/02-18-53/RB_experimentAllXY_sequence'
 location_new2 = '2018-07-23/18-36-11/RB_experimentAllXY_sequence'
 location_new2 = '2018-07-23/19-35-23/RB_experimentAllXY_sequence'
 
+#location_new2 = '2018-07-28/22-00-35/RB_experimentAllXY_sequence'
+#location_new2 = '2018-07-28/23-36-24/RB_experimentAllXY_sequence'
+
+
 DS = load_data(location = location_new2, io = IO_K, formatter = formatter)
 
 #%%
@@ -249,12 +253,12 @@ NewIO = DiskIO(base_location = 'D:\\Data\\RB_experiment')
 
 DS = load_data(location = location_dc, io = NewIO)
 
-DS = load_data(location = location_4, io = IO, formatter = formatter)
+DS = load_data(location = location8, io = IO, formatter = formatter)
 DS2 = load_data(location = location_b, io = IO, formatter = formatter)
 #%%
 
 ds = DS
-Qubit = 2
+Qubit = 1
 i = 0 if Qubit == 2 else 1
 ramsey_point = 11
 fitting_point = 24
@@ -266,7 +270,7 @@ y = ds.probability_data[:,i,ramsey_point:ramsey_point+fitting_point].mean(axis =
 #y = 1-y
 
 pars, pcov = curve_fit(RB_Fidelity, x, y,
-                       p0 = (0.9, 0.2, 0.4),
+                       p0 = (0.9, 0.2, 0.3),
                        bounds = ((0.7, 0, 0),(1, 0.8, 0.8)))
 #                       bounds = ((), ()))
 #pars, pcov = curve_fit(RB_Fidelity, x, y,
@@ -278,7 +282,7 @@ pars, pcov = curve_fit(RB_Fidelity, x, y,
 plot_point = fitting_point
 pt = MatPlot()
 pt.add(x = x[:plot_point],y = ds.probability_data[:,i,11:11+fitting_point].mean(axis = 0)[:plot_point], fmt = 'bp',xlabel = 'Clifford Numbers', ylabel = '$P_{|1>}$', xunit = 'N', yunit = '%')
-pt.add(x = x[:plot_point], y = RB_Fidelity(x,pars[0],pars[1],pars[2])[:plot_point],fmt = 'r--', )
+pt.add(x = x[:plot_point], y = RB_Fidelity(x,pars[0],pars[1],pars[2])[:plot_point],fmt = 'b--', )
 #pt.add_to_plot(xlabel = 'Clifford Numbers')
 #%%
 #pt1 = MatPlot()
@@ -451,8 +455,8 @@ def average_two_qubit(ds):
 
 #%%
 
-DS = load_data(location = location_xx, io = IO, formatter = formatter)
-fitting_point = 10
+#DS = load_data(location = location_xx, io = IO, formatter = formatter)
+fitting_point = 24
 
 ds = DS
 x = np.array([len(clifford_sets[0][i]) for i in range(fitting_point)])
@@ -460,10 +464,10 @@ x = np.array([len(clifford_sets[0][i]) for i in range(fitting_point)])
 average = average_two_qubit(ds)
 
 #average = average_normalized_two_qubit(ds)
-x[0] = 0
+#x[0] = 0
 #x = x-1
 start = 0
-end = 10
+end = -1
 
 x = x[start:end]
 average = average[start:end]
@@ -474,8 +478,8 @@ pars, pcov = curve_fit(RB_Fidelity, x, average,
 fidelity = 1-(1-pars[0])*3/4
 print('fidelity is: ', fidelity)
 pt = MatPlot()
-pt.add(x = x, y = average, fmt = 'bp',xlabel = 'Clifford Numbers', ylabel = '$P_{|11>}$', xunit = 'N', yunit = '%')
-pt.add(x = x, y = RB_Fidelity(x,pars[0],pars[1],pars[2]), fmt = 'r--',)
+pt.add(x = x, y = average, fmt = 'cp',xlabel = 'Clifford Numbers', ylabel = '$P_{|11>}$', xunit = 'N', yunit = '%')
+pt.add(x = x, y = RB_Fidelity(x,pars[0],pars[1],pars[2]), fmt = 'c--',)
 
 
 

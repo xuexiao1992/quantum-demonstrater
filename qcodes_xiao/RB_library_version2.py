@@ -230,13 +230,16 @@ class RB_all_test(Manipulation):
         return self
 
 #%%
-#from RB_test_version2 import convert_clifford_to_sequence, clifford_sets_1, clifford_sets_2
+from RB_test_version2 import convert_clifford_to_sequence, clifford_sets_1, clifford_sets_2
 #from RB_test import convert_clifford_to_sequence, clifford_sets_1, clifford_sets_2
 
-
+'''
 clifford_sets_1 = load_object('clifford_sets_1')
 clifford_sets_2 = load_object('clifford_sets_2')
 
+clifford_sets_1 = load_object('interleave_clifford_sets_1')
+clifford_sets_2 = load_object('interleave_clifford_sets_2')
+'''
 class RB_all(Manipulation):
 
     def __init__(self, name, pulsar, **kw):
@@ -252,13 +255,13 @@ class RB_all(Manipulation):
         self.clifford_number = kw.pop('clifford_number', 0)
         self.sequence_number = kw.pop('sequence_number', 0)
         
-        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude', 0.9)
+        self.off_resonance_amplitude = kw.pop('off_resonance_amplitude', 1.15)
         
         self.amplitude_control = kw.pop('amplitude_control', 30*0.5*-0.03)
         self.amplitude_target = kw.pop('amplitude_target', 30*0.5*0.02)
-        self.detuning_time = kw.pop('detuning_time', 0)
-        self.phase_1 = kw.pop('phase_1', 90)
-        self.phase_2 = kw.pop('phase_2', 90)
+        self.detuning_time = kw.pop('detuning_time', 80e-9)
+        self.phase_1 = kw.pop('phase_1', 46)
+        self.phase_2 = kw.pop('phase_2', 27)
         self.align = kw.pop('align', False)
 
     def __call__(self, **kw):
@@ -364,7 +367,7 @@ class RB_all(Manipulation):
 
         for i in range(len(clifford_gates1)):
             print('go to next clifford : ', i)
-            
+            '''
             length_clifford1 = sum([gate_length[gate] for gate in clifford_gates1[i]])
             length_clifford2 = sum([gate_length[gate] for gate in clifford_gates2[i]])
             
@@ -377,7 +380,7 @@ class RB_all(Manipulation):
             if length_clifford1 != 2.5e-7 and 'I' not in clifford_gates1[i] and 'Zp_prep' not in clifford_gates1[i]:
                 
                 raise ValueError('clifford length different:', length_clifford1)
-            
+            '''
             for qubit in ['qubit_1', 'qubit_2']:
                 clifford = clifford_gates[qubit][i]
                 
@@ -403,32 +406,39 @@ class RB_all(Manipulation):
                         amp = self.off_resonance_amplitude if qubit == 'qubit_1' else 0
                         freq_shift = -30e6 if qubit == 'qubit_1' else 0
                     
-                    elif gate == 'CZ':
+                    elif 'CZ' in gate:
+                        last_gate_1 = gate_name_1
+                        gate_name = 'CPhase%d%d'%((i+1),(j+1))
+                        gate_name_1 = gate_name + '_waiting%d%d'%((i+1),(j+1))
+                        gate_name_2 = gate_name + '_waiting%d%d'%((i+1),(j+1))
+                        refgate = last_gate_1
+                        
                         if gate == 'CZ_dumy':
                             pass
                         
-                        else:
-                            refgate = last_gate_1
+                        elif gate == 'CZ':
                             
-                            gate_name = 'CPhase%d%d'%((i+1),(j+1))
+#                            gate_name = 'CPhase%d%d'%((i+1),(j+1))
                             
-                            gate_name_1 = gate_name + '_waiting'
-                            gate_name_2 = gate_name + '_waiting'
-                            
-                            self.add_CPhase(name = gate_name, refgate = refgate, waiting_time = 10e-9,
+                            self.add_CPhase(name = gate_name, refgate = refgate, refpoint = 'end', waiting_time = 10e-9,
                                             control_qubit = qubit_1, target_qubit = qubit_2,
                                             amplitude_control = amplitude_control, amplitude_target = amplitude_target, 
                                             length = detuning_time)
                             
-                            self.add_Z(name='Zcp_Q1', qubit = qubit_1, degree = self.phase_1)
-                            self.add_Z(name='Zcp_Q2', qubit = qubit_2, degree = self.phase_2)
+                            self.add_Z(name='Zcp%d%d'%((i+1,j+1)) + 'qubit_1', qubit = qubit_1, degree = self.phase_1)
+                            self.add_Z(name='Zcp%d%d'%((i+1,j+1)) + 'qubit_2', qubit = qubit_2, degree = self.phase_2)
                             
-                            self.add_CPhase(name = gate_name_1, refgate = gate_name, 
+#                            gate_name_1 = gate_name + '_waiting%d%d'%((i+1),(j+1))
+#                            gate_name_2 = gate_name + '_waiting%d%d'%((i+1),(j+1))
+                            
+                            self.add_CPhase(name = gate_name_1, refgate = gate_name, refpoint = 'end', 
                                             control_qubit = qubit_1, target_qubit = qubit_2,
                                             amplitude_control = 0, amplitude_target = 0, 
                                             length = 10e-9)
                             
                             pass
+                        else:
+                            raise NameError('CZ gate not found')
                         continue
                     
                     elif 'Z' in gate:
