@@ -148,77 +148,16 @@ Sweep_Value1 = T[20:-40:1]
 Sweep_Value2 = LP[-820:-900:1]
 
 
-Sweep_Value1 = T[25:0:1]
-Sweep_Value2 = LP[-660:-760:1]
-
-
-#Sweep_Value1 = T[15:-25:1]
-#Sweep_Value2 = LP[-500:-580:1]
-
-Sweep_Value1 = T[40:-100:2]
-Sweep_Value2 = LP[-500:-700:2]
-
-Sweep_Value1 = T[-20:-80:2]
-Sweep_Value2 = LP[-700:-840:2]
-#
-Sweep_Value1 = T[-0:-120:2]
-Sweep_Value2 = LP[-650:-900:2]
-
-#Sweep_Value1 = T[-0:-70:1.5]
-#Sweep_Value2 = LP[-530:-620:1.5]
-#
-Sweep_Value1 = T[-50:-100:1.5]
-Sweep_Value2 = LP[-660:-740:1.5]
-
-Sweep_Value1 = T[-30:-80:2]
-Sweep_Value2 = LP[-650:-720:2]
-
-
 Sweep_Value1 = T[-0:-60:1.5]
 Sweep_Value2 = LP[-520:-610:1.5]
 
+
+#Sweep_Value1 = T[-0:-90:1.5]
+#Sweep_Value2 = LP[-250:-700:3]
+
+#Sweep_Value1 = T[-0:-90:1.5]
+#Sweep_Value2 = LP[-450:-650:2]
 ##
-#Sweep_Value1 = T[-10:-130:2]
-#Sweep_Value2 = LP[-500:-900:3]
-
-#Sweep_Value1 = T[-20:-130:2]
-#Sweep_Value2 = LP[-670:-840:2]
-
-#Sweep_Value1 = T[-20:-60:0.5]
-#Sweep_Value2 = LP[-570:-610:0.5]
-
-#Sweep_Value1 = T[0:-100:2]
-#Sweep_Value2 = LP[-650:-850:2]
-
-
-#
-#Sweep_Value1 = T[-20:-120:2.5]
-#Sweep_Value2 = LP[-650:-850:2.5]
-##
-##
-#Sweep_Value1 = T[-30:-80:1.5]
-#Sweep_Value2 = LP[-650:-750:1.5]
-
-
-#Sweep_Value1 = T[-80:-120:1]
-#Sweep_Value2 = LP[-460:-540:1]
-
-
-
-#Sweep_Value1 = T[40:-60:2]
-#Sweep_Value2 = LP[-300:-600:2]
-
-#Sweep_Value1 = T[-15:-40:0.5]
-#Sweep_Value2 = LP[-760:-810:0.5]
-
-#Sweep_Value1 = T[100:-150:2]
-#Sweep_Value2 = LP[-300:-900:2]
-
-#Sweep_Value1 = T[-20:-80:1]
-#Sweep_Value1 = T[-80:-20:1]
-#Sweep_Value2 = LP[-110:-260:1]
-
-
 #Sweep_Value1 = G.LD[-200:-280:1]
 #Sweep_Value2 = LP[-480:-560:1]
 
@@ -241,15 +180,17 @@ Sweep_Value2 = LP[-520:-610:1.5]
 #Sweep_Value1 = SQD1[-0:-200:2]
 #Sweep_Value2 = SQD3[-300:-500:2]
 
-
 #Sweep_Value1 = SQD1[-50:-150:2]
 #Sweep_Value2 = SQD3[-300:-500:2]
 
 #Sweep_Value1 = SQD1[-0:-140:2]
 #Sweep_Value2 = SQD3[-350:-450:2]
 
-#Sweep_Value1 = SQD1[-40:-120:2]
-#Sweep_Value2 = SQD3[-350:-500:2]
+#Sweep_Value1 = SQD1[-40:-140:2]
+#Sweep_Value2 = SQD3[-250:-400:3]
+
+#Sweep_Value1 = SQD1[-100:-200:2]
+#Sweep_Value2 = SQD3[-300:-450:3]
 
 #Sweep_Value1 = Count[0:100:0.5]
 

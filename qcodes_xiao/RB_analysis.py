@@ -245,6 +245,9 @@ location_new2 = '2018-07-23/19-35-23/RB_experimentAllXY_sequence'
 #location_new2 = '2018-07-28/22-00-35/RB_experimentAllXY_sequence'
 #location_new2 = '2018-07-28/23-36-24/RB_experimentAllXY_sequence'
 
+location_new2 = '2018-08-19/23-43-55/RB_experimentAllXY_sequence'
+
+location_new2 = '2018-08-26/13-44-11/RB_experimentAllXY_sequence'
 
 DS = load_data(location = location_new2, io = IO_K, formatter = formatter)
 
@@ -258,10 +261,10 @@ DS2 = load_data(location = location_b, io = IO, formatter = formatter)
 #%%
 
 ds = DS
-Qubit = 1
+Qubit = 2
 i = 0 if Qubit == 2 else 1
 ramsey_point = 11
-fitting_point = 24
+fitting_point = 16
 x = np.array([len(clifford_sets[0][i]) for i in range(fitting_point)])
 #x = x-1
 #x[0] = 0

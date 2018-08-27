@@ -223,7 +223,7 @@ def generate_randomized_clifford_sequence(interleave = None):
     
     clifford_sets = []
     
-    sequence_length = 80
+    sequence_length = 160
     
     sequence_number = 35
     
@@ -247,9 +247,9 @@ def generate_randomized_clifford_sequence(interleave = None):
             
     return clifford_sets
 
-clifford_sets = generate_randomized_clifford_sequence(interleave = 'Zp')
+#clifford_sets = generate_randomized_clifford_sequence(interleave = 'Zp')
 
-#clifford_sets = generate_randomized_clifford_sequence()
+clifford_sets = generate_randomized_clifford_sequence()
 #clifford_sets_1 = clifford_sets
 #clifford_sets_2 = clifford_sets
 #clifford_sets1 = generate_randomized_clifford_sequence()

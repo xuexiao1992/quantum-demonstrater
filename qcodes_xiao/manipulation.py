@@ -9,7 +9,7 @@ import numpy as np
 import time
 from pycqed.measurement.waveform_control.element import Element
 from pycqed.measurement.waveform_control.pulse import SquarePulse
-from gate import Single_Qubit_Gate, Two_Qubit_Gate, CPhase_Gate, CNot_Gate, CRotation_Gate
+from gate import Single_Qubit_Gate, Two_Qubit_Gate, CPhase_Gate, CNot_Gate, CRotation_Gate, Ramp
 
 
 class Manipulation(Element):
@@ -123,6 +123,23 @@ class Manipulation(Element):
         return True
 
 
+    def add_Ramp(self, name = None, control_qubit = None, target_qubit = None, length = 0,
+                   amplitude_control = 0, amplitude_target = 0, ramp = 'up',
+                   refgate = None, refpoint = 'end',
+                   waiting_time = 0, refpoint_new = 'start'):
+
+        if name in self.operations.keys():
+            raise NameError('Name already used')            ## need to stop the program or maybe randomly give a name
+
+        ramp_pulse = Ramp(name = name, control_qubit = control_qubit, target_qubit = target_qubit,
+                          amplitude_control = amplitude_control, amplitude_target = amplitude_target,
+                          length = length, ramp = ramp,
+                          refgate = None if refgate == None else self.operations[refgate],
+                          refpoint = refpoint, waiting_time = waiting_time,)
+
+        self._add_all_pulses_of_qubit_gate(name = name, qubit_gate = ramp_pulse)
+
+        return True
 
 
 

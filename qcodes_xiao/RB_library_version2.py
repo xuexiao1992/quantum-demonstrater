@@ -236,10 +236,10 @@ from RB_test_version2 import convert_clifford_to_sequence, clifford_sets_1, clif
 '''
 clifford_sets_1 = load_object('clifford_sets_1')
 clifford_sets_2 = load_object('clifford_sets_2')
-
-clifford_sets_1 = load_object('interleave_clifford_sets_1')
-clifford_sets_2 = load_object('interleave_clifford_sets_2')
 '''
+#clifford_sets_1 = load_object('interleave_clifford_sets_1')
+#clifford_sets_2 = load_object('interleave_clifford_sets_2')
+
 class RB_all(Manipulation):
 
     def __init__(self, name, pulsar, **kw):
@@ -310,7 +310,7 @@ class RB_all(Manipulation):
         
         self.align = kw.pop('align', self.align)
         self.align = False
-        
+        te = 15e-9
 #        clifford_index = list((np.random.rand(self.clifford_number)*24).astype(int))
 
 #        clifford_gates = convert_clifford_to_sequence(clifford_index)
@@ -420,7 +420,7 @@ class RB_all(Manipulation):
                             
 #                            gate_name = 'CPhase%d%d'%((i+1),(j+1))
                             
-                            self.add_CPhase(name = gate_name, refgate = refgate, refpoint = 'end', waiting_time = 10e-9,
+                            self.add_CPhase(name = gate_name, refgate = refgate, refpoint = 'end', waiting_time = te,
                                             control_qubit = qubit_1, target_qubit = qubit_2,
                                             amplitude_control = amplitude_control, amplitude_target = amplitude_target, 
                                             length = detuning_time)
@@ -434,7 +434,7 @@ class RB_all(Manipulation):
                             self.add_CPhase(name = gate_name_1, refgate = gate_name, refpoint = 'end', 
                                             control_qubit = qubit_1, target_qubit = qubit_2,
                                             amplitude_control = 0, amplitude_target = 0, 
-                                            length = 10e-9)
+                                            length = te)
                             
                             pass
                         else:

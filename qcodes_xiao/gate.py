@@ -328,6 +328,56 @@ class Two_Qubit_Gate(Gate):
 
         return True
 
+    def ramp(self, name = 'ramp_pulse', length = 0, ramp = 'up',
+             waiting_time = 0, refpulse = None, refpoint = 'end', **kw):
+
+        AMP_C = kw.pop('amplitude_control', self.detuning_amplitude_C)
+        AMP_T = kw.pop('amplitude_target', self.detuning_amplitude_T)
+        
+        if ramp == 'up':
+            start_C = 0
+            end_C = AMP_C
+            start_T = 0
+            end_T = AMP_T
+            
+        elif ramp == 'down':
+            start_C = AMP_C
+            end_C = 0
+            start_T = AMP_T
+            end_T = 0
+        
+        else:
+            raise NameError('ramp direction unknown: ', ramp)
+        
+
+        voltage_pulse_C = LinearPulse(channel = self.channel_VP1, name = '%s_detuning_pulse_C'%self.name,
+                                       start_value = start_C, end_value = end_C, length = length,
+                                       refpulse = refpulse)
+
+        voltage_pulse_T = LinearPulse(channel = self.channel_VP2, name = '%s_detuning_pulse_T'%self.name,
+                                       start_value = start_T, end_value = end_T, length = length,
+                                       refpulse = refpulse)
+
+        detuning_pulse_C = {
+                'pulse': voltage_pulse_C,
+                'pulse_name': voltage_pulse_C.name,
+                'refpulse': None if refpulse == None else refpulse,
+                'refpoint': refpoint,
+                'waiting': waiting_time
+                }
+
+        detuning_pulse_T = {
+                'pulse': voltage_pulse_T,
+                'pulse_name': voltage_pulse_T.name,
+                'refpulse': '%s_detuning_pulse_C'%self.name,
+                'refpoint': 'start',
+                'waiting': 0
+                }
+
+        self.pulses.append(detuning_pulse_C)
+        self.pulses.append(detuning_pulse_T)
+
+        return True
 
     def XY_rotation(self, name, degree = 90, waiting_time = 0, refpulse = None, refpoint = 'end'):
 
@@ -398,6 +448,25 @@ class CPhase_Gate(Two_Qubit_Gate):
         self.detuning(name = name, length = pulse_length, waiting_time = waiting_time, refpoint = refpoint,
                       amplitude_control = amplitude_control, amplitude_target = amplitude_target,
                       refpulse = None if refgate == None else refgate[-2]['pulse_name'])
+
+    def __call__(self, **kw):
+
+        return self
+
+
+class Ramp(Two_Qubit_Gate):
+
+    def __init__(self, name = 'Ramp', control_qubit = None, target_qubit = None,
+                 amplitude_control = 0, amplitude_target = 0, length = 0, ramp = 'up',
+                 rotating_phase = 180, refgate = None, refpoint = 'end', waiting_time = 0):
+
+        super().__init__(name, control_qubit, target_qubit)
+
+        pulse_length = length if length != 0 else rotating_phase*self.detuning_length_Pi/180
+
+        self.ramp(name = name, length = pulse_length, waiting_time = waiting_time, refpoint = refpoint,
+                  amplitude_control = amplitude_control, amplitude_target = amplitude_target, ramp = ramp,
+                  refpulse = None if refgate == None else refgate[-2]['pulse_name'])
 
     def __call__(self, **kw):
 

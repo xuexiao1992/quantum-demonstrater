@@ -305,7 +305,7 @@ def generate_randomized_clifford_sequence(interleave = None):
     
     sequence_length = 50
     
-    sequence_number = 50
+    sequence_number = 32
     
     for j in range(sequence_number):
         
@@ -315,7 +315,7 @@ def generate_randomized_clifford_sequence(interleave = None):
             
             if i in range(15, 30) and i%3 != 0:
                 continue
-            elif i in range(30, 101) and i%10 != 0:
+            elif i in range(30, 141) and i%10 != 0:
                 continue
             
             clifford_gates = 0

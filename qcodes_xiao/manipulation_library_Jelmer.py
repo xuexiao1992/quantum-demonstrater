@@ -5,6 +5,15 @@ Created on Mon Jul  9 17:21:45 2018
 @author: jmboter
 """
 
+import numpy as np
+from pycqed.measurement.waveform_control.pulsar import Pulsar
+from pycqed.measurement.waveform_control.element import Element
+from qcodes.instrument.base import Instrument
+#from experiment import Experiment
+from manipulation import Manipulation
+import stationF006
+from copy import deepcopy
+
 class ChargeNoiseBob_Jelmer(Manipulation):
     
     def __init__(self, name, pulsar, **kw):

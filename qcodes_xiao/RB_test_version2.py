@@ -407,8 +407,8 @@ def convert_clifford_to_sequence(clifford_index_1, clifford_index_2, start_1 = '
     for i in range(len(Clifford_group)):
         for j in range(len(Clifford_group)):
 #            print('i: %d\nj: %d\n'%(i,j))
-            for G1 in ['X9', 'Y9', 'mX9', 'mY9', 'Z9', 'mZ9',]:# 'I', 'Xp', 'Yp', 'Zp']:
-                for G2 in ['X9', 'Y9', 'mX9', 'mY9', 'Z9', 'mZ9',]:# 'I', 'Xp', 'Yp', 'Zp']:
+            for G1 in ['X9', 'Y9', 'mX9', 'mY9',]:# 'Z9', 'mZ9',]:# 'I', 'Xp', 'Yp', 'Zp']:
+                for G2 in ['X9', 'Y9', 'mX9', 'mY9',]:# 'Z9', 'mZ9',]:# 'I', 'Xp', 'Yp', 'Zp']:
                     mat3 = np.linalg.multi_dot([init_state, total_matrix, np.kron(gates[G1], gates[G2]), CZ, np.kron(Clifford_group[i], Clifford_group[j])][::-1])
 #                    if abs(np.sum(abs(mat3))-np.sum(abs(np.diag(mat3)))) < 1e-5 and abs(abs(np.sum(np.diag(mat3)))-np.sum(abs(np.diag(mat3)))) < 1e-5:
                     if np.sum(abs(mat3[1:])) < 1e-8:    
@@ -442,13 +442,13 @@ def generate_randomized_clifford_sequence(start = 'I', interleave = None):
     clifford_sets_1 = []
     clifford_sets_2 = []
     
-    sequence_length = 40
+    sequence_length = 30
     
     rep_num = 40
     
     sequence_number = 16*rep_num
     
-    sequence_number = 35
+    sequence_number = 24
     start = start
     
     for j in range(sequence_number):
