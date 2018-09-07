@@ -223,9 +223,9 @@ def generate_randomized_clifford_sequence(interleave = None):
     
     clifford_sets = []
     
-    sequence_length = 160
+    sequence_length = 100
     
-    sequence_number = 35
+    sequence_number = 20
     
     for j in range(sequence_number):
         

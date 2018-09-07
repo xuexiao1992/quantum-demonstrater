@@ -751,9 +751,45 @@ class CPhase_Calibrate(Manipulation):
         
         off_resonance_amplitude = kw.pop('off_resonance_amplitude',self.off_resonance_amplitude)
         
+        qubit_1 = Instrument.find_instrument('qubit_1')
+        qubit_2 = Instrument.find_instrument('qubit_2')
         
         te = 15e-9
         
+        
+        '''
+        if control_qubit == 'qubit_2':
+            self.add_single_qubit_gate(name='off_resonance1_Q1', 
+                                       qubit = qubit_1, amplitude = off_resonance_amplitude, 
+                                       length = qubit_1.Pi_pulse_length, frequency_shift = frequency_shift-30e6)
+            
+            self.add_single_qubit_gate(name='X_Pi_Q2', refgate = 'off_resonance1_Q1', refpoint = 'start', waiting_time = 0,
+                                       qubit = qubit_2, amplitude = Pi_amplitude, 
+                                       length = qubit_2.Pi_pulse_length, frequency_shift = 0)
+        
+            self.add_X(name='X1_Q2', refgate = 'off_resonance1_Q1', qubit = qubit_1,  
+                       amplitude = 1, length = qubit_1.halfPi_pulse_length, 
+                       frequency_shift = 0,)
+        
+        elif target_qubit == 'qubit_2':
+            
+            amp = Pi_amplitude if Pi_amplitude != 0 else off_resonance_amplitude
+            shift = 0 if Pi_amplitude != 0 else -30e6
+            
+            self.add_single_qubit_gate(name='X_Pi_Q2', 
+                                       qubit = qubit_1, amplitude = amp, 
+                                       length = qubit_1.Pi_pulse_length, frequency_shift = shift)
+        
+            self.add_single_qubit_gate(name='off_resonance1_Q1', refgate = 'X_Pi_Q2', 
+                                       qubit = qubit_1, amplitude = off_resonance_amplitude, 
+                                       length = qubit_1.halfPi_pulse_length, frequency_shift = frequency_shift-30e6)
+            
+            self.add_X(name='X1_Q2', refgate = 'off_resonance1_Q1', refpoint = 'start', waiting_time = 0,
+                       qubit = qubit_2,  
+                       amplitude = 1, length = qubit_2.halfPi_pulse_length, 
+                       frequency_shift = 0,)
+            
+        '''
         
         self.add_single_qubit_gate(name='X_Pi_Q2', qubit = self.qubits[C], amplitude = Pi_amplitude, 
                                    length = self.qubits[0].Pi_pulse_length, frequency_shift = 0)
@@ -774,7 +810,7 @@ class CPhase_Calibrate(Manipulation):
                    amplitude = off_resonance_amplitude, length = self.qubits[1].halfPi_pulse_length, 
                    frequency_shift = frequency_shift-30e6,)
         
-
+        
         
         
         self.add_CPhase(name = 'CP_wait1', refgate = 'X1_Q2',
@@ -794,7 +830,24 @@ class CPhase_Calibrate(Manipulation):
     
         
         self.add_Z(name='Z1_Q1', qubit = self.qubits[T], degree = phase)
+        '''
+        if target_qubit  == 'qubit_2':
+            self.add_single_qubit_gate(name='off_resonance3_Q1', refgate = 'CP_wait2',
+                                       qubit = self.qubits[C], amplitude = off_resonance_amplitude, 
+                                       length = self.qubits[0].halfPi_pulse_length, frequency_shift = frequency_shift-30e6)
+            
+            self.add_X(name='X2_Q2', refgate = 'off_resonance3_Q1', refpoint = 'start', waiting_time = 0, 
+                       qubit = self.qubits[T], 
+                       amplitude = 1, length = self.qubits[0].halfPi_pulse_length, 
+                       frequency_shift = frequency_shift,)
         
+        else:
+            self.add_X(name='X2_Q2', refgate = 'CP_wait2', 
+                       waiting_time = 0, qubit = self.qubits[T], 
+                       amplitude = 1, length = self.qubits[0].halfPi_pulse_length, 
+                       frequency_shift = frequency_shift,)
+        
+        '''
         self.add_X(name='X2_Q2', refgate = 'CP_wait2', 
                    waiting_time = 0, qubit = self.qubits[T], 
                    amplitude = 1, length = self.qubits[0].halfPi_pulse_length, 
@@ -804,7 +857,7 @@ class CPhase_Calibrate(Manipulation):
             self.add_single_qubit_gate(name='off_resonance3_Q1', refgate = 'X2_Q2', refpoint = 'start',
                                        qubit = self.qubits[C], amplitude = off_resonance_amplitude, 
                                        length = self.qubits[0].halfPi_pulse_length, frequency_shift = frequency_shift-30e6)
-
+        
 
         return self
 
@@ -1167,14 +1220,15 @@ class DCZ(Manipulation):
         qubit_2 = Instrument.find_instrument('qubit_2')
         self.qubits[0] = qubit_1
         self.qubits[1] = qubit_2
-        target_amp = 0
-        decouple_amp = 0
-        te = 15e-9
+        target_amp = 1
+        decouple_amp = 1
+        te = 10e-9
 #        off_resonance_amplitude = 1.2
         
         '''
         if control_qubit == 'qubit_2':
             # first pi pulse
+            
             
             if Pi_amplitude != 0:
             
@@ -1195,6 +1249,7 @@ class DCZ(Manipulation):
                 
             
         elif target_qubit == 'qubit_2':
+            
             if Pi_amplitude != 0:
                 self.add_single_qubit_gate(name='XPi_Q1', qubit = self.qubits[0], amplitude = Pi_amplitude, 
                                            length = self.qubits[0].Pi_pulse_length, frequency_shift = 0)
@@ -1214,6 +1269,7 @@ class DCZ(Manipulation):
                            amplitude = 1, length = self.qubits[0].halfPi_pulse_length, )
         
         '''
+        
         self.add_single_qubit_gate(name='X_Pi_Q2', qubit = self.qubits[C], amplitude = Pi_amplitude, 
                                    length = self.qubits[0].Pi_pulse_length, frequency_shift = 0)
         

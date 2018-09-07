@@ -483,7 +483,7 @@ class Experiment:
         if self.make_new_element:
             self.load_sequence(idx_j = idx_j)
         else:
-            self.restore_previous_sequence(filename = 'RB_sequence\\sequence_%d'%idx_j)
+            self.restore_previous_sequence(filename = 'RB_sequence_v2\\sequence_%d'%idx_j)
             self.update_elements_in_awgs()
         
         time.sleep(0.1)
@@ -1183,8 +1183,8 @@ class Experiment:
                 '''
                 store it into awg here
                 '''
-                if not self.make_new_element:
-                    filename = 'RB_sequence\\sequence_%d'%idx_j
+                if self.make_new_element:
+                    filename = 'RB_sequence_v2\\sequence_%d'%idx_j
                     self.save_sequence(self.awg, filename, disk = 'C:')
                     self.save_sequence(self.awg2, filename, disk = 'C:')
     

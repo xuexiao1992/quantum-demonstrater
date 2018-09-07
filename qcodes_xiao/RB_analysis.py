@@ -249,22 +249,25 @@ location_new2 = '2018-08-19/23-43-55/RB_experimentAllXY_sequence'
 
 location_new2 = '2018-08-26/13-44-11/RB_experimentAllXY_sequence'
 
+location_new2 = '2018-08-28/16-16-04/RB_experimentAllXY_sequence'
+
+
 DS = load_data(location = location_new2, io = IO_K, formatter = formatter)
 
 #%%
 NewIO = DiskIO(base_location = 'D:\\Data\\RB_experiment')
 
-DS = load_data(location = location_dc, io = NewIO)
+#DS = load_data(location = location5, io = NewIO)
 
 DS = load_data(location = location8, io = IO, formatter = formatter)
-DS2 = load_data(location = location_b, io = IO, formatter = formatter)
+DS2 = load_data(location = location6, io = IO, formatter = formatter)
 #%%
 
 ds = DS
 Qubit = 2
 i = 0 if Qubit == 2 else 1
 ramsey_point = 11
-fitting_point = 16
+fitting_point = 26
 x = np.array([len(clifford_sets[0][i]) for i in range(fitting_point)])
 #x = x-1
 #x[0] = 0
@@ -274,7 +277,7 @@ y = ds.probability_data[:,i,ramsey_point:ramsey_point+fitting_point].mean(axis =
 
 pars, pcov = curve_fit(RB_Fidelity, x, y,
                        p0 = (0.9, 0.2, 0.3),
-                       bounds = ((0.7, 0, 0),(1, 0.8, 0.8)))
+                       bounds = ((0.5, 0, 0),(1, 0.8, 0.8)))
 #                       bounds = ((), ()))
 #pars, pcov = curve_fit(RB_Fidelity, x, y,
 #                       p0 = (-0.9, 0.2, -0.4),
