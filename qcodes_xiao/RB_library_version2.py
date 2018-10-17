@@ -1100,5 +1100,63 @@ class RB_decoupling(Manipulation):
 
 
                 
-                                
+#%%
+
+
+class CRot(Manipulation):
+
+    def __init__(self, name, pulsar, **kw):
+
+        super().__init__(name, pulsar, **kw)
+        self.refphase = {}
+        self.qubit = kw.pop('qubit', 'qubit_1')
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = None
+        self.amplitude = kw.pop('amplitude', 0)
+        self.amplitude2 = kw.pop('amplitude2', 0)
+        
+        self.amplitudepi = kw.pop('amplitudepi', 1)
+        self.frequency_shift = kw.pop('frequency_shift', 0)
+        self.length = kw.pop('duration_time', 275e-9)
+    def __call__(self, **kw):
+        self.name = kw.pop('name', self.name)
+        self.qubits = kw.pop('qubits', None)
+        if self.qubits is not None:
+            self.qubits_name = [qubit.name for qubit in self.qubits]
+            self.refphase = {qubit.name: 0 for qubit in self.qubits}
+        self.pulsar = kw.pop('pulsar', None)
+        
+        self.amplitude = kw.get('amplitude', self.amplitude)
+        self.amplitude2 = kw.pop('amplitude2', self.amplitude2)
+        
+        return self
+
+    def make_circuit(self, **kw):
+        qubit_name = kw.pop('qubit', self.qubit)
+        
+        qubit = Instrument.find_instrument(qubit_name)
+        qubit_1 = Instrument.find_instrument('qubit_1')
+        qubit_2 = Instrument.find_instrument('qubit_2')
+        CRot_pulse_length = 260e-9
+        length = kw.get('duration_time', CRot_pulse_length)
+        
+#        length = kw.get('duration_time', self.length)
+        
+        amplitude = kw.get('amplitude', self.amplitude)
+        amplitude2 = kw.pop('amplitude2', self.amplitude2)
+        
+        amplitudepi = kw.get('amplitudepi', self.amplitudepi)
+        frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
+
+        self.add_CPhase(name = 'CP_Q12', control_qubit = self.qubits[0], target_qubit = self.qubits[1],
+                        amplitude_control = amplitude, amplitude_target = amplitude2, length = length+150e-9)
+        
+        self.add_single_qubit_gate(name='CRot', refgate = 'CP_Q12', qubit = self.qubits[1], 
+                                   refpoint = 'start', waiting_time = 100e-9, amplitude = amplitudepi, 
+                                   length = length, frequency_shift = frequency_shift,)
+
+        return self                          
               

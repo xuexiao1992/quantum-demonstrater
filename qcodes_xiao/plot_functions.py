@@ -54,7 +54,7 @@ def make_pcolor_array(array):
     return arraynew2
 # plot stability_diagram
 
-def plot2Ddata(data_set, dev = False):
+def plot2Ddata(data_set, dev = False, axis = 0):
     """ Plot 2D data from a genereric Qcodes loop, with a singlular measurment
     Input
     ----
@@ -72,7 +72,7 @@ def plot2Ddata(data_set, dev = False):
             z = data_set.arrays[array]
             zlabel = array
     if dev == True:
-        z = np.gradient(z, axis = 0)        
+        z = np.gradient(z, axis = axis)        
             
     plt.figure(21, figsize=(12, 8))
     plt.clf() 
@@ -190,6 +190,9 @@ def plot1D(data_set, measurements = 'All', xaxis = True, sameaxis = False, fitfu
                     plt.ylabel(readnames[i] + ' prob')
                 j = j+1
             jj = jj+1
+    
+    addPPTslide(title = data_set.location, fig=plt.figure(20), notes=qtt.tools.reshape_metadata(data_set, printformat='fancy'))
+    
     callback = Index(data_set, plt.figure(20))
     ppt = plt.axes([0.81, 0.90, 0.1, 0.075])
     bppt = Button(ppt, 'ppt')

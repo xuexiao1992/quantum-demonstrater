@@ -1134,8 +1134,13 @@ class Experiment:
         
         print('1st element:', element_no)
         
-        if len(self.X_sweep_array) > len(self.dig.X_sweep_array):
-            coeff = int(len(self.X_sweep_array)/len(self.dig.X_sweep_array))
+        if type(self.dig.X_sweep_array) is int or len(self.X_sweep_array) > len(self.dig.X_sweep_array):    # modified before adiabatic scan with Jelmer
+            if type(self.dig.X_sweep_array) is int:
+                coeff = int(len(self.X_sweep_array)/1)
+            else:
+                coeff = int(len(self.X_sweep_array)/len(self.dig.X_sweep_array))
+                
+#            coeff = int(len(self.X_sweep_array)/len(self.dig.X_sweep_array))
             unit_length = int((awg.sequence_length()-1)/coeff)
             for j in range(1, coeff):
                 awg.set_sqel_waveform(waveform_name = name+'_ch%d'%i, channel = i,
@@ -1460,7 +1465,8 @@ class Experiment:
 #                    
             copyfile('C:\\Github\\quantum-demonstrater\\qcodes_xiao\\experiment_version2.py' , self.full_path+'\\experiment_version2.py')
             copyfile('C:\\Github\\quantum-demonstrater\\qcodes_xiao\\manipulation_library.py' , self.full_path+'\\manipulation_library.py')   
-            
+            copyfile('C:\\Github\\quantum-demonstrater\\qcodes_xiao\\manipulation_library_Jelmer.py' , self.full_path+'\\manipulation_library_Jelmer.py')
+            copyfile('C:\\Github\\quantum-demonstrater\\qcodes_xiao\\setting_versiontom_29_10_2017.py' , self.full_path+'\\setting_versiontom_29_10_2017.py')
 #            
 #            self.calculate_average_data()
             

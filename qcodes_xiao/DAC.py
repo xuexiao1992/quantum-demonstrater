@@ -141,22 +141,21 @@ from qcodes.instrument.parameter import ArrayParameter, StandardParameter
 
 Count = StandardParameter(name = 'Count', set_cmd = Counts)
 
-Sweep_Value1 = T[0:-75:1]
-Sweep_Value2 = LP[-320:-400:1]
+#Sweep_Value1 = T[0:-75:1]
+#Sweep_Value2 = LP[-320:-400:1]
 
-Sweep_Value1 = T[20:-40:1]
-Sweep_Value2 = LP[-820:-900:1]
-
-
-Sweep_Value1 = T[-10:-70:1.5]
-Sweep_Value2 = LP[-540:-630:1.5]
+#Sweep_Value1 = T[20:-40:1]
+#Sweep_Value2 = LP[-820:-900:1]
 
 
-#Sweep_Value1 = T[-0:-90:1.5]
-#Sweep_Value2 = LP[-250:-700:3]
+Sweep_Value1 = T[30:90:1]
+Sweep_Value2 = LP[-360:-450:1]
 
-#Sweep_Value1 = T[-0:-90:1.5]
-#Sweep_Value2 = LP[-450:-650:2]
+#Sweep_Value1 = T[-30:70:1]
+#Sweep_Value2 = G.B[-500:-400:1]
+
+#Sweep_Value1 = G.B[-350:-450:1]
+#Sweep_Value2 = LP[-725:-875:2]
 ##
 #Sweep_Value1 = G.LD[-200:-280:1]
 #Sweep_Value2 = LP[-480:-560:1]
@@ -189,8 +188,8 @@ Sweep_Value2 = LP[-540:-630:1.5]
 #Sweep_Value1 = SQD1[-60:-160:2]
 #Sweep_Value2 = SQD3[-250:-400:3]
 
-#Sweep_Value1 = SQD1[-100:-200:2]
-#Sweep_Value2 = SQD3[-300:-450:3]
+#Sweep_Value1 = SQD1[10:110:1]
+#Sweep_Value2 = SQD3[-250:-400:1]
 
 #Sweep_Value1 = Count[0:100:0.5]
 

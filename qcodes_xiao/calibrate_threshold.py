@@ -6,6 +6,7 @@ Created on Thu Apr 26 13:50:58 2018
 """
 
 import scipy
+from matplotlib.widgets import Button
 
 def double_gaussian(signal_amp, params):
     """ A model for the sum of two Gaussian distributions. """
@@ -35,8 +36,8 @@ def calibrate_threshold(data):
         for j in range(10,20):
             hist_values.append(min(data.raw_data[0,0,i,j,:]))
  
-#    plt.figure()
-#    h = plt.hist(hist_values, bins = 45)
+    g = plt.figure()
+    h = plt.hist(hist_values, bins = 45)
     h = np.histogram(hist_values, bins = 45)
  
     signal_amp = (h[1][:-1] + h[1][1:])/2
@@ -44,7 +45,13 @@ def calibrate_threshold(data):
     mean_up = h[1][0] - 2.2*(h[1][0]-h[1][-1])/3
     fit_params,_ = fit_double_gaussian(signal_amp,h[0])#,[300,400,0.022,0.026,mean_dn,mean_up])
    
-#    plt.plot(signal_amp,double_gaussian(signal_amp,fit_params))
+    plt.plot(signal_amp,double_gaussian(signal_amp,fit_params))
+    
+#    callback = Index(data_set, plt.figure(42))
+#    ppt = plt.axes([0.81, 0.90, 0.1, 0.075])
+#    bppt = Button(ppt, 'ppt')
+#    bppt.on_clicked(callback.ppt) 
+#    ppt._button = bppt
    
     visibility = []
     for s in signal_amp:
@@ -54,4 +61,4 @@ def calibrate_threshold(data):
     th_ind = visibility.index(max(visibility))
     threshold = signal_amp[th_ind]
    
-    return threshold
+    return g, threshold

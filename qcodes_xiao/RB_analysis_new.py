@@ -146,12 +146,12 @@ location_new2 = '2018-09-06/23-39-09/RB_experimentAllXY_sequence'   #   Clifford
 '''
 non_interleave new
 '''
-#location_new2 = '2018-09-04/11-24-17/RB_experiment2AllXY_sequence'   #   Clifford without CZ
+location_new2 = '2018-09-04/11-24-17/RB_experiment2AllXY_sequence'   #   Clifford without CZ
 
 
-#DS4 = load_data(location = location_new2, io = IO_K2, formatter = formatter)
+DS4 = load_data(location = location_new2, io = IO_K2, formatter = formatter)
 
-DS = load_data(location = location_new2, io = IO_K, formatter = formatter)
+#DS = load_data(location = location_new2, io = IO_K, formatter = formatter)
 
 #%% character benchmarking without normalization
 
@@ -239,7 +239,7 @@ P_pi_q2 = 0.97
 P_init_q1 = 1#0.99
 P_init_q2 = 1#0.99
 
-fitting_point = 18
+fitting_point = 24
 
 def average_normalized_two_qubit(ds):
     
@@ -344,7 +344,7 @@ def average_normalized_two_qubit(ds):
 
 #%%
 first_sequence = 32
-sequence_number = 64
+sequence_number = 128
 
 ds = DS
 
@@ -375,9 +375,9 @@ P3 = average['00'] - average['01'] - average['10'] + average['11']
 start = 1
 end = 18
 
-pars1, pcov1 = curve_fit(RB_Fidelity, x[start:end], P1[start:end], p0 = (0.9, 0.2, 0), bounds = ((0.5, 0, 0),(1, 1.2, 0.001)))
-pars2, pcov2 = curve_fit(RB_Fidelity, x[start:end], P2[start:end], p0 = (0.9, 0.2, 0), bounds = ((0.5, 0, 0),(1, 1.2, 0.001)))
-pars3, pcov3 = curve_fit(RB_Fidelity, x[start:end], P3[start:end], p0 = (0.9, 0.2, 0), bounds = ((0.5, 0, 0),(1, 1.2, 0.001)))
+pars1, pcov1 = curve_fit(RB_Fidelity, x[start:end], P1[start:end], p0 = (0.9, 0.2, 0), bounds = ((0.5, 0, 0),(1, 1.2, 0.005)))
+pars2, pcov2 = curve_fit(RB_Fidelity, x[start:end], P2[start:end], p0 = (0.9, 0.2, 0), bounds = ((0.5, 0, 0),(1, 1.2, 0.005)))
+pars3, pcov3 = curve_fit(RB_Fidelity, x[start:end], P3[start:end], p0 = (0.9, 0.2, 0), bounds = ((0.5, 0, 0),(1, 1.2, 0.005)))
 P = 3/15 * (pars1[0] + pars2[0]) + 9/15 * pars3[0]
 Fidelity = 1- (1-P)*3/4
 print('P:', P)

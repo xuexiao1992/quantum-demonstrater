@@ -1416,7 +1416,8 @@ class Experiment:
 #               
 #                    
             copyfile('C:\\Github\\quantum-demonstrater\\qcodes_xiao\\experiment_version2.py' , self.full_path+'\\experiment_version2.py')
-            copyfile('C:\\Github\\quantum-demonstrater\\qcodes_xiao\\manipulation_library.py' , self.full_path+'\\manipulation_library.py')   
+            copyfile('C:\\Github\\quantum-demonstrater\\qcodes_xiao\\manipulation_library.py' , self.full_path+'\\manipulation_library.py')
+            copyfile('C:\\Github\\quantum-demonstrater\\qcodes_xiao\\manipulation_library.py' , self.full_path+'\\manipulation_library_Jelmer.py')
             
 #            
 #            self.calculate_average_data()
