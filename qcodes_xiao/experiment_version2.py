@@ -44,6 +44,8 @@ from data_set_plot import convert_to_ordered_data, convert_to_01_state, convert_
 
 from shutil import copyfile
 
+import winsound
+
 #%%
 
 def Func_Sin(x,amp,omega,phase,offset):
@@ -1476,6 +1478,25 @@ class Experiment:
         self.close()
         
         self.data_set.arrays[self.Y_parameter+'_set'].ndarray = np.array(self.Y_sweep_array)
+        
+        winsound.Beep(2000, 300)
+        winsound.Beep(1000, 300)
+
+                
+#        winsound.Beep(660, 100)
+#        winsound.Beep(37, 150)
+#        winsound.Beep(660, 100)
+#        winsound.Beep(37, 300)
+#        winsound.Beep(660, 100)
+#        winsound.Beep(37, 300)
+#        winsound.Beep(510, 100)
+#        winsound.Beep(37, 100)
+#        winsound.Beep(660, 100)
+#        winsound.Beep(37, 300)
+#        winsound.Beep(770, 100)
+#        winsound.Beep(37, 550)
+#        winsound.Beep(380, 100)
+#        winsound.Beep(37, 575)
 
         return self.data_set
 

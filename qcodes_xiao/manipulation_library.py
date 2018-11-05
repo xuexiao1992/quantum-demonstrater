@@ -334,6 +334,10 @@ class Rabi_detuning(Manipulation):
         amplitude = kw.get('amplitude', self.amplitude)
         amplitude2 = kw.pop('amplitude2', self.amplitude2)
         frequency_shift = kw.pop('frequency_shift', self.frequency_shift)
+        
+#        if superposition == True:
+#            self.add_X(name='X1_Q1', qubit = qubit_1,
+#                   amplitude = amplitude, length = qubit_1.halfPi_pulse_length,)
 
         self.add_CPhase(name = 'CP_Q12', control_qubit = self.qubits[0], target_qubit = self.qubits[1],
                         amplitude_control = amplitude, amplitude_target = amplitude2, length = length+150e-9)
