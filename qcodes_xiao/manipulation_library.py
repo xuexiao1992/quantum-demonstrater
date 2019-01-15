@@ -99,6 +99,7 @@ class Ramsey(Manipulation):
         self.off_resonance = kw.pop('off_resonance', False)
         
         self.echo = kw.pop('echo', False)
+        self.detune = kw.pop('detune', False)
 
     def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
@@ -116,6 +117,7 @@ class Ramsey(Manipulation):
         self.phase_2 = kw.pop('phase_2', self.phase_2)
         self.off_resonance = kw.pop('off_resonance', self.off_resonance)
         self.echo = kw.pop('echo', self.echo)
+        self.detune = kw.pop('detune', self.detune)
         return self
 
     def make_circuit(self, **kw):
@@ -128,6 +130,7 @@ class Ramsey(Manipulation):
         phase_2 = kw.pop('phase_2', self.phase_2)
         
         echo = kw.pop('echo', self.echo)
+        detune = kw.pop('detune', self.detune)
         
         qubit_name = kw.pop('qubit', self.qubit)
         
@@ -142,7 +145,10 @@ class Ramsey(Manipulation):
                    amplitude = amplitude, length = length, frequency_shift = frequency_shift)
         
         self.add_Z(name='Z1_Q1', qubit = qubit, degree = phase_2)
-#        self.add_Z(name='Zde2_Q1', qubit = qubit, degree = 360 * 4e6*waiting_time)
+        
+        if detune:
+            self.add_Z(name='Detune', qubit = qubit, degree = 360 * 4e6*waiting_time)
+        
         if echo:
             self.add_X(name='De_Q1', qubit = qubit, refgate = 'X1_Q1', waiting_time = waiting_time/2,
                        amplitude = amplitude, length = length*2, frequency_shift = frequency_shift)
@@ -758,7 +764,7 @@ class CPhase_Calibrate(Manipulation):
         qubit_1 = Instrument.find_instrument('qubit_1')
         qubit_2 = Instrument.find_instrument('qubit_2')
         
-        te = 15e-9
+        te = 10e-9
         
         
         '''

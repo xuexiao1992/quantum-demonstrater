@@ -285,11 +285,14 @@ class ChargeNoiseBob_Jelmer2(Manipulation):
         self.amplitude_control = kw.pop('amplitude_control', 30*0.5*-0.0277)
         self.amplitude_target = kw.pop('amplitude_target', 30*0.5*0.00)
         self.DFS = kw.pop('DFS', False)
-        self.add_dephase = kw.pop('add_dephase', False)
         self.decoupled_qubit = kw.pop('decoupled_qubit', 'qubit_1')
         self.decoupled_cphase = kw.pop('decoupled_cphase', False)
+        self.add_dephase = kw.pop('add_dephase', False)
         self.sigma = kw.pop('sigma', 0)
+        self.correlated = kw.pop('correlated', True)
         self.DD = kw.pop('DD', 'None')
+        self.project = kw.pop('project', False)
+        self.det_freq = kw.pop('det_freq', 4E6)
 
     def __call__(self, **kw):
         self.name = kw.pop('name', self.name)
@@ -307,11 +310,14 @@ class ChargeNoiseBob_Jelmer2(Manipulation):
         self.amplitude_target = kw.pop('amplitude_target', self.amplitude_target)
         self.detuning_time = kw.pop('detuning_time', self.detuning_time)
         self.DFS = kw.pop('DFS', self.DFS)
-        self.add_dephase = kw.pop('add_dephase', self.add_dephase)
         self.decoupled_qubit = kw.pop('decoupled_qubit', self.decoupled_qubit)
         self.decoupled_cphase = kw.pop('decoupled_cphase', self.decoupled_cphase)
+        self.add_dephase = kw.pop('add_dephase', self.add_dephase)
         self.sigma = kw.pop('sigma', self.sigma)
+        self.correlated = kw.pop('correlated', self.correlated)
         self.DD = kw.pop('DD', self.DD)
+        self.project = kw.pop('project', self.project)
+        self.det_freq = kw.pop('det_freq', self.det_freq)
         
         return self
 
@@ -330,13 +336,17 @@ class ChargeNoiseBob_Jelmer2(Manipulation):
         amplitude_target = kw.pop('amplitude_target', self.amplitude_target)
 #        qubit_name = kw.pop('qubit', self.qubit)
         DD = kw.pop('DD', self.DD)
+        project = kw.pop('project', self.project)
+        det_freq = kw.pop('det_freq', self.det_freq)
         
         qubit_1 = Instrument.find_instrument('qubit_1')
         qubit_2 = Instrument.find_instrument('qubit_2')
         
         if add_dephase:
             sigma = kw.pop('sigma', self.sigma)
-            noise = np.random.normal(0, sigma)
+            correlated = kw.pop('correlated', self.correlated)
+            noise1 = np.random.normal(0, sigma)
+            noise2 = -(-1)**correlated * noise1
         
         te = 10e-9
 
@@ -396,7 +406,7 @@ class ChargeNoiseBob_Jelmer2(Manipulation):
                             amplitude_control = 0, amplitude_target = 0, 
                             length = waiting_time)
         
-        if DD == 'Hahn':
+        if DD == 'PhysicalHahn': #Pi_X on both qubits
             self.add_CPhase(name = 'WAIT0', refgate = 'Q1_X2', waiting_time = 0,
                             control_qubit = qubit_1, target_qubit = qubit_2,
                             amplitude_control = 0, amplitude_target = 0, 
@@ -412,14 +422,30 @@ class ChargeNoiseBob_Jelmer2(Manipulation):
                             amplitude_control = 0, amplitude_target = 0, 
                             length = waiting_time/2)
         
+        if DD == 'LogicalHahn': #Pi_X on Q1, Pi_Y on Q2
+            self.add_CPhase(name = 'WAIT0', refgate = 'Q1_X2', waiting_time = 0,
+                            control_qubit = qubit_1, target_qubit = qubit_2,
+                            amplitude_control = 0, amplitude_target = 0, 
+                            length = waiting_time/2)
+            
+            self.add_X(name='Q1_X_Hahn', qubit = qubit_1, refgate = 'WAIT0', waiting_time = te,
+                   amplitude = amplitude, length = qubit_1.Pi_pulse_length,)
+            self.add_Y(name='Q2_Y_Hahn', qubit = qubit_2, refgate = 'Q1_X_Hahn', refpoint = 'start',
+                   amplitude = amplitude, length = qubit_2.Pi_pulse_length,)
+            
+            self.add_CPhase(name = 'WAIT', refgate = 'Q1_X_Hahn', waiting_time = 0,
+                            control_qubit = qubit_1, target_qubit = qubit_2,
+                            amplitude_control = 0, amplitude_target = 0, 
+                            length = waiting_time/2)
+        
         # Add detuning during wait time for easy fitting
         self.add_Z(name='Q1_Zdet', qubit = qubit_1, degree = 360 * 0E6 * waiting_time)
-        self.add_Z(name='Q2_Zdet', qubit = qubit_2, degree = 360 * 4E6 * waiting_time)
+        self.add_Z(name='Q2_Zdet', qubit = qubit_2, degree = 360 * det_freq * waiting_time)
         
         # Add noise in software
         if add_dephase:
-            self.add_Z(name='Z_noise_Q1', qubit = qubit_1, degree = 360 * noise * waiting_time)
-            self.add_Z(name='Z_noise_Q2', qubit = qubit_2, degree = 360 * noise * waiting_time)
+            self.add_Z(name='Z_noise_Q1', qubit = qubit_1, degree = 360 * noise1 * waiting_time)
+            self.add_Z(name='Z_noise_Q2', qubit = qubit_2, degree = 360 * noise2 * waiting_time)
         
         # Reverse sequence to go back to initial state
         
@@ -429,7 +455,8 @@ class ChargeNoiseBob_Jelmer2(Manipulation):
         
         self.add_X(name='Q1_X3', qubit = qubit_1, refgate = 'WAIT', waiting_time = te,
                    amplitude = amplitude, length = qubit_1.halfPi_pulse_length,)
-        self.add_X(name='Q2_X3', qubit = qubit_2, refgate = 'Q1_X3', refpoint = 'start',
+        if not project:
+            self.add_X(name='Q2_X3', qubit = qubit_2, refgate = 'Q1_X3', refpoint = 'start',
                    amplitude = amplitude, length = qubit_2.halfPi_pulse_length,)
         
         # Z rotation for 01+10
@@ -461,8 +488,11 @@ class ChargeNoiseBob_Jelmer2(Manipulation):
                             length = detuning_time)
         
         # Z rotations to correct for phases in CPhase plus Pi/2
-        self.add_Z(name='Q1_Z_CP2', qubit = qubit_1, degree = phase_1+90)
-        self.add_Z(name='Q2_Z_CP2', qubit = qubit_2, degree = phase_2+90)
+        if not project:
+            phase_1 +=90
+        phase_2 += 90
+        self.add_Z(name='Q1_Z_CP2', qubit = qubit_1, degree = phase_1)
+        self.add_Z(name='Q2_Z_CP2', qubit = qubit_2, degree = phase_2)
         
         # Final X rotations (Pi/2)
         self.add_X(name='Q1_X4', qubit = qubit_1, refgate = 'CP2', waiting_time = te,

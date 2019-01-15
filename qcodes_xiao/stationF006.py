@@ -84,7 +84,7 @@ def twodotboundaries():
             
             'RS': (-1000, 300),
             'RD': (-1500, 200),
-            'LP': (-1000, 200), 
+            'LP': (-1200, 200), 
             'LPF': (-100, 100),
             'RP': (-1500, 200), 
             'RPF': (-100, 100),
@@ -222,7 +222,7 @@ def initialize(reinit=False, server_name=None):
     
     qubit_1.define_neighbor(neighbor_qubit = 'qubit_2', pulse_delay = 0e-9)
 
-    qubit_2.define_neighbor(neighbor_qubit = 'qubit_2', pulse_delay = 10e-9)
+    qubit_2.define_neighbor(neighbor_qubit = 'qubit_1', pulse_delay = 10e-9)
     
     # Loading IVVI
     logging.info('LD400: load IVVI driver')

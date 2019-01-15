@@ -30,7 +30,11 @@ import matplotlib.pyplot as plt
 
 def coscurve(t,A,B,C,D):
     
-    return A*np.cos(np.pi *2*B*(t-C)/360) + D 
+    return A*np.cos(np.pi *2*B*(t-C)/360) + D
+
+def decay_coscurve(t,A,B,C,D,E):
+    
+    return A*np.exp(-(t/B)**2)*np.cos(np.pi *2*C*t-D) + E
     
 def fitcos(x,y):
 
@@ -42,6 +46,21 @@ def fitcos(x,y):
     print(pars1[2])
     return xfit, yfit
 
+def fitdecaycos(x,y,verbose=False):
+    
+    x = x*1E6
+
+    pars1, pcov = curve_fit(decay_coscurve, x, y, 
+                        p0 = (y.max()-y.min(), 1, 2, np.pi,(y.max()-y.min())/2),
+                        bounds = ((0,0.1,0.1,-np.pi,-1),(1,100,20,np.pi,1)))
+    xfit = x*1E-6
+    yfit = decay_coscurve(x,pars1[0],pars1[1],pars1[2],pars1[3],pars1[4])
+    print(pars1)
+    
+    if verbose:
+        return pars1
+    else:
+        return xfit, yfit
 
 def make_pcolor_array(array):
     """ function to modify array for definining x or y axis  to plot with pcolor
