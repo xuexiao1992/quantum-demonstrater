@@ -224,6 +224,9 @@ class Experiment:
         self.occupied_channel2 = 'ch5_marker2'
     
     
+        self._ramsey_results = []
+    
+    
     def reset(self, name = None, label = None, **kw):
         
         name = self.name if name is None else name
@@ -1371,6 +1374,9 @@ class Experiment:
         print('frequency shift: ', frequency_shift)
         print('update fequency to: ', frequency)
         VSG.frequency(frequency)
+        
+        self._ramsey_results.append({'qubit': qubit, 'frequency_shift': frequency_shift, 'frequency': frequency})
+        
         return True
     
     def draw_allXY(self, qubit = 'qubit2'):
