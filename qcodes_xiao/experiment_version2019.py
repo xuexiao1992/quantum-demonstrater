@@ -1365,9 +1365,9 @@ class Experiment:
             pars, pcov = curve_fit(Func_Gaussian, x, y, bounds = ((0, x[0]), (1,x[-1])))
             error = sum(np.sqrt((y-Func_Gaussian(x, *pars))**2)) #adding a check for the fitting 
             
-            if error < 0.6:
+            if 0 < error < 0.8:
                 frequency_shift = pars[1]
-            else:
+            if error >= 0.8:
                 frequency_shift = 0
             
         except RuntimeError:
